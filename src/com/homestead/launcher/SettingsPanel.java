@@ -106,21 +106,10 @@ public final class SettingsPanel {
         }).opens().setHelp("Switch Amazon's packages off, and back on again. Nothing is "
                 + "ever uninstalled.");
 
-        final Panel.Row watch = p.addRow("Warn if the system undoes Debloat",
-                onOff(Prefs.restoreWatch(c)), null).asSwitch();
-        watch.cell.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                boolean n = !Prefs.restoreWatch(c);
-                Prefs.setRestoreWatch(c, n);
-                watch.setValue(onOff(n));
-                AppModel.reload(c);
-                host.rebuildGrid();
-            }
-        });
-        watch.setHelp("A system update can switch back on packages Debloat turned off, "
-                + "including Amazon's launcher. When that happens a tile appears at the top of "
-                + "the home screen, and pressing it switches them off again. It only checks "
-                + "what this app switched off, and needs the ADB link to fix them.");
+        p.addRow("Fire TV settings", "", new Runnable() {
+            public void run() { host.showPanel(FireTvSettingsPanel.build(c, host)); }
+        }).opens().setHelp("Amazon's own settings screens (network, display, Bluetooth, "
+                + "applications, My Fire TV), each opened directly.");
 
         final Panel.Row updates = p.addRow("Check for updates",
                 "v" + UpdateChecker.installedVersionName(c), null);
