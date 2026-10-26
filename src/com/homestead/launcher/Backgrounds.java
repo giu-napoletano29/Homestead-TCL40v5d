@@ -73,6 +73,15 @@ final class Backgrounds {
             this.glows = glows;
             this.bands = bands;
         }
+
+        /**
+         * The look's own colour, opaque: the main glow of a graphic one, else the lit end of the
+         * gradient. The home screen tints its cards and buttons with it, so they belong to it.
+         */
+        int tint() {
+            if (glows != null) return 0xFF000000 | ((int) glows[0][3] & 0x00FFFFFF);
+            return 0xFF000000 | ((radial ? from : to) & 0x00FFFFFF);
+        }
     }
 
     private static final int EDGE = 0x3DFFFFFF;
@@ -108,6 +117,36 @@ final class Backgrounds {
                             { 0.12f, 0.90f, 0.62f, 0xCCE8451B },
                             { 0.80f, 0.30f, 0.50f, 0x99B3122E },
                             { 0.50f, 0.00f, 0.40f, 0x55FF9A3C } }, true),
+            new Preset("ocean",    "Ocean",    0xFF03101F, 0xFF020812, 0xFFFFFFFF, 0xFFE6F2FA, EDGE, false,
+                    new float[][]{
+                            { 0.12f, 0.90f, 0.62f, 0xCC1E6FD9 },
+                            { 0.88f, 0.15f, 0.55f, 0xB300B8D4 },
+                            { 0.50f, 0.55f, 0.35f, 0x5518A99B } }, true),
+            new Preset("forest",   "Forest",   0xFF04140D, 0xFF020A06, 0xFFFFFFFF, 0xFFE8F6EC, EDGE, false,
+                    new float[][]{
+                            { 0.10f, 0.92f, 0.60f, 0xCC12A05A },
+                            { 0.85f, 0.20f, 0.45f, 0x8099C93A },
+                            { 0.55f, 0.60f, 0.35f, 0x5510867A } }, true),
+            new Preset("sunrise",  "Sunrise",  0xFF1A0A14, 0xFF08040A, 0xFFFFFFFF, 0xFFFFF0E6, EDGE, false,
+                    new float[][]{
+                            { 0.90f, 0.92f, 0.62f, 0xCCF5762C },
+                            { 0.10f, 0.20f, 0.55f, 0xCCE63E86 },
+                            { 0.50f, 1.05f, 0.40f, 0x66FFC24A } }, true),
+            new Preset("orchid",   "Orchid",   0xFF14061C, 0xFF07030F, 0xFFFFFFFF, 0xFFF7E9FA, EDGE, false,
+                    new float[][]{
+                            { 0.15f, 0.90f, 0.60f, 0xCCC02AD6 },
+                            { 0.85f, 0.12f, 0.60f, 0xCC5B3AF0 },
+                            { 0.55f, 0.55f, 0.35f, 0x66FF6FB5 } }, true),
+            new Preset("glacier",  "Glacier",  0xFF061523, 0xFF030A12, 0xFFFFFFFF, 0xFFEAF6FB, EDGE, false,
+                    new float[][]{
+                            { 0.10f, 0.20f, 0.55f, 0xB38FD8F5 },
+                            { 0.88f, 0.90f, 0.60f, 0xCC3B7DE0 },
+                            { 0.50f, 0.60f, 0.35f, 0x6650E0C8 } }, true),
+            new Preset("crimson",  "Crimson",  0xFF14040A, 0xFF060205, 0xFFFFFFFF, 0xFFFBE8EA, EDGE, false,
+                    new float[][]{
+                            { 0.12f, 0.92f, 0.60f, 0xCCD62839 },
+                            { 0.85f, 0.18f, 0.55f, 0xCC7A1F5C },
+                            { 0.50f, 0.00f, 0.40f, 0x55FF8A3C } }, true),
     };
 
     /** The setting value for the photo. */

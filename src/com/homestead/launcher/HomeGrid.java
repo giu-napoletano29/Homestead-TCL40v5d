@@ -636,7 +636,14 @@ public class HomeGrid implements SettingsPanel.Host {
      */
     private int cardColor(boolean textTile) {
         if (look == Backgrounds.PHOTO_LOOK) return textTile ? 0xA6222831 : 0xA6161A20;
-        return CARD_COLOR;
+        // A dark glass tinted with the look's own colour, so the cards belong to the
+        // background instead of sitting on it as flat grey.
+        int t = look.tint();
+        float k = textTile ? 0.66f : 0.74f;
+        int r = Math.round(Color.red(t) * (1 - k) + 0x0A * k);
+        int g = Math.round(Color.green(t) * (1 - k) + 0x0E * k);
+        int b = Math.round(Color.blue(t) * (1 - k) + 0x14 * k);
+        return Color.argb(0xC4, r, g, b);
     }
 
     /** Header and clock colour; on a photo, a soft shadow keeps them readable. */
