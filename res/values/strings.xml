@@ -5,6 +5,7 @@
   <!-- Home screen. Translations live in values-<lang>; Android picks the TV's language. -->
   <string name="home_livetv">Live TV</string>
   <string name="home_livetv_hint">Press OK to watch</string>
+  <string name="home_channels">Canali TV</string>
   <string name="home_livetv_failed">Live TV is not available</string>
   <string name="home_restore">Some changes were undone</string>
   <string name="home_restore_hint_one">%1$s was switched back on. Press OK to switch it off again</string>

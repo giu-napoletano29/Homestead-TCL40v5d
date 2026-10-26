@@ -61,12 +61,15 @@ public final class AppModel {
     public static final int TYPE_LIVETV = 5;
     /** Offers to switch off again what a system update switched back on. */
     public static final int TYPE_RESTORE = 6;
+    /** "Canali TV": the live channels of the installed streaming apps (ChannelsPanel). */
+    public static final int TYPE_CHANNELS = 7;
 
     static final String LIVETV_PKG = "com.amazon.tv.livetv";
     static final String LIVETV_SVC = "com.amazon.tv.livetv.TuneService";
     /** Item.key() of the Live TV tile; also how it is stored when hidden. */
     static final String LIVETV_KEY = "sys:livetv";
     static final String RESTORE_KEY = "sys:restore";
+    static final String CHANNELS_KEY = "sys:channels";
     static final String AMAZON_LAUNCHER = "com.amazon.tv.launcher";
     /** Apple AirPlay & HomeKit. Fire OS only lets its own Settings open it, so we fall back. */
     static final String AIRPLAY_PKG = "com.apple.airplay.amazon.airplay";
@@ -119,6 +122,7 @@ public final class AppModel {
         public String key() {
             if (type == TYPE_INPUT) return "in:" + inputId;
             if (type == TYPE_LIVETV) return LIVETV_KEY;
+            if (type == TYPE_CHANNELS) return CHANNELS_KEY;
             if (type == TYPE_RESTORE) return RESTORE_KEY;
             if (type == TYPE_AMAZON_HOME) return "amz";
             if (type == TYPE_SETTINGS) return "sys:settings";
@@ -137,10 +141,15 @@ public final class AppModel {
     /** Everything, including tiles the user has hidden. Settings needs this. */
     public static List<Item> allItems() { return ITEMS; }
 
-    /** Whether the model has the Live TV tile, hidden or not. */
+    /** The two big text tiles for watching TV: the tuner's Live TV and "Canali TV". */
+    public static boolean isLive(int type) {
+        return type == TYPE_LIVETV || type == TYPE_CHANNELS;
+    }
+
+    /** Whether the model has a Live TV or Canali TV tile, hidden or not. */
     public static boolean hasLiveTv() {
         for (int i = 0; i < ITEMS.size(); i++) {
-            if (ITEMS.get(i).type == TYPE_LIVETV) return true;
+            if (isLive(ITEMS.get(i).type)) return true;
         }
         return false;
     }
@@ -442,6 +451,7 @@ public final class AppModel {
             parts.add("inputs failed");
         }
         if (liveTvAvailable(c)) parts.add("livetv");
+        parts.add("channels:" + ChannelsPanel.signature(c));
         if (amazonLauncherOn(c)) parts.add("amazonhome");
         parts.add("reverted:" + reverted(c));
         Collections.sort(parts);
@@ -497,6 +507,13 @@ public final class AppModel {
             tv.label = c.getString(R.string.home_livetv);
             tv.glyph = R.drawable.ic_in_antenna;
             ITEMS.add(tv);
+        }
+        if (ChannelsPanel.any(c)) {
+            Item ch = new Item();
+            ch.type = TYPE_CHANNELS;
+            ch.label = c.getString(R.string.home_channels);
+            ch.glyph = R.drawable.ic_in_antenna;
+            ITEMS.add(ch);
         }
         try {
             TvInputManager tim = (TvInputManager) c.getSystemService(Context.TV_INPUT_SERVICE);
@@ -762,7 +779,7 @@ public final class AppModel {
             }
             private int rank(int t) {
                 if (t == TYPE_RESTORE) return -1;
-                if (t == TYPE_LIVETV) return 0;
+                if (isLive(t)) return 0;
                 if (t == TYPE_INPUT) return 1;
                 if (t == TYPE_AMAZON_HOME || t == TYPE_SETTINGS || t == TYPE_HEALTH) return 2;
                 return 3;

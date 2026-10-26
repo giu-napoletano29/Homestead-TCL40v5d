@@ -252,7 +252,7 @@ public final class SettingsPanel {
 
         p.addHeader("Sections");
 
-        // Only offered on a TV that has the Live TV tile.
+        // Only offered where there is a Live TV or Canali TV tile.
         if (AppModel.hasLiveTv()) {
             final Panel.Row tvFirst = p.addRow("Live TV first", onOff(Prefs.liveTvFirst(c)), null).asSwitch();
             tvFirst.cell.setOnClickListener(new View.OnClickListener() {
@@ -435,6 +435,7 @@ public final class SettingsPanel {
                 }
                 // Live TV leaves the model when its app is switched off; still name it.
                 if (label.equals(AppModel.LIVETV_KEY)) label = c.getString(R.string.home_livetv);
+                if (label.equals(AppModel.CHANNELS_KEY)) label = c.getString(R.string.home_channels);
                 rows.add(label);
                 rowKeys.add(k);
             }

@@ -396,7 +396,7 @@ public class HomeGrid implements SettingsPanel.Host {
         List<AppModel.Item> all = AppModel.visibleItems(ctx);
         for (int i = 0; i < all.size(); i++) {
             int t = all.get(i).type;
-            if (t == AppModel.TYPE_LIVETV || t == AppModel.TYPE_INPUT) {
+            if (AppModel.isLive(t) || t == AppModel.TYPE_INPUT) {
                 selectKey(all.get(i).key());
                 return;
             }
@@ -600,7 +600,7 @@ public class HomeGrid implements SettingsPanel.Host {
             scroll.scrollTo(0, 0);
             return;
         }
-        if (liveTvFirst() && selectKey(AppModel.LIVETV_KEY)) {
+        if (liveTvFirst() && (selectKey(AppModel.LIVETV_KEY) || selectKey(AppModel.CHANNELS_KEY))) {
             scroll.scrollTo(0, 0);
             return;
         }
@@ -951,9 +951,9 @@ public class HomeGrid implements SettingsPanel.Host {
             if (it.type == AppModel.TYPE_RESTORE) {
                 restoreShown = true;
                 restore = it;
-            } else if (tvFirst && it.type == AppModel.TYPE_LIVETV) {
+            } else if (tvFirst && AppModel.isLive(it.type) && liveTv == null) {
                 liveTv = it;
-            } else if (it.type == AppModel.TYPE_INPUT || it.type == AppModel.TYPE_LIVETV
+            } else if (it.type == AppModel.TYPE_INPUT || AppModel.isLive(it.type)
                     || it.type == AppModel.TYPE_AMAZON_HOME
                     || it.type == AppModel.TYPE_SETTINGS || it.type == AppModel.TYPE_HEALTH) {
                 inputs.add(it);
@@ -1427,7 +1427,7 @@ public class HomeGrid implements SettingsPanel.Host {
             public void onClick(View v) {
                 // TV Health opens a panel in this window, so it is not reported as a
                 // pick; that would make an overlay host dismiss itself.
-                boolean leaves = it.type != AppModel.TYPE_HEALTH;
+                boolean leaves = it.type != AppModel.TYPE_HEALTH && it.type != AppModel.TYPE_CHANNELS;
                 if (listener != null && leaves) listener.onPick(it);
                 act(it);
             }
@@ -1541,7 +1541,7 @@ public class HomeGrid implements SettingsPanel.Host {
         FrameLayout cell = newCell(it);
         GradientDrawable card = new GradientDrawable();
         card.setCornerRadius(dp(CORNER_DP));
-        boolean textTile = it.type == AppModel.TYPE_INPUT || it.type == AppModel.TYPE_LIVETV;
+        boolean textTile = it.type == AppModel.TYPE_INPUT || AppModel.isLive(it.type);
         card.setColor(cardColor(textTile));
         cell.setBackground(card);
         cardCells.put(cell, Boolean.valueOf(textTile));
@@ -1639,6 +1639,11 @@ public class HomeGrid implements SettingsPanel.Host {
         }
         if (it.type == AppModel.TYPE_RESTORE) {
             restoreReverted();
+            return;
+        }
+        if (it.type == AppModel.TYPE_CHANNELS) {
+            logOpen(it.label);
+            showPanel(ChannelsPanel.build(ctx, panelHost));
             return;
         }
         if (it.type == AppModel.TYPE_LIVETV) {
