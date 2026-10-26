@@ -51,14 +51,27 @@ final class Backgrounds {
         final int outline;
         /** A soft glow in the middle fading to the edges, instead of the diagonal gradient. */
         final boolean radial;
+        /**
+         * Coloured glows over the base, for the graphic looks: each is {x, y, radius, colour},
+         * the first three as fractions of the screen's width, height and longer side. Null for none.
+         */
+        final float[][] glows;
+        /** Two soft diagonal light bands across the screen, on top of the glows. */
+        final boolean bands;
         Preset(String id, String name, int from, int to, int text, int ring, int outline) {
             this(id, name, from, to, text, ring, outline, false);
         }
         Preset(String id, String name, int from, int to, int text, int ring, int outline,
                 boolean radial) {
+            this(id, name, from, to, text, ring, outline, radial, null, false);
+        }
+        Preset(String id, String name, int from, int to, int text, int ring, int outline,
+                boolean radial, float[][] glows, boolean bands) {
             this.id = id; this.name = name; this.from = from; this.to = to; this.text = text; this.ring = ring;
             this.outline = outline;
             this.radial = radial;
+            this.glows = glows;
+            this.bands = bands;
         }
     }
 
@@ -79,6 +92,22 @@ final class Backgrounds {
             new Preset("deepsea",  "Deep sea", 0xFF08303A, 0xFF000000, 0xFFFFFFFF, 0xFFE6F0F2, EDGE, true),
             // A flat dark navy, softer than black.
             new Preset("night",    "Night",    0xFF0E1726, 0xFF0E1726, 0xFFE8EEF6, 0xFFFFFFFF, EDGE),
+            // The graphic ones: coloured light pooling on a dark base, with soft diagonal bands.
+            new Preset("aurora",   "Aurora",   0xFF04121C, 0xFF0A0620, 0xFFFFFFFF, 0xFFE9F7F4, EDGE, false,
+                    new float[][]{
+                            { 0.10f, 0.95f, 0.62f, 0xCC10B5A6 },
+                            { 0.85f, 0.10f, 0.60f, 0xCC6A3DE0 },
+                            { 0.55f, 0.60f, 0.38f, 0x6628C76F } }, true),
+            new Preset("synth",    "Synthwave", 0xFF12061F, 0xFF05030F, 0xFFFFFFFF, 0xFFFBEAF6, EDGE, false,
+                    new float[][]{
+                            { 0.90f, 0.85f, 0.62f, 0xCCE0309F },
+                            { 0.05f, 0.15f, 0.55f, 0xCC2B6BFF },
+                            { 0.50f, 1.05f, 0.45f, 0x99FF7A2F } }, true),
+            new Preset("lava",     "Lava",     0xFF160503, 0xFF050202, 0xFFFFFFFF, 0xFFFFF0E4, EDGE, false,
+                    new float[][]{
+                            { 0.12f, 0.90f, 0.62f, 0xCCE8451B },
+                            { 0.80f, 0.30f, 0.50f, 0x99B3122E },
+                            { 0.50f, 0.00f, 0.40f, 0x55FF9A3C } }, true),
     };
 
     /** The setting value for the photo. */
@@ -273,6 +302,7 @@ final class Backgrounds {
     }
 
     static GradientDrawable drawable(Preset p) {
+        if (p.glows != null) return new GlowDrawable(p);
         if (p.radial) {
             // The glow sits left of centre, behind the first tile; its reach follows the screen.
             GradientDrawable g = new GradientDrawable(GradientDrawable.Orientation.TL_BR,
@@ -288,5 +318,59 @@ final class Backgrounds {
         }
         return new GradientDrawable(GradientDrawable.Orientation.BL_TR,
                 new int[]{ p.from, p.to });
+    }
+
+    /**
+     * The base gradient with coloured glows and diagonal light bands drawn over it. The
+     * shaders are made once when the size is known, so drawing it again costs a few fills.
+     * It is a GradientDrawable so the Settings swatch can round its corners like the others.
+     */
+    private static final class GlowDrawable extends GradientDrawable {
+        private final Preset p;
+        private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private android.graphics.RadialGradient[] glowShaders;
+        private android.graphics.LinearGradient bandShader;
+
+        GlowDrawable(Preset p) {
+            super(GradientDrawable.Orientation.TL_BR, new int[]{ p.from, p.to });
+            this.p = p;
+        }
+
+        @Override protected void onBoundsChange(android.graphics.Rect r) {
+            super.onBoundsChange(r);
+            if (r.isEmpty()) return;
+            int n = p.glows.length;
+            glowShaders = new android.graphics.RadialGradient[n];
+            float side = Math.max(r.width(), r.height());
+            for (int i = 0; i < n; i++) {
+                float[] g = p.glows[i];
+                int col = (int) g[3];
+                glowShaders[i] = new android.graphics.RadialGradient(
+                        r.left + g[0] * r.width(), r.top + g[1] * r.height(), g[2] * side,
+                        col, col & 0x00FFFFFF, android.graphics.Shader.TileMode.CLAMP);
+            }
+            // A band runs from the lower left to the upper right; light in the middle, none at the edges.
+            bandShader = new android.graphics.LinearGradient(
+                    r.left, r.bottom, r.right, r.top,
+                    new int[]{ 0x00FFFFFF, 0x00FFFFFF, 0x14FFFFFF, 0x00FFFFFF, 0x00FFFFFF,
+                            0x0DFFFFFF, 0x00FFFFFF },
+                    new float[]{ 0f, 0.22f, 0.30f, 0.40f, 0.60f, 0.68f, 0.80f },
+                    android.graphics.Shader.TileMode.CLAMP);
+        }
+
+        @Override public void draw(Canvas canvas) {
+            super.draw(canvas);
+            if (glowShaders == null) return;
+            android.graphics.Rect r = getBounds();
+            for (int i = 0; i < glowShaders.length; i++) {
+                paint.setShader(glowShaders[i]);
+                canvas.drawRect(r, paint);
+            }
+            if (p.bands && bandShader != null) {
+                paint.setShader(bandShader);
+                canvas.drawRect(r, paint);
+            }
+            paint.setShader(null);
+        }
     }
 }
