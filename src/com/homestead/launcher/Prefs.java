@@ -42,6 +42,8 @@ public final class Prefs {
     private static final String K_TUNNEL = "adb_tunnel_enabled";
     private static final String K_REAPPLY = "adb_reapply_on_boot";
     private static final String K_RESTORE_WATCH = "restore_watch";
+    private static final String K_SHORTCUTS_PLACE = "shortcuts_place";
+    private static final String K_SHORTCUTS = "shortcuts";
     private static final String K_DISABLED = "disabled_by_us";
     private static final String K_REFUSED = "refused_by_fire_os";
     private static final String K_HOME_OFF = "home_off_by_user";
@@ -238,6 +240,35 @@ public final class Prefs {
      * a package Debloat turned off, and a tile on top of the home screen offers to redo it.
      * Off by default.
      */
+    /** Quick Fire TV settings in the top bar: off, or on (SHORTCUTS_BAR; the default here). */
+    public static final int SHORTCUTS_OFF = 0;
+    public static final int SHORTCUTS_BAR = 3;
+
+    public static int shortcutsPlace(Context c) {
+        return sp(c).getInt(K_SHORTCUTS_PLACE, SHORTCUTS_BAR) == SHORTCUTS_OFF
+                ? SHORTCUTS_OFF : SHORTCUTS_BAR;
+    }
+    public static void setShortcutsPlace(Context c, int v) {
+        sp(c).edit().putInt(K_SHORTCUTS_PLACE, v).apply();
+    }
+
+    /** Screen ids (FireTvSettingsPanel) in the bar; four until chosen. */
+    public static Set<String> shortcuts(Context c) {
+        Set<String> s = sp(c).getStringSet(K_SHORTCUTS, null);
+        if (s != null) return new HashSet<String>(s);
+        Set<String> d = new HashSet<String>();
+        d.add("network");
+        d.add("controllers");
+        d.add("applications");
+        d.add("device");
+        return d;
+    }
+    public static void setShortcut(Context c, String id, boolean on) {
+        Set<String> s = shortcuts(c);
+        if (on) s.add(id); else s.remove(id);
+        sp(c).edit().putStringSet(K_SHORTCUTS, s).apply();
+    }
+
     public static boolean restoreWatch(Context c) { return sp(c).getBoolean(K_RESTORE_WATCH, false); }
     public static void setRestoreWatch(Context c, boolean v) {
         sp(c).edit().putBoolean(K_RESTORE_WATCH, v).apply();

@@ -106,6 +106,11 @@ public final class SettingsPanel {
         }).opens().setHelp("Switch Amazon's packages off, and back on again. Nothing is "
                 + "ever uninstalled.");
 
+        p.addRow("Fire TV settings", "", new Runnable() {
+            public void run() { host.showPanel(FireTvSettingsPanel.build(c, host)); }
+        }).opens().setHelp("Amazon's own settings screens (network, Bluetooth, applications, "
+                + "My Fire TV), each opened directly, and the quick settings in the top bar.");
+
         final Panel.Row watch = p.addRow("Warn if the system undoes Debloat",
                 onOff(Prefs.restoreWatch(c)), null).asSwitch();
         watch.cell.setOnClickListener(new View.OnClickListener() {
@@ -263,7 +268,7 @@ public final class SettingsPanel {
                     host.rebuildGrid();
                 }
             });
-            tvFirst.setHelp("A large Live TV tile on top, then TV apps, then inputs; Home always "
+            tvFirst.setHelp("A wide Live TV (or Canali TV) tile above the dock of TV apps; Home always "
                     + "lands on Live TV.");
         }
 

@@ -83,6 +83,8 @@ public class HomeGrid implements SettingsPanel.Host {
     private static final int GAP_DP = 16;
     private static final int CORNER_DP = 10;
     private static final int TOP_RESERVE_DP = 152;
+    /** Height of the Live TV tile that sits above the dock when "Live TV first" is on. */
+    private static final int HERO_H_DP = 104;
     private static final int TOPBAR_SIDE_DP = 32;
     private static final int TOPBAR_TOP_DP = 26;
     private static final int DOCK_COUNT = 5;
@@ -134,6 +136,12 @@ public class HomeGrid implements SettingsPanel.Host {
     private final TextView settingsLabel;
     private final FrameLayout inputsPill;
     private final TextView inputsLabel;
+    /** The quick Fire TV settings pills, left of Inputs and Settings; rebuilt with the grid. */
+    private final LinearLayout shortcutRow;
+    private final List<TextView> shortcutLabels = new ArrayList<TextView>();
+    private final List<View> shortcutPills = new ArrayList<View>();
+    /** How many quick settings the bar shows before "More settings" and "Settings". */
+    private static final int BAR_SHORTCUTS = 3;
     /** A soft, colour-shifting glow behind the dock - see setGlow(). */
     private final View glow;
     private int glowColor;
@@ -339,6 +347,11 @@ public class HomeGrid implements SettingsPanel.Host {
         LinearLayout pillRow = new LinearLayout(c);
         pillRow.setOrientation(LinearLayout.HORIZONTAL);
         pillRow.setClipChildren(false);
+        shortcutRow = new LinearLayout(c);
+        shortcutRow.setOrientation(LinearLayout.HORIZONTAL);
+        shortcutRow.setClipChildren(false);
+        pillRow.addView(shortcutRow, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         LinearLayout.LayoutParams inputsLp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         inputsLp.rightMargin = dp(12);
@@ -359,6 +372,71 @@ public class HomeGrid implements SettingsPanel.Host {
     }
 
     // ---------------------------------------------------------------- top bar
+
+    /**
+     * The quick Fire TV settings: up to BAR_SHORTCUTS screens the user chose, then "More
+     * settings" (all of Amazon's), left of Inputs and Settings. The Inputs pill is only there
+     * on a TV that has inputs to jump to.
+     */
+    private void rebuildShortcutPills() {
+        shortcutRow.removeAllViews();
+        shortcutLabels.clear();
+        shortcutPills.clear();
+        boolean inputs = false;
+        List<AppModel.Item> all = AppModel.allItems();
+        for (int i = 0; i < all.size(); i++) {
+            if (all.get(i).type == AppModel.TYPE_INPUT) inputs = true;
+        }
+        inputsPill.setVisibility(inputs ? View.VISIBLE : View.GONE);
+        if (Prefs.shortcutsPlace(ctx) == Prefs.SHORTCUTS_OFF || Prefs.simpleMode(ctx)) return;
+
+        java.util.Set<String> want = Prefs.shortcuts(ctx);
+        List<String[]> screens = FireTvSettingsPanel.available(ctx, null);
+        int shown = 0;
+        for (int i = 0; i < screens.size() && shown < BAR_SHORTCUTS; i++) {
+            final String[] s = screens.get(i);
+            if (!want.contains(s[FireTvSettingsPanel.ID])) continue;
+            addShortcutPill(shortLabel(s[FireTvSettingsPanel.TITLE]),
+                    ShortcutIcons.render(s[FireTvSettingsPanel.ID], dp(ICON_SZ_DP)),
+                    new Runnable() {
+                        public void run() {
+                            logOpen(s[FireTvSettingsPanel.TITLE]);
+                            SetupPanel.start(ctx, FireTvSettingsPanel.intentFor(
+                                    s[FireTvSettingsPanel.ACTION]));
+                        }
+                    });
+            shown++;
+        }
+        addShortcutPill("More settings", ShortcutIcons.render("more", dp(ICON_SZ_DP)),
+                new Runnable() {
+                    public void run() {
+                        logOpen("More settings");
+                        FireTvSettingsPanel.openAll(ctx, panelHost);
+                    }
+                });
+    }
+
+    private void addShortcutPill(String text, Bitmap icon, Runnable action) {
+        TextView label = new TextView(ctx);
+        FrameLayout pill = buildPill(label, text, icon, action);
+        pill.setId(View.generateViewId());
+        paintText(label);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        lp.rightMargin = dp(12);
+        shortcutRow.addView(pill, lp);
+        shortcutLabels.add(label);
+        shortcutPills.add(pill);
+    }
+
+    /** Pills are small: the long screen names lose their second half. */
+    private static String shortLabel(String title) {
+        if ("Controllers & Bluetooth".equals(title)) return "Controllers";
+        if ("Display & sounds".equals(title)) return "Display";
+        if ("Amazon account".equals(title)) return "Account";
+        if ("Data monitoring".equals(title)) return "Data";
+        return title;
+    }
 
     /** The Settings item's own icon, already drawn once by AppModel; reused here at pill size. */
     private Bitmap settingsIcon() {
@@ -525,6 +603,7 @@ public class HomeGrid implements SettingsPanel.Host {
         paintText(dateLine);
         paintText(settingsLabel);
         paintText(inputsLabel);
+        for (int i = 0; i < shortcutLabels.size(); i++) paintText(shortcutLabels.get(i));
         for (int i = 0; i < column.getChildCount(); i++) {
             View v = column.getChildAt(i);
             if (v instanceof TextView) paintText((TextView) v);
@@ -892,6 +971,7 @@ public class HomeGrid implements SettingsPanel.Host {
         builtGen = layoutGen;
         updateClock();
         try {
+            rebuildShortcutPills();
             buildSections();
         } catch (Throwable t) {
             android.util.Log.e("Homestead", "grid build failed, drawing fallback", t);
@@ -991,8 +1071,8 @@ public class HomeGrid implements SettingsPanel.Host {
 
         // Dock: Live TV first (if on), then the top few most-used TV apps. AppModel.resort()
         // already put the most relevant ones first, so the dock is just "take the front".
-        int dockSlots = Math.max(0, DOCK_COUNT - (liveTv != null ? 1 : 0));
-        int dockAppCount = Math.min(dockSlots, tv.size());
+        // Live TV first is a tile of its own above the dock, not one of its slots.
+        int dockAppCount = Math.min(DOCK_COUNT, tv.size());
         List<AppModel.Item> dockApps = tv.subList(0, dockAppCount);
         List<AppModel.Item> tvGrid = tv.subList(dockAppCount, tv.size());
 
@@ -1262,6 +1342,9 @@ public class HomeGrid implements SettingsPanel.Host {
             topRowWired = true;
             settingsPill.setNextFocusDownId(cell.getId());
             inputsPill.setNextFocusDownId(cell.getId());
+            for (int i = 0; i < shortcutPills.size(); i++) {
+                shortcutPills.get(i).setNextFocusDownId(cell.getId());
+            }
         }
     }
 
@@ -1272,8 +1355,7 @@ public class HomeGrid implements SettingsPanel.Host {
         title.setMaxLines(1);
         title.setEllipsize(TextUtils.TruncateAt.END);
         paintText(title);
-        title.setText(liveTv != null ? liveTv.label
-                : dockApps.isEmpty() ? "" : dockApps.get(0).label);
+        title.setText(dockApps.isEmpty() ? "" : dockApps.get(0).label);
         LinearLayout.LayoutParams tlp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         tlp.bottomMargin = dp(10);
@@ -1295,7 +1377,23 @@ public class HomeGrid implements SettingsPanel.Host {
                     View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
             spacer -= restoreSlot.getMeasuredHeight() + dp(GAP_DP);
         }
+        int dockH = dp(DOCK_H_DP[Prefs.dockSize(ctx)]);
+        int heroH = dp(HERO_H_DP);
+        if (liveTv != null) spacer -= heroH + dp(GAP_DP);
         if (spacer > 0) column.addView(new View(ctx), new LinearLayout.LayoutParams(1, spacer));
+
+        // Live TV first: a wide tile above the dock, on the wallpaper.
+        View hero = null;
+        if (liveTv != null) {
+            hero = buildCard(liveTv);
+            wireTopRow(hero);
+            stopAt(hero, true, true);
+            dockKeys.add(liveTv.key());
+            LinearLayout.LayoutParams hlp = new LinearLayout.LayoutParams(
+                    dockH * 16 / 9 * 2 + dp(GAP_DP), heroH);
+            hlp.bottomMargin = dp(GAP_DP);
+            column.addView(hero, hlp);
+        }
 
         column.addView(title, tlp);
         dockTitleView = title;
@@ -1307,7 +1405,6 @@ public class HomeGrid implements SettingsPanel.Host {
 
         int h = dp(DOCK_H_DP[Prefs.dockSize(ctx)]);
         int normalW = h * 16 / 9;
-        int featuredW = normalW + normalW / 2;
 
         LinearLayout row = new LinearLayout(ctx);
         row.setOrientation(LinearLayout.HORIZONTAL);
@@ -1317,27 +1414,24 @@ public class HomeGrid implements SettingsPanel.Host {
         // since clipChildren(false) alone still clips to the padding, which cut the focused
         // tile (and its focus rim) off at its unscaled edges. The sides grow with the widest
         // tile, so an end tile's zoom still fits at the larger dock sizes.
-        int widest = (liveTv != null) ? featuredW : normalW;
-        int grow = Math.round(widest * (FOCUS_SCALE - 1f) / 2f) + dp(2);
+        int grow = Math.round(normalW * (FOCUS_SCALE - 1f) / 2f) + dp(2);
         int padV = dp(DOCK_PAD_DP);
         int padH = Math.max(padV, grow);
         row.setPadding(padH, padV, padH, padV);
         row.setClipToPadding(false);
 
-        if (liveTv != null) {
-            View cell = buildCard(liveTv);
-            wireTopRow(cell);
-            stopAt(cell, true, dockApps.isEmpty());
-            row.addView(cell, new LinearLayout.LayoutParams(featuredW, h));
-            dockKeys.add(liveTv.key());
-        }
         for (int i = 0; i < dockApps.size(); i++) {
             AppModel.Item it = dockApps.get(i);
             View cell = buildTile(it);
-            wireTopRow(cell);
+            if (hero == null) {
+                wireTopRow(cell);
+            } else {
+                // UP from the dock goes to the Live TV tile, which goes on to the pills.
+                cell.setNextFocusUpId(hero.getId());
+            }
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(normalW, h);
-            if (i > 0 || liveTv != null) lp.leftMargin = dp(GAP_DP);
-            stopAt(cell, i == 0 && liveTv == null, i == dockApps.size() - 1);
+            if (i > 0) lp.leftMargin = dp(GAP_DP);
+            stopAt(cell, i == 0, i == dockApps.size() - 1);
             row.addView(cell, lp);
             dockKeys.add(it.key());
         }

@@ -421,7 +421,7 @@ public final class SetupPanel {
         return start(c, new Intent(Settings.ACTION_SETTINGS));
     }
 
-    private static boolean start(Context c, Intent i) {
+    static boolean start(Context c, Intent i) {
         try {
             i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             // Leaving for a settings screen must not bounce the user straight back here.
