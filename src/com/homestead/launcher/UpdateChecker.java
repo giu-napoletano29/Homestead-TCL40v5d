@@ -42,7 +42,7 @@ public final class UpdateChecker {
     private static final String TAG = "Homestead";
 
     /** owner/repo. One line to change if distribution moves to a dedicated releases repo. */
-    static final String REPO = "Sarg338/Homestead";
+    static final String REPO = "giu-napoletano29/Homestead-TCL40v5d";
 
     private static final String API =
             "https://api.github.com/repos/" + REPO + "/releases/latest";
