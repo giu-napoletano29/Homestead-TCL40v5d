@@ -268,7 +268,7 @@ public class HomeGrid implements SettingsPanel.Host {
                 // five presses in a row open Settings instead.
                 if (e.getKeyCode() == android.view.KeyEvent.KEYCODE_MENU && panels.isEmpty()) {
                     if (e.getAction() == android.view.KeyEvent.ACTION_UP) {
-                        if (!Prefs.simpleMode(ctx)) hideFocused();
+                        if (!Prefs.simpleMode(ctx)) showItemMenu();
                         else if (menuTaps.tap()) {
                             logOpen("Settings (Menu x" + MenuTaps.COUNT + ")");
                             showPanel(SettingsPanel.build(ctx, panelHost));
@@ -884,23 +884,87 @@ public class HomeGrid implements SettingsPanel.Host {
 
     public boolean isPanelOpen() { return !panels.isEmpty(); }
 
+    /** The model item under the focus, or null. */
+    private AppModel.Item focusedItem() {
+        if (focusedKey == null) return null;
+        List<AppModel.Item> all = AppModel.allItems();
+        for (int i = 0; i < all.size(); i++) {
+            if (focusedKey.equals(all.get(i).key())) return all.get(i);
+        }
+        return null;
+    }
+
+    /** Settings and TV Health stay reachable so hidden tiles can always be restored. */
+    private static boolean fixedTile(AppModel.Item t) {
+        return t.type == AppModel.TYPE_SETTINGS || t.type == AppModel.TYPE_HEALTH
+                || t.type == AppModel.TYPE_RESTORE;
+    }
+
+    /** An app the user installed, which the system lets them remove. */
+    private boolean removable(AppModel.Item t) {
+        if (t.type != AppModel.TYPE_APP || t.pkg == null || t.pkg.equals(ctx.getPackageName())) {
+            return false;
+        }
+        try {
+            int f = ctx.getPackageManager().getApplicationInfo(t.pkg, 0).flags;
+            return (f & (android.content.pm.ApplicationInfo.FLAG_SYSTEM
+                    | android.content.pm.ApplicationInfo.FLAG_UPDATED_SYSTEM_APP)) == 0;
+        } catch (Throwable e) {
+            return false;
+        }
+    }
+
     /**
-     * Hide whatever tile currently has focus.
+     * The Menu button (or a long press) on a tile: a small menu for what to do with it, hide
+     * it from the home screen or uninstall the app, instead of hiding it at once.
+     * @return true if there was a menu to show.
+     */
+    public boolean showItemMenu() {
+        final AppModel.Item target = focusedItem();
+        if (target == null || fixedTile(target) || !panels.isEmpty()) return false;
+        final Panel p = new Panel(ctx, target.label, null, Panel.SHEET);
+        p.addRow("Hide from the home screen", "", new Runnable() {
+            public void run() {
+                closePanel();
+                hideItem(target);
+            }
+        }).setHelp("The tile goes away; bring it back in Settings > Home screen > Hidden tiles.");
+        if (removable(target)) {
+            p.addRow("Uninstall", "", new Runnable() {
+                public void run() {
+                    closePanel();
+                    uninstall(target);
+                }
+            }).setHelp("Asks the system to remove " + target.label + " from this TV. The system "
+                    + "asks you to confirm first.");
+        }
+        p.addRow("Cancel", "", new Runnable() {
+            public void run() { closePanel(); }
+        });
+        showPanel(p.root);
+        return true;
+    }
+
+    private void uninstall(AppModel.Item t) {
+        logOpen("Uninstall " + t.label);
+        Intent i = new Intent(Intent.ACTION_DELETE, Uri.parse("package:" + t.pkg));
+        if (!SetupPanel.start(ctx, i)) {
+            Toast.makeText(ctx, t.label + " cannot be uninstalled from here", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    /**
+     * Hide whatever tile currently has focus, without asking.
      * @return true if something was hidden.
      */
     public boolean hideFocused() {
-        if (focusedKey == null) return false;
-        AppModel.Item target = null;
-        List<AppModel.Item> all = AppModel.allItems();
-        for (int i = 0; i < all.size(); i++) {
-            if (focusedKey.equals(all.get(i).key())) { target = all.get(i); break; }
-        }
-        if (target == null) return false;
-        // Settings and TV Health stay reachable so hidden tiles can always be restored.
-        if (target.type == AppModel.TYPE_SETTINGS || target.type == AppModel.TYPE_HEALTH
-                || target.type == AppModel.TYPE_RESTORE) {
-            return false;
-        }
+        AppModel.Item target = focusedItem();
+        if (target == null || fixedTile(target)) return false;
+        hideItem(target);
+        return true;
+    }
+
+    private void hideItem(AppModel.Item target) {
         Prefs.setHidden(ctx, target.key(), true);
         try {
             Toast.makeText(ctx, target.label + " hidden - restore it in Settings",
@@ -908,7 +972,6 @@ public class HomeGrid implements SettingsPanel.Host {
         } catch (Throwable t) { }
         layoutGen++;
         rebuild();
-        return true;
     }
 
     public void showPanel(final View v) {
@@ -1681,7 +1744,7 @@ public class HomeGrid implements SettingsPanel.Host {
         cell.setOnLongClickListener(new View.OnLongClickListener() {
             // In Simple mode a held Select falls through to a normal click.
             public boolean onLongClick(View v) {
-                return !Prefs.simpleMode(ctx) && hideFocused();
+                return !Prefs.simpleMode(ctx) && showItemMenu();
             }
         });
         cellsByKey.put(it.key(), cell);
