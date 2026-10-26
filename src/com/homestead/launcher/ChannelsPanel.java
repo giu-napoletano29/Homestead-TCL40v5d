@@ -142,12 +142,19 @@ final class ChannelsPanel {
         int screenW = c.getResources().getDisplayMetrics().widthPixels;
         int margin = AppModel.dp(c, MARGIN_DP);
         int gap = AppModel.dp(c, GAP_DP);
-        int cardW = (screenW - 2 * margin - (COLUMNS - 1) * gap) / COLUMNS;
+        // The scroll view's own side padding (12 dp) comes off the width the cards share.
+        int cardW = (screenW - 2 * (margin + AppModel.dp(c, 12)) - (COLUMNS - 1) * gap) / COLUMNS;
         int cardH = cardW * 9 / 16;
 
         FrameLayout root = new FrameLayout(c);
+        // Clickable so it swallows touches, but not focusable: a clickable view takes focus
+        // itself, and then no card ever gets it.
         root.setClickable(true);
-        root.setBackgroundColor(0xEB06101A);
+        root.setFocusable(false);
+        // Opaque, so the home screen's clock and pills do not show through behind the title.
+        GradientDrawable backdrop = new GradientDrawable(GradientDrawable.Orientation.TL_BR,
+                new int[]{ 0xFF0A1824, 0xFF050B12 });
+        root.setBackground(backdrop);
 
         LinearLayout page = new LinearLayout(c);
         page.setOrientation(LinearLayout.VERTICAL);
