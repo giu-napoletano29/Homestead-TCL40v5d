@@ -268,7 +268,7 @@ public final class SettingsPanel {
                     host.rebuildGrid();
                 }
             });
-            tvFirst.setHelp("A wide Live TV (or Canali TV) tile above the dock of TV apps; Home always "
+            tvFirst.setHelp("Live TV (or Canali TV) as a wider first tile in the dock; Home always "
                     + "lands on Live TV.");
         }
 

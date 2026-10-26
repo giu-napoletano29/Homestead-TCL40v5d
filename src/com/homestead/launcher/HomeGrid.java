@@ -83,8 +83,6 @@ public class HomeGrid implements SettingsPanel.Host {
     private static final int GAP_DP = 16;
     private static final int CORNER_DP = 10;
     private static final int TOP_RESERVE_DP = 152;
-    /** Height of the Live TV tile that sits above the dock when "Live TV first" is on. */
-    private static final int HERO_H_DP = 104;
     private static final int TOPBAR_SIDE_DP = 32;
     private static final int TOPBAR_TOP_DP = 26;
     private static final int DOCK_COUNT = 5;
@@ -1091,8 +1089,8 @@ public class HomeGrid implements SettingsPanel.Host {
 
         // Dock: Live TV first (if on), then the top few most-used TV apps. AppModel.resort()
         // already put the most relevant ones first, so the dock is just "take the front".
-        // Live TV first is a tile of its own above the dock, not one of its slots.
-        int dockAppCount = Math.min(DOCK_COUNT, tv.size());
+        int dockSlots = Math.max(0, DOCK_COUNT - (liveTv != null ? 1 : 0));
+        int dockAppCount = Math.min(dockSlots, tv.size());
         List<AppModel.Item> dockApps = tv.subList(0, dockAppCount);
         List<AppModel.Item> tvGrid = tv.subList(dockAppCount, tv.size());
 
@@ -1375,7 +1373,8 @@ public class HomeGrid implements SettingsPanel.Host {
         title.setMaxLines(1);
         title.setEllipsize(TextUtils.TruncateAt.END);
         paintText(title);
-        title.setText(dockApps.isEmpty() ? "" : dockApps.get(0).label);
+        title.setText(liveTv != null ? liveTv.label
+                : dockApps.isEmpty() ? "" : dockApps.get(0).label);
         LinearLayout.LayoutParams tlp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         tlp.bottomMargin = dp(10);
@@ -1397,23 +1396,7 @@ public class HomeGrid implements SettingsPanel.Host {
                     View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
             spacer -= restoreSlot.getMeasuredHeight() + dp(GAP_DP);
         }
-        int dockH = dp(DOCK_H_DP[Prefs.dockSize(ctx)]);
-        int heroH = dp(HERO_H_DP);
-        if (liveTv != null) spacer -= heroH + dp(GAP_DP);
         if (spacer > 0) column.addView(new View(ctx), new LinearLayout.LayoutParams(1, spacer));
-
-        // Live TV first: a wide tile above the dock, on the wallpaper.
-        View hero = null;
-        if (liveTv != null) {
-            hero = buildCard(liveTv);
-            wireTopRow(hero);
-            stopAt(hero, true, true);
-            dockKeys.add(liveTv.key());
-            LinearLayout.LayoutParams hlp = new LinearLayout.LayoutParams(
-                    dockH * 16 / 9 * 2 + dp(GAP_DP), heroH);
-            hlp.bottomMargin = dp(GAP_DP);
-            column.addView(hero, hlp);
-        }
 
         column.addView(title, tlp);
         dockTitleView = title;
@@ -1434,24 +1417,29 @@ public class HomeGrid implements SettingsPanel.Host {
         // since clipChildren(false) alone still clips to the padding, which cut the focused
         // tile (and its focus rim) off at its unscaled edges. The sides grow with the widest
         // tile, so an end tile's zoom still fits at the larger dock sizes.
-        int grow = Math.round(normalW * (FOCUS_SCALE - 1f) / 2f) + dp(2);
+        int featuredW = normalW + normalW / 2;
+        int widest = (liveTv != null) ? featuredW : normalW;
+        int grow = Math.round(widest * (FOCUS_SCALE - 1f) / 2f) + dp(2);
         int padV = dp(DOCK_PAD_DP);
         int padH = Math.max(padV, grow);
         row.setPadding(padH, padV, padH, padV);
         row.setClipToPadding(false);
 
+        // Live TV first: the first tile of the dock, half as wide again as the others.
+        if (liveTv != null) {
+            View cell = buildCard(liveTv);
+            wireTopRow(cell);
+            stopAt(cell, true, dockApps.isEmpty());
+            row.addView(cell, new LinearLayout.LayoutParams(featuredW, h));
+            dockKeys.add(liveTv.key());
+        }
         for (int i = 0; i < dockApps.size(); i++) {
             AppModel.Item it = dockApps.get(i);
             View cell = buildTile(it);
-            if (hero == null) {
-                wireTopRow(cell);
-            } else {
-                // UP from the dock goes to the Live TV tile, which goes on to the pills.
-                cell.setNextFocusUpId(hero.getId());
-            }
+            wireTopRow(cell);
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(normalW, h);
-            if (i > 0) lp.leftMargin = dp(GAP_DP);
-            stopAt(cell, i == 0, i == dockApps.size() - 1);
+            if (i > 0 || liveTv != null) lp.leftMargin = dp(GAP_DP);
+            stopAt(cell, i == 0 && liveTv == null, i == dockApps.size() - 1);
             row.addView(cell, lp);
             dockKeys.add(it.key());
         }
