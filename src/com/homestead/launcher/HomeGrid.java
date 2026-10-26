@@ -94,6 +94,8 @@ public class HomeGrid implements SettingsPanel.Host {
     private static final int DOCK_PAD_DP = 14;
     private static final int DOCK_BOTTOM_DP = 26;
     private static final int ICON_SZ_DP = 26;
+    /** The icon inside a top-bar pill; the pills are small, so it is smaller than ICON_SZ_DP. */
+    private static final int PILL_ICON_DP = 17;
     // One flat neutral card colour for every non-banner tile - hierarchy comes from the
     // dock's translucent band standing apart from the grid, not from a different hue per
     // tile type.
@@ -140,6 +142,7 @@ public class HomeGrid implements SettingsPanel.Host {
     private final LinearLayout shortcutRow;
     private final List<TextView> shortcutLabels = new ArrayList<TextView>();
     private final List<View> shortcutPills = new ArrayList<View>();
+    private String pillsKey = "";
     /** How many quick settings the bar shows before "More settings" and "Settings". */
     private static final int BAR_SHORTCUTS = 3;
     /** A soft, colour-shifting glow behind the dock - see setGlow(). */
@@ -354,7 +357,7 @@ public class HomeGrid implements SettingsPanel.Host {
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         LinearLayout.LayoutParams inputsLp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        inputsLp.rightMargin = dp(12);
+        inputsLp.rightMargin = dp(8);
         pillRow.addView(inputsPill, inputsLp);
         pillRow.addView(settingsPill, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
@@ -379,19 +382,30 @@ public class HomeGrid implements SettingsPanel.Host {
      * on a TV that has inputs to jump to.
      */
     private void rebuildShortcutPills() {
-        shortcutRow.removeAllViews();
-        shortcutLabels.clear();
-        shortcutPills.clear();
         boolean inputs = false;
         List<AppModel.Item> all = AppModel.allItems();
         for (int i = 0; i < all.size(); i++) {
             if (all.get(i).type == AppModel.TYPE_INPUT) inputs = true;
         }
         inputsPill.setVisibility(inputs ? View.VISIBLE : View.GONE);
-        if (Prefs.shortcutsPlace(ctx) == Prefs.SHORTCUTS_OFF || Prefs.simpleMode(ctx)) return;
 
+        boolean on = Prefs.shortcutsPlace(ctx) != Prefs.SHORTCUTS_OFF && !Prefs.simpleMode(ctx);
         java.util.Set<String> want = Prefs.shortcuts(ctx);
         List<String[]> screens = FireTvSettingsPanel.available(ctx, null);
+        StringBuilder key = new StringBuilder(on ? "on" : "off");
+        for (int i = 0; i < screens.size(); i++) {
+            if (want.contains(screens.get(i)[FireTvSettingsPanel.ID])) {
+                key.append(',').append(screens.get(i)[FireTvSettingsPanel.ID]);
+            }
+        }
+        // Same pills as before: leave them, so one with focus keeps it through a reload.
+        if (key.toString().equals(pillsKey)) return;
+        pillsKey = key.toString();
+
+        shortcutRow.removeAllViews();
+        shortcutLabels.clear();
+        shortcutPills.clear();
+        if (!on) return;
         int shown = 0;
         for (int i = 0; i < screens.size() && shown < BAR_SHORTCUTS; i++) {
             final String[] s = screens.get(i);
@@ -423,7 +437,7 @@ public class HomeGrid implements SettingsPanel.Host {
         paintText(label);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        lp.rightMargin = dp(12);
+        lp.rightMargin = dp(8);
         shortcutRow.addView(pill, lp);
         shortcutLabels.add(label);
         shortcutPills.add(pill);
@@ -487,7 +501,7 @@ public class HomeGrid implements SettingsPanel.Host {
         cell.setFocusable(true);
         cell.setFocusableInTouchMode(true);
         cell.setClipChildren(false);
-        cell.setPadding(dp(18), dp(11), dp(22), dp(11));
+        cell.setPadding(dp(12), dp(6), dp(15), dp(6));
 
         LinearLayout row = new LinearLayout(ctx);
         row.setOrientation(LinearLayout.HORIZONTAL);
@@ -498,13 +512,13 @@ public class HomeGrid implements SettingsPanel.Host {
             iv.setScaleType(ImageView.ScaleType.FIT_CENTER);
             iv.setImageBitmap(icon);
             LinearLayout.LayoutParams ilp = new LinearLayout.LayoutParams(
-                    dp(ICON_SZ_DP), dp(ICON_SZ_DP));
-            ilp.rightMargin = dp(10);
+                    dp(PILL_ICON_DP), dp(PILL_ICON_DP));
+            ilp.rightMargin = dp(7);
             row.addView(iv, ilp);
         }
 
         label.setText(text);
-        label.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
+        label.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
         label.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
         row.addView(label);
 
@@ -949,9 +963,15 @@ public class HomeGrid implements SettingsPanel.Host {
         String keep = focusedKey;
         int y = scroll.getScrollY();
         int[] rx = getRowScrollX();
+        View focus = root.findFocus();
+        boolean onPill = focus != null && (focus == settingsPill || focus == inputsPill
+                || shortcutPills.contains(focus));
         build();
         // Leave focus alone while a panel is open, or the grid would take it from the panel.
-        if (panels.isEmpty()) {
+        // And on a pill: a reload of the model must not pull it back to a tile.
+        if (panels.isEmpty() && onPill) {
+            if (!focus.isAttachedToWindow()) settingsPill.requestFocus();
+        } else if (panels.isEmpty()) {
             if (keep == null || !selectKey(keep)) takeFocus();
         }
         applyScroll(y, rx);
