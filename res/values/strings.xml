@@ -23,4 +23,10 @@
   <string name="home_profile_hint">Open Account &amp; Profile Settings, then Profiles</string>
   <string name="home_kids_hint">Open Account &amp; Profile Settings, then Kids Settings</string>
   <string name="home_wsiw_hint">Ask Alexa: “what should I watch?”</string>
+  <string name="home_settings_pill">Settings</string>
+  <string name="home_inputs_pill">Inputs</string>
+  <string name="home_greeting_night">Good night</string>
+  <string name="home_greeting_morning">Good morning</string>
+  <string name="home_greeting_afternoon">Good afternoon</string>
+  <string name="home_greeting_evening">Good evening</string>
 </resources>
