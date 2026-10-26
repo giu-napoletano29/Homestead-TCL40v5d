@@ -1802,9 +1802,9 @@ public class HomeGrid implements SettingsPanel.Host {
 
         ImageView ic = new ImageView(ctx);
         ic.setScaleType(ImageView.ScaleType.FIT_CENTER);
-        ic.setImageBitmap(ChannelsPanel.tileIcon(dp(64)));
-        LinearLayout.LayoutParams ilp = new LinearLayout.LayoutParams(dp(54), dp(54));
-        ilp.rightMargin = dp(12);
+        ic.setImageBitmap(ChannelsPanel.tileIcon(dp(72)));
+        LinearLayout.LayoutParams ilp = new LinearLayout.LayoutParams(dp(62), dp(62));
+        ilp.rightMargin = dp(14);
         row.addView(ic, ilp);
 
         LinearLayout col = new LinearLayout(ctx);
@@ -1813,17 +1813,10 @@ public class HomeGrid implements SettingsPanel.Host {
         TextView name = new TextView(ctx);
         name.setText(it.label);
         name.setTextColor(Color.WHITE);
-        name.setTextSize(TypedValue.COMPLEX_UNIT_SP, 19);
+        name.setTextSize(TypedValue.COMPLEX_UNIT_SP, 22);
         name.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
         name.setSingleLine(true);
         col.addView(name);
-        TextView sub = new TextView(ctx);
-        sub.setText(ChannelsPanel.summary());
-        sub.setTextColor(0xCCFFFFFF);
-        sub.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
-        sub.setSingleLine(true);
-        sub.setEllipsize(TextUtils.TruncateAt.END);
-        col.addView(sub);
         row.addView(col, new LinearLayout.LayoutParams(
                 0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
 

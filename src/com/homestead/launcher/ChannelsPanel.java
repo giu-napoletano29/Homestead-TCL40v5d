@@ -105,11 +105,6 @@ final class ChannelsPanel {
 
     private ChannelsPanel() { }
 
-    /** What the tile says under its name. */
-    static String summary() {
-        return "Rai, Mediaset e altre dirette";
-    }
-
     /**
      * The tile's picture: a television with a play triangle on its screen and a small antenna
      * on top, drawn in white lines so it reads at a glance and follows no logo.
@@ -191,10 +186,12 @@ final class ChannelsPanel {
         // itself, and then no card ever gets it.
         root.setClickable(true);
         root.setFocusable(false);
-        // Opaque, so the home screen's clock and pills do not show through behind the title.
-        GradientDrawable backdrop = new GradientDrawable(GradientDrawable.Orientation.TL_BR,
-                new int[]{ 0xFF0A1824, 0xFF050B12 });
-        root.setBackground(backdrop);
+        // The background chosen for the home screen, under a dark veil so the cards read.
+        root.setBackground(pageBackground(c));
+        View veil = new View(c);
+        veil.setBackgroundColor(0x8C000000);
+        root.addView(veil, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
         LinearLayout page = new LinearLayout(c);
         page.setOrientation(LinearLayout.VERTICAL);
@@ -281,6 +278,20 @@ final class ChannelsPanel {
         root.addView(page, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         return root;
+    }
+
+    /** The look the home screen has now: its preset, or the photo when it is chosen and loaded. */
+    private static Drawable pageBackground(Context c) {
+        try {
+            if (Backgrounds.photoChosen(c)) {
+                Bitmap photo = Backgrounds.photoFor(Backgrounds.keyOf(Backgrounds.photoFile(c)));
+                if (photo != null) return Backgrounds.photoDrawable(c, photo);
+            }
+            return Backgrounds.drawable(Backgrounds.current(c));
+        } catch (Throwable t) {
+            return new GradientDrawable(GradientDrawable.Orientation.TL_BR,
+                    new int[]{ 0xFF0A1824, 0xFF050B12 });
+        }
     }
 
     /** One focusable card with the channel's logo; it lifts and gets a white rim on focus. */
