@@ -105,6 +105,46 @@ final class ChannelsPanel {
 
     private ChannelsPanel() { }
 
+    /** What the tile says under its name. */
+    static String summary() {
+        return "Rai, Mediaset e altre dirette";
+    }
+
+    /**
+     * The tile's picture: a television with a play triangle on its screen and a small antenna
+     * on top, drawn in white lines so it reads at a glance and follows no logo.
+     */
+    static Bitmap tileIcon(int px) {
+        Bitmap b = Bitmap.createBitmap(px, px, Bitmap.Config.ARGB_8888);
+        Canvas cv = new Canvas(b);
+        float s = px;
+        Paint line = new Paint(Paint.ANTI_ALIAS_FLAG);
+        line.setColor(Color.WHITE);
+        line.setStyle(Paint.Style.STROKE);
+        line.setStrokeWidth(s * 0.065f);
+        line.setStrokeCap(Paint.Cap.ROUND);
+        line.setStrokeJoin(Paint.Join.ROUND);
+        Paint fill = new Paint(Paint.ANTI_ALIAS_FLAG);
+        fill.setColor(Color.WHITE);
+
+        // The set.
+        RectF body = new RectF(s * 0.08f, s * 0.28f, s * 0.92f, s * 0.80f);
+        cv.drawRoundRect(body, s * 0.10f, s * 0.10f, line);
+        // The antenna: two rods from the middle of the top edge.
+        cv.drawLine(s * 0.50f, s * 0.28f, s * 0.30f, s * 0.08f, line);
+        cv.drawLine(s * 0.50f, s * 0.28f, s * 0.70f, s * 0.08f, line);
+        // The stand.
+        cv.drawLine(s * 0.32f, s * 0.90f, s * 0.68f, s * 0.90f, line);
+        // Play.
+        android.graphics.Path p = new android.graphics.Path();
+        p.moveTo(s * 0.43f, s * 0.42f);
+        p.lineTo(s * 0.43f, s * 0.66f);
+        p.lineTo(s * 0.65f, s * 0.54f);
+        p.close();
+        cv.drawPath(p, fill);
+        return b;
+    }
+
     /** The catalogue entries whose app is installed and switched on. */
     private static List<Entry> available(Context c) {
         PackageManager pm = c.getPackageManager();

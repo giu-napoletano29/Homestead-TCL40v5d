@@ -643,6 +643,7 @@ public class HomeGrid implements SettingsPanel.Host {
         // The ring and the outline are per look, so every cell is repainted (not animated:
         // this is a palette swap, not a focus change).
         for (View cell : cellsByKey.values()) style(cell, cell == focusedCell, false);
+        for (int i = 0; i < channelsTiles.size(); i++) paintChannelsTile(channelsTiles.get(i));
         for (Map.Entry<View, Boolean> e : cardCells.entrySet()) {
             Drawable bg = e.getKey().getBackground();
             if (bg instanceof GradientDrawable) ((GradientDrawable) bg).setColor(cardColor(e.getValue()));
@@ -663,7 +664,9 @@ public class HomeGrid implements SettingsPanel.Host {
         int r = Math.round(Color.red(t) * (1 - k) + 0x0A * k);
         int g = Math.round(Color.green(t) * (1 - k) + 0x0E * k);
         int b = Math.round(Color.blue(t) * (1 - k) + 0x14 * k);
-        return Color.argb(0xC4, r, g, b);
+        // Opaque: a translucent card shows the shadow it casts when it lifts on focus, as a
+        // darker rectangle inside it.
+        return Color.rgb(r, g, b);
     }
 
     /** Header and clock colour; on a photo, a soft shadow keeps them readable. */
@@ -1135,6 +1138,7 @@ public class HomeGrid implements SettingsPanel.Host {
         column.removeAllViews();
         cellsByKey.clear();
         cardCells.clear();
+        channelsTiles.clear();
         rows.clear();
         dockKeys.clear();
         dockTitleView = null;
@@ -1158,6 +1162,7 @@ public class HomeGrid implements SettingsPanel.Host {
         column.removeAllViews();
         cellsByKey.clear();
         cardCells.clear();
+        channelsTiles.clear();
         rows.clear();
         dockKeys.clear();
         dockTitleView = null;
@@ -1641,6 +1646,9 @@ public class HomeGrid implements SettingsPanel.Host {
         cell.setOutlineProvider(new ViewOutlineProvider() {
             public void getOutline(View v, Outline outline) {
                 outline.setRoundRect(0, 0, v.getWidth(), v.getHeight(), radius);
+                // A glass card over a photo is see-through, and its lift shadow would show
+                // through it: no shadow for those.
+                if (look == Backgrounds.PHOTO_LOOK && cardCells.containsKey(v)) outline.setAlpha(0f);
             }
         });
         cell.setClipToOutline(true);
@@ -1774,8 +1782,70 @@ public class HomeGrid implements SettingsPanel.Host {
         return cell;
     }
 
+    /** The Canali TV tiles built, so a change of background can repaint their gradient. */
+    private final List<View> channelsTiles = new ArrayList<View>();
+
+    /**
+     * The Canali TV tile: a gradient in the look's own colour, a drawn TV with a play button
+     * and an antenna on the left, and the name with what it holds beside it. It is the one tile
+     * that stands for watching TV, so it is not a plain grey card.
+     */
+    private View buildChannelsTile(AppModel.Item it) {
+        FrameLayout cell = newCell(it);
+        paintChannelsTile(cell);
+        channelsTiles.add(cell);
+
+        LinearLayout row = new LinearLayout(ctx);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        row.setPadding(dp(16), dp(8), dp(14), dp(8));
+
+        ImageView ic = new ImageView(ctx);
+        ic.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        ic.setImageBitmap(ChannelsPanel.tileIcon(dp(64)));
+        LinearLayout.LayoutParams ilp = new LinearLayout.LayoutParams(dp(54), dp(54));
+        ilp.rightMargin = dp(12);
+        row.addView(ic, ilp);
+
+        LinearLayout col = new LinearLayout(ctx);
+        col.setOrientation(LinearLayout.VERTICAL);
+        col.setGravity(Gravity.CENTER_VERTICAL);
+        TextView name = new TextView(ctx);
+        name.setText(it.label);
+        name.setTextColor(Color.WHITE);
+        name.setTextSize(TypedValue.COMPLEX_UNIT_SP, 19);
+        name.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        name.setSingleLine(true);
+        col.addView(name);
+        TextView sub = new TextView(ctx);
+        sub.setText(ChannelsPanel.summary());
+        sub.setTextColor(0xCCFFFFFF);
+        sub.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
+        sub.setSingleLine(true);
+        sub.setEllipsize(TextUtils.TruncateAt.END);
+        col.addView(sub);
+        row.addView(col, new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+
+        cell.addView(row, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        return cell;
+    }
+
+    private void paintChannelsTile(View cell) {
+        int t = look == null ? 0xFF2A6FDB : look.tint();
+        int hi = Color.rgb(Math.min(255, Color.red(t) * 3 / 4 + 40),
+                Math.min(255, Color.green(t) * 3 / 4 + 40), Math.min(255, Color.blue(t) * 3 / 4 + 40));
+        int lo = Color.rgb(Color.red(t) / 4, Color.green(t) / 4, Color.blue(t) / 4);
+        GradientDrawable g = new GradientDrawable(GradientDrawable.Orientation.TL_BR,
+                new int[]{ hi, lo });
+        g.setCornerRadius(dp(CORNER_DP));
+        cell.setBackground(g);
+    }
+
     /** An input, Live TV, Settings, TV Health, Amazon Home, or a non-TV app: one flat card. */
     private View buildCard(AppModel.Item it) {
+        if (it.type == AppModel.TYPE_CHANNELS) return buildChannelsTile(it);
         FrameLayout cell = newCell(it);
         GradientDrawable card = new GradientDrawable();
         card.setCornerRadius(dp(CORNER_DP));
