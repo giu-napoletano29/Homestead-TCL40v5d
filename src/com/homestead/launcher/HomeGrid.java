@@ -754,8 +754,11 @@ public class HomeGrid implements SettingsPanel.Host {
         bg.setGradientType(GradientDrawable.RADIAL_GRADIENT);
         bg.setGradientRadius(dp(900));
         bg.setGradientCenter(0.5f, 0.5f);
-        int tint = (look == null ? 0xFF000000 : look.tint()) & 0x00FFFFFF;
-        bg.setColors(new int[]{ 0x40000000 | tint, 0xFA000000 });
+        // Opaque, so the home screen does not show through behind the digits: the look's colour
+        // at a fifth of its strength in the middle, near black at the edges.
+        int tint = look == null ? 0xFF000000 : look.tint();
+        int mid = Color.rgb(Color.red(tint) / 5, Color.green(tint) / 5, Color.blue(tint) / 5);
+        bg.setColors(new int[]{ mid, 0xFF020304 });
         v.setBackground(bg);
 
         idleBox = new LinearLayout(ctx);
