@@ -83,6 +83,8 @@ public class HomeGrid implements SettingsPanel.Host {
     private static final int GAP_DP = 16;
     private static final int CORNER_DP = 10;
     private static final int TOP_RESERVE_DP = 152;
+    /** How far the dock sits above the bottom of the first screen. */
+    private static final int DOCK_LIFT_DP = 56;
     private static final int TOPBAR_SIDE_DP = 32;
     private static final int TOPBAR_TOP_DP = 26;
     private static final int DOCK_COUNT = 5;
@@ -227,7 +229,25 @@ public class HomeGrid implements SettingsPanel.Host {
         // Overridden so Back and Menu reach us before the focused child consumes them; a
         // key listener on the root would never fire.
         root = new FrameLayout(c) {
+            @Override protected void onAttachedToWindow() {
+                super.onAttachedToWindow();
+                armIdle();
+            }
+            @Override protected void onDetachedFromWindow() {
+                super.onDetachedFromWindow();
+                cancelIdle();
+            }
+            @Override public void onWindowFocusChanged(boolean has) {
+                super.onWindowFocusChanged(has);
+                if (has) armIdle(); else cancelIdle();
+            }
             @Override public boolean dispatchKeyEvent(android.view.KeyEvent e) {
+                // The press that wakes the idle clock does nothing else.
+                if (idleView != null) {
+                    if (e.getAction() == android.view.KeyEvent.ACTION_DOWN) hideIdle();
+                    return true;
+                }
+                armIdle();
                 if (e.getAction() == android.view.KeyEvent.ACTION_UP) {
                     lastKey = e.getKeyCode();
                     lastKeyDevice = e.getDeviceId();
@@ -689,6 +709,109 @@ public class HomeGrid implements SettingsPanel.Host {
         if (h < 12) return ctx.getString(R.string.home_greeting_morning);
         if (h < 18) return ctx.getString(R.string.home_greeting_afternoon);
         return ctx.getString(R.string.home_greeting_evening);
+    }
+
+    // ---------------------------------------------------------------- idle clock
+
+    private final android.os.Handler idleHandler =
+            new android.os.Handler(android.os.Looper.getMainLooper());
+    private FrameLayout idleView;
+    private LinearLayout idleBox;
+    private TextView idleClock, idleDate;
+    private int idleTicks;
+    private final Runnable idleStart = new Runnable() {
+        public void run() { showIdle(); }
+    };
+    private final Runnable idleTick = new Runnable() {
+        public void run() { tickIdle(); }
+    };
+    private static final long IDLE_TICK_MS = 15000L;
+
+    /** Start the wait again; called on every key and whenever this window comes back. */
+    private void armIdle() {
+        idleHandler.removeCallbacks(idleStart);
+        int m = Prefs.idleMinutes(ctx);
+        if (m > 0 && idleView == null) idleHandler.postDelayed(idleStart, m * 60000L);
+    }
+
+    private void cancelIdle() {
+        idleHandler.removeCallbacks(idleStart);
+        idleHandler.removeCallbacks(idleTick);
+        if (idleView != null) {
+            root.removeView(idleView);
+            idleView = null;
+        }
+    }
+
+    /** A big clock over everything, nearly black; it moves a little each minute. */
+    private void showIdle() {
+        if (idleView != null || !root.isAttachedToWindow() || !root.hasWindowFocus()
+                || root.getWindowVisibility() != View.VISIBLE) return;
+        FrameLayout v = new FrameLayout(ctx);
+        v.setClickable(true);
+        v.setFocusable(false);
+        GradientDrawable bg = new GradientDrawable();
+        bg.setGradientType(GradientDrawable.RADIAL_GRADIENT);
+        bg.setGradientRadius(dp(900));
+        bg.setGradientCenter(0.5f, 0.5f);
+        int tint = (look == null ? 0xFF000000 : look.tint()) & 0x00FFFFFF;
+        bg.setColors(new int[]{ 0x40000000 | tint, 0xFA000000 });
+        v.setBackground(bg);
+
+        idleBox = new LinearLayout(ctx);
+        idleBox.setOrientation(LinearLayout.VERTICAL);
+        idleBox.setGravity(Gravity.CENTER_HORIZONTAL);
+        idleClock = new TextView(ctx);
+        idleClock.setTextSize(TypedValue.COMPLEX_UNIT_SP, 120);
+        idleClock.setTypeface(Typeface.create("sans-serif-thin", Typeface.NORMAL));
+        idleClock.setTextColor(0xE6FFFFFF);
+        idleClock.setIncludeFontPadding(false);
+        idleBox.addView(idleClock);
+        idleDate = new TextView(ctx);
+        idleDate.setTextSize(TypedValue.COMPLEX_UNIT_SP, 26);
+        idleDate.setTextColor(0x99FFFFFF);
+        idleDate.setLetterSpacing(0.04f);
+        idleBox.addView(idleDate);
+        v.addView(idleBox, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT,
+                Gravity.CENTER));
+
+        idleView = v;
+        idleTicks = 0;
+        root.addView(v, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        v.setAlpha(0f);
+        v.animate().alpha(1f).setDuration(600L).start();
+        tickIdle();
+    }
+
+    private void tickIdle() {
+        if (idleView == null) return;
+        Date now = new Date();
+        String fmt = (Prefs.clockMode(ctx) == Prefs.CLOCK_12H) ? "h:mm" : "HH:mm";
+        idleClock.setText(new SimpleDateFormat(fmt, Locale.getDefault()).format(now));
+        String pat = android.text.format.DateFormat.getBestDateTimePattern(
+                Locale.getDefault(), "EEEEdMMMM");
+        idleDate.setText(new SimpleDateFormat(pat, Locale.getDefault()).format(now));
+        // Every minute the pair drifts to another spot, so no pixel stays lit for long.
+        if (idleTicks % 4 == 0) {
+            java.util.Random r = new java.util.Random();
+            idleBox.animate().translationX((r.nextFloat() - 0.5f) * dp(260))
+                    .translationY((r.nextFloat() - 0.5f) * dp(170))
+                    .setDuration(2500L).start();
+        }
+        idleTicks++;
+        idleHandler.removeCallbacks(idleTick);
+        idleHandler.postDelayed(idleTick, IDLE_TICK_MS);
+    }
+
+    private void hideIdle() {
+        idleHandler.removeCallbacks(idleTick);
+        if (idleView != null) {
+            root.removeView(idleView);
+            idleView = null;
+        }
+        armIdle();
     }
 
     /** Focus for a fresh Home press: Live TV when it comes first, else as takeFocus(). */
@@ -1403,6 +1526,9 @@ public class HomeGrid implements SettingsPanel.Host {
                     View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
             spacer -= restoreSlot.getMeasuredHeight() + dp(GAP_DP);
         }
+        // Not quite at the bottom edge: a little higher leaves less empty wallpaper in the
+        // middle and shows more of the grid's first row below.
+        spacer -= dp(DOCK_LIFT_DP);
         if (spacer > 0) column.addView(new View(ctx), new LinearLayout.LayoutParams(1, spacer));
 
         column.addView(title, tlp);

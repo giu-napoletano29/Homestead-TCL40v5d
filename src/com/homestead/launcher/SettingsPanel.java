@@ -206,6 +206,25 @@ public final class SettingsPanel {
             }
         });
 
+        final Panel.Row idle = p.addRow("Idle clock", idleLabel(Prefs.idleMinutes(c)), null);
+        idle.cell.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                int cur = Prefs.idleMinutes(c);
+                int next = Prefs.IDLE_CHOICES[0];
+                for (int i = 0; i < Prefs.IDLE_CHOICES.length; i++) {
+                    if (Prefs.IDLE_CHOICES[i] == cur) {
+                        next = Prefs.IDLE_CHOICES[(i + 1) % Prefs.IDLE_CHOICES.length];
+                        break;
+                    }
+                }
+                Prefs.setIdleMinutes(c, next);
+                idle.setValue(idleLabel(next));
+            }
+        });
+        idle.setHelp("After this long with no button pressed, the home screen is covered by a "
+                + "large clock that drifts slowly across the screen, so nothing stays lit in one "
+                + "place. Any button brings the home screen back; that press does nothing else.");
+
         final Panel.Row greet = p.addRow("Greeting", onOff(Prefs.greeting(c)), null).asSwitch();
         greet.cell.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
@@ -493,6 +512,10 @@ public final class SettingsPanel {
             case Prefs.CLOCK_OFF: return "Off";
             default: return "24-hour";
         }
+    }
+
+    private static String idleLabel(int minutes) {
+        return minutes <= 0 ? "Off" : minutes + " min";
     }
 
     private static String dateLabel(Context c) {

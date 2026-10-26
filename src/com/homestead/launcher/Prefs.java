@@ -42,6 +42,7 @@ public final class Prefs {
     private static final String K_TUNNEL = "adb_tunnel_enabled";
     private static final String K_REAPPLY = "adb_reapply_on_boot";
     private static final String K_RESTORE_WATCH = "restore_watch";
+    private static final String K_IDLE = "idle_minutes";
     private static final String K_SHORTCUTS_PLACE = "shortcuts_place";
     private static final String K_SHORTCUTS = "shortcuts";
     private static final String K_DISABLED = "disabled_by_us";
@@ -268,6 +269,11 @@ public final class Prefs {
         if (on) s.add(id); else s.remove(id);
         sp(c).edit().putStringSet(K_SHORTCUTS, s).apply();
     }
+
+    /** Minutes without a button press before the idle clock covers the home screen; 0 is never. */
+    public static final int[] IDLE_CHOICES = { 0, 2, 5, 10, 15, 30 };
+    public static int idleMinutes(Context c) { return sp(c).getInt(K_IDLE, 5); }
+    public static void setIdleMinutes(Context c, int v) { sp(c).edit().putInt(K_IDLE, v).apply(); }
 
     public static boolean restoreWatch(Context c) { return sp(c).getBoolean(K_RESTORE_WATCH, false); }
     public static void setRestoreWatch(Context c, boolean v) {
