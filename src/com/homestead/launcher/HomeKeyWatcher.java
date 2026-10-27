@@ -37,12 +37,18 @@ import java.io.InputStreamReader;
  * applied only when a process starts, so this runs in its own process: binding after the
  * grant starts a fresh one that can read the log straight away. Only ActivityManager and
  * ActivityTaskManager lines from the system buffer are read, and nothing is kept.
+ *
+ * It also reports the buttons of a TV's remote that come over HDMI-CEC. Android does not hand
+ * those to an accessibility key filter, but Fire OS logs each one (OZ-DCSCEC:HdmiCecAgent,
+ * "Opcode: 0x44; Params: 0x72"), so the log is where they are seen.
  */
 public class HomeKeyWatcher extends Service {
 
     static final int MSG_REGISTER = 1;
     /** arg1 is the uid that started the HOME intent. */
     static final int MSG_HOME = 2;
+    /** arg1 is the CEC user-control code of a button pressed on the TV's remote. */
+    static final int MSG_TVKEY = 3;
 
     private static final String TAG = "Homestead";
     private static final String PERM = "android.permission.READ_LOGS";
@@ -97,8 +103,9 @@ public class HomeKeyWatcher extends Service {
                 // -T 1 follows from the newest line, so there is no backlog to skip.
                 // Android 9 (Fire OS 7) logs activity starts as ActivityManager; Android 10
                 // and later (Fire OS 8) as ActivityTaskManager.
-                proc = new ProcessBuilder("logcat", "-b", "system", "-v", "epoch", "-T", "1",
-                        "ActivityManager:I", "ActivityTaskManager:I", "*:S")
+                proc = new ProcessBuilder("logcat", "-b", "system", "-b", "main", "-v", "epoch",
+                        "-T", "1", "ActivityManager:I", "ActivityTaskManager:I",
+                        "OZ-DCSCEC:HdmiCecAgent:I", "*:S")
                         .redirectErrorStream(true).start();
                 BufferedReader r = new BufferedReader(
                         new InputStreamReader(proc.getInputStream()));
@@ -106,7 +113,9 @@ public class HomeKeyWatcher extends Service {
                 String line;
                 while (running && (line = r.readLine()) != null) {
                     int uid = homeStartUid(line, started);
-                    if (uid >= 0) send(uid);
+                    if (uid >= 0) { send(MSG_HOME, uid); continue; }
+                    int cec = cecKey(line, started);
+                    if (cec >= 0) send(MSG_TVKEY, cec);
                 }
             } catch (Throwable t) {
                 if (running) Log.w(TAG, "Home watch failed: " + t);
@@ -146,11 +155,31 @@ public class HomeKeyWatcher extends Service {
         try { return Integer.parseInt(line.substring(s, e)); } catch (Throwable t) { return -1; }
     }
 
-    private void send(int uid) {
+    /**
+     * The code of a button pressed on a TV's remote, from the CEC agent's log line "Received
+     * message: Source: 0x00; Destination: 0x04; Opcode: 0x44; Params: 0x72", or -1. Only the
+     * press (0x44), not the release (0x45).
+     */
+    static int cecKey(String line, long notBefore) {
+        if (line.indexOf("HdmiCecAgent") < 0 || line.indexOf("Opcode: 0x44") < 0) return -1;
+        int p = line.indexOf("Params: 0x");
+        if (p < 0) return -1;
+        int s = p + 10, e = s;
+        while (e < line.length() && Character.digit(line.charAt(e), 16) >= 0) e++;
+        if (e == s) return -1;
+        try {
+            String t = line.trim();
+            long at = (long) (Double.parseDouble(t.substring(0, t.indexOf(' '))) * 1000.0);
+            if (at < notBefore) return -1;
+        } catch (Throwable ignored) { }
+        try { return Integer.parseInt(line.substring(s, e), 16); } catch (Throwable t) { return -1; }
+    }
+
+    private void send(int what, int arg) {
         Messenger c = client;
         if (c == null) return;
         try {
-            c.send(Message.obtain(null, MSG_HOME, uid, 0));
+            c.send(Message.obtain(null, what, arg, 0));
         } catch (RemoteException e) {
             client = null;
         }

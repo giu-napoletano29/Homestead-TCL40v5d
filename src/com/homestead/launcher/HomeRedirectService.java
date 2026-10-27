@@ -232,8 +232,27 @@ public class HomeRedirectService extends AccessibilityService {
     private final Messenger fromWatcher = new Messenger(new Handler(Looper.getMainLooper()) {
         public void handleMessage(Message m) {
             if (m.what == HomeKeyWatcher.MSG_HOME) onHomeKey(m.arg1);
+            else if (m.what == HomeKeyWatcher.MSG_TVKEY) onTvKey(m.arg1);
         }
     });
+
+    private int lastTvKey = -1;
+    private long lastTvKeyAt;
+
+    /** A button of the TV's remote reached us over HDMI-CEC; do what it is bound to. */
+    private void onTvKey(int cec) {
+        int key = KeyBindings.keyForCec(cec);
+        if (key < 0) return;
+        // A held button repeats its press every half second or so: act once.
+        long now = SystemClock.elapsedRealtime();
+        if (cec == lastTvKey && now - lastTvKeyAt < 900L) { lastTvKeyAt = now; return; }
+        lastTvKey = cec;
+        lastTvKeyAt = now;
+        String action = Prefs.tvKey(this, key);
+        if (KeyBindings.OFF.equals(action)) return;
+        Log.i(TAG, "TV remote " + KeyBindings.nameOf(key) + " -> " + action);
+        KeyBindings.run(this, this, action);
+    }
 
     private final ServiceConnection watcherConn = new ServiceConnection() {
         public void onServiceConnected(ComponentName n, IBinder b) {
@@ -400,52 +419,11 @@ public class HomeRedirectService extends AccessibilityService {
         handler.postDelayed(pkgReload, Math.max(0L, at - now));
     }
 
-    /** Turn key filtering on or off to match the TV remote bindings. */
-    static void keysChanged() {
-        if (instance != null) instance.refreshKeyFilter();
-    }
-
-    private void refreshKeyFilter() {
-        try {
-            android.accessibilityservice.AccessibilityServiceInfo info = getServiceInfo();
-            if (info == null) return;
-            boolean want = KeyBindings.anyOn(this);
-            boolean has = (info.flags
-                    & android.accessibilityservice.AccessibilityServiceInfo.FLAG_REQUEST_FILTER_KEY_EVENTS) != 0;
-            if (want == has) return;
-            info.flags ^= android.accessibilityservice.AccessibilityServiceInfo.FLAG_REQUEST_FILTER_KEY_EVENTS;
-            setServiceInfo(info);
-            Log.i(TAG, "key filtering " + (want ? "on" : "off"));
-        } catch (Throwable t) {
-            Log.w(TAG, "key filtering: " + t);
-        }
-    }
-
-    /**
-     * A coloured button of a TV remote, which arrives over HDMI-CEC. Only those, only from
-     * HDMI; everything else goes on to the app untouched.
-     */
-    @Override
-    protected boolean onKeyEvent(android.view.KeyEvent e) {
-        int code = e.getKeyCode();
-        if (!KeyBindings.isBindable(code)) return false;
-        if ((e.getSource() & android.view.InputDevice.SOURCE_HDMI)
-                != android.view.InputDevice.SOURCE_HDMI) return false;
-        String action = Prefs.tvKey(this, code);
-        if (KeyBindings.OFF.equals(action)) return false;
-        if (e.getAction() == android.view.KeyEvent.ACTION_DOWN && e.getRepeatCount() == 0) {
-            Log.i(TAG, "TV remote " + KeyBindings.nameOf(code) + " -> " + action);
-            KeyBindings.run(this, this, action);
-        }
-        return true;
-    }
-
     @Override
     protected void onServiceConnected() {
         super.onServiceConnected();
-        instance = this;
-        refreshKeyFilter();
         if (home != null) return;               // guard against a second connect
+        instance = this;
         Prefs.setHomeOffByUser(this, false);
         wm = (WindowManager) getSystemService(WINDOW_SERVICE);
         // Before the first load, so an input that registers during it is still noticed.

@@ -27,8 +27,8 @@ import java.util.List;
  * Fire TV app uses them, so here each can open Home, a page of this launcher, or an app.
  *
  * A binding applies only to a key that came over HDMI, so the Fire TV's own remote and the
- * apps are untouched. Reading the keys needs the accessibility service to filter key events;
- * it does that only while at least one binding is on (HomeRedirectService.keysChanged()).
+ * apps are untouched. The keys are read from the system log (HomeKeyWatcher), since Android
+ * does not give HDMI-CEC keys to an accessibility service.
  */
 final class KeyBindings {
 
@@ -44,6 +44,17 @@ final class KeyBindings {
     private static final String[] NAMES = { "Red", "Green", "Yellow", "Blue" };
 
     private KeyBindings() { }
+
+    /** The Android key of a CEC user-control code (0x71 blue, 0x72 red, 0x73 green, 0x74 yellow), or -1. */
+    static int keyForCec(int cec) {
+        switch (cec) {
+            case 0x72: return KeyEvent.KEYCODE_PROG_RED;
+            case 0x73: return KeyEvent.KEYCODE_PROG_GREEN;
+            case 0x74: return KeyEvent.KEYCODE_PROG_YELLOW;
+            case 0x71: return KeyEvent.KEYCODE_PROG_BLUE;
+            default: return -1;
+        }
+    }
 
     static boolean isBindable(int keyCode) {
         for (int i = 0; i < KEYS.length; i++) if (KEYS[i] == keyCode) return true;
@@ -181,6 +192,5 @@ final class KeyBindings {
 
     private static void set(Context c, int key, String action) {
         Prefs.setTvKey(c, key, action);
-        HomeRedirectService.keysChanged();
     }
 }

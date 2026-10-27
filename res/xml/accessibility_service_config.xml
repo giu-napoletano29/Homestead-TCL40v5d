@@ -1,9 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  The flagRequestFilterKeyEvents is not set here: Fire OS does not deliver KEYCODE_HOME to key
-  filtering, and the flag routes every key event on the device through this process. The
-  service sets it at run time, only while a TV remote button is bound (KeyBindings), and
-  canRequestFilterKeyEvents is what allows that.
+  No flagRequestFilterKeyEvents: Fire OS does not deliver KEYCODE_HOME to key filtering, and
+  the flag would route every key event on the device through this process.
   No packageNames filter: the service must see non-Amazon apps come to the foreground so it
   can remove the overlay.
 -->
@@ -12,5 +10,4 @@
     android:accessibilityFeedbackType="feedbackGeneric"
     android:notificationTimeout="0"
     android:canRetrieveWindowContent="false"
-    android:canRequestFilterKeyEvents="true"
     android:description="@string/service_desc"/>
