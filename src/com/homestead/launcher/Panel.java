@@ -46,11 +46,20 @@ public class Panel {
 
     public static final int FULL = 0, SHEET = 1;
 
-    private static final int NAVY = 0xFF0B1F38, SHEET_BG = 0xFF0E2542;
-    private static final int TEXT = 0xFFEAF0F7, SUB = 0xFFA9BACC, MUTE = 0xFF7C8FA4;
-    private static final int HEAD = 0xFF7FA8D8, ROW_BG = 0x10FFFFFF, PANE_BG = 0x12FFFFFF;
-    private static final int FOCUS_BG = 0xFFE8EEF6, FOCUS_TEXT = 0xFF0B1F38;
+    // Neutral greys rather than blues: the page takes its hue from the wallpaper (see tinted()),
+    // the way the home screen's side rail does, and rows are picked out with a translucent
+    // white band, as there, instead of a light fill with dark text.
+    private static final int TEXT = 0xFFF0F1F3, SUB = 0xFFB4BAC2, MUTE = 0xFF868C96;
+    private static final int HEAD = 0xFFA6ADB8, ROW_BG = 0x0DFFFFFF, PANE_BG = 0x12FFFFFF;
+    private static final int FOCUS_BG = 0x40FFFFFF;
     private static final int DEFAULT_VALUE = 0xFFA7D28F;
+    private static final int CORNER_DP = 6;
+
+    /** The wallpaper's dark tone at a quarter strength, over black, at the given alpha. */
+    private static int tinted(Context c, int alpha) {
+        int t = Backgrounds.tone(c);
+        return Color.argb(alpha, Color.red(t) / 4, Color.green(t) / 4, Color.blue(t) / 4);
+    }
 
     public final FrameLayout root;
     private final Context ctx;
@@ -126,8 +135,8 @@ public class Panel {
             sheet.setOrientation(LinearLayout.VERTICAL);
             sheet.setPadding(dp(28), dp(32), dp(28), dp(22));
             GradientDrawable bg = new GradientDrawable();
-            bg.setColor(SHEET_BG);
-            float r = dp(22);
+            bg.setColor(tinted(c, 0xF0));
+            float r = dp(CORNER_DP);
             bg.setCornerRadii(new float[]{r, r, 0, 0, 0, 0, r, r});
             sheet.setBackground(bg);
             sheet.setElevation(dp(16));
@@ -157,7 +166,7 @@ public class Panel {
             animated = sheet;
         } else {
             // Opaque, so the grid or a panel underneath does not show through.
-            root.setBackgroundColor(NAVY);
+            root.setBackgroundColor(tinted(c, 0xFF));
 
             LinearLayout split = new LinearLayout(c);
             split.setOrientation(LinearLayout.HORIZONTAL);
@@ -170,7 +179,7 @@ public class Panel {
             pane.setPadding(dp(28), dp(28), dp(28), dp(24));
             GradientDrawable pbg = new GradientDrawable();
             pbg.setColor(PANE_BG);
-            pbg.setCornerRadius(dp(18));
+            pbg.setCornerRadius(dp(CORNER_DP));
             pane.setBackground(pbg);
             pane.addView(helpTitle, lp(0, dp(10)));
             pane.addView(helpBody, lp(0, 0));
@@ -351,7 +360,7 @@ public class Panel {
         box.setOrientation(LinearLayout.VERTICAL);
         GradientDrawable bg = new GradientDrawable();
         bg.setColor(0x14FFFFFF);
-        bg.setCornerRadius(dp(10));
+        bg.setCornerRadius(dp(CORNER_DP));
         box.setBackground(bg);
         box.setPadding(dp(14), dp(10), dp(14), dp(10));
         box.setFocusable(false);
@@ -572,14 +581,13 @@ public class Panel {
             }
             boolean enabled = cell.isEnabled();
             GradientDrawable bg = new GradientDrawable();
-            bg.setCornerRadius(panel.dp(12));
+            bg.setCornerRadius(panel.dp(CORNER_DP));
             bg.setColor(focused ? FOCUS_BG : ROW_BG);
             cell.setBackground(bg);
 
-            label.setTextColor(focused ? FOCUS_TEXT : TEXT);
+            label.setTextColor(TEXT);
             label.setTypeface(Fonts.get(panel.ctx, focused ? Fonts.MEDIUM : Fonts.REGULAR));
-            int vc = focused ? onLight(valueColor) : valueColor;
-            value.setTextColor(vc);
+            value.setTextColor(valueColor);
 
             String v = value.getText().toString();
             boolean sw = isSwitch && (v.equalsIgnoreCase("on") || v.equalsIgnoreCase("off"));
@@ -587,7 +595,7 @@ public class Panel {
             toggle.setVisibility(sw ? View.VISIBLE : View.GONE);
             if (sw) {
                 toggle.on = v.equalsIgnoreCase("on");
-                toggle.light = focused;
+                toggle.light = false;
                 toggle.color = valueColor;
                 toggle.invalidate();
             }
@@ -595,12 +603,12 @@ public class Panel {
             if (badge.getVisibility() == View.VISIBLE) {
                 GradientDrawable b = new GradientDrawable();
                 b.setCornerRadius(panel.dp(20));
-                int bc = focused ? 0xFF7A5600 : 0xFFE8C468;
+                int bc = 0xFFE8C468;
                 b.setStroke(Math.max(1, panel.dp(1)), bc);
                 badge.setBackground(b);
                 badge.setTextColor(bc);
             }
-            chevron.setTextColor(focused ? FOCUS_TEXT : MUTE);
+            chevron.setTextColor(focused ? TEXT : MUTE);
 
             float a = enabled ? 1f : 0.45f;
             label.setAlpha(a);

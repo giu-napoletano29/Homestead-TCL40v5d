@@ -413,6 +413,21 @@ final class Backgrounds {
     }
 
     /**
+     * The background's main colour taken down to a dark shade: a photo's own dark tone, or a
+     * preset's tint at 35%. What the side rail and the settings pages take their hue from.
+     */
+    static int tone(Context c) {
+        if (photoChosen(c)) {
+            Bitmap b = lastPhoto();
+            return b != null ? scrimColorFor(b) : 0xFF000000;
+        }
+        int t = current(c).tint();
+        int r = ((t >> 16) & 0xFF) * 35 / 100, g = ((t >> 8) & 0xFF) * 35 / 100,
+                b = (t & 0xFF) * 35 / 100;
+        return 0xFF000000 | (r << 16) | (g << 8) | b;
+    }
+
+    /**
      * A soft, small copy of the picture for the idle clock's backdrop: shrunk to a tenth and
      * box-blurred, which is all a blur needs here (a real one needs API 31). Left small -
      * a BitmapDrawable stretches it over the screen, so it costs almost no memory. Null if

@@ -524,7 +524,7 @@ public class HomeGrid implements SettingsPanel.Host {
 
     // ---------------------------------------------------------------- side rail
 
-    private static final int RAIL_REST = 0x66000000, RAIL_OPEN = 0xEA000000;
+    private static final int RAIL_REST = 0x66000000, RAIL_OPEN = 0xF0000000;
     private RailGlass railBg;
 
     /**
@@ -579,16 +579,18 @@ public class HomeGrid implements SettingsPanel.Host {
             android.graphics.Rect b = getBounds();
             if (b.isEmpty()) return;
             paint.setShader(null);
-            // The fill's alpha is animated; its colour is the background's while the rail is
-            // closed, and open it keeps only a hint of it (a quarter) over the black.
+            // The fill's alpha is animated. Its colour is the wallpaper's dark tone while the
+            // rail is closed, and open it is the settings pages' own: that tone at a quarter
+            // strength over black.
             float k = 1f - 0.75f * open;
             int rgb = (Math.round(((tint >> 16) & 0xFF) * k) << 16)
                     | (Math.round(((tint >> 8) & 0xFF) * k) << 8)
                     | Math.round((tint & 0xFF) * k);
             paint.setColor((fill & 0xFF000000) | rgb);
             cv.drawRect(b, paint);
+            // The glass sheen is for the closed rail; open, the fill is the plain page colour.
             paint.setShader(sheen);
-            paint.setAlpha(255);
+            paint.setAlpha(Math.round(255f * (1f - open)));
             cv.drawRect(b, paint);
             paint.setAlpha(edgeAlpha);
             paint.setShader(glow);
@@ -676,7 +678,7 @@ public class HomeGrid implements SettingsPanel.Host {
         label.setText(text);
         label.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
         label.setTypeface(Fonts.get(ctx, Fonts.MEDIUM));
-        label.setTextColor(0xFFF3F0EA);
+        label.setTextColor(0xFFF0F1F3);
         label.setSingleLine(true);
         label.setAlpha(0f);
         LinearLayout.LayoutParams llp = new LinearLayout.LayoutParams(
@@ -2081,6 +2083,10 @@ public class HomeGrid implements SettingsPanel.Host {
                         keepAtTop();
                         revealInDock(v);
                         if (dockTitleView != null) dockTitleView.setText(it.label);
+                    } else if (dockTitleView != null) {
+                        // The icon tiles carry no name: the line above the dock names the one
+                        // in focus, whichever row it is in.
+                        dockTitleView.setText(it.label);
                     }
                 } else {
                     style(v, false, true);
@@ -2151,6 +2157,11 @@ public class HomeGrid implements SettingsPanel.Host {
         float scale = focused ? FOCUS_SCALE : 1f;
         float z = focused ? dp(FOCUS_LIFT_DP) : 0f;
         float alpha = focused ? 1f : UNFOCUSED_ALPHA;
+        // A very light tile (Netflix's white banner) is toned down until it has focus.
+        if (f.getTag() == BRIGHT_DIM && f.getChildCount() > 0
+                && f.getChildAt(0) instanceof ImageView) {
+            ((ImageView) f.getChildAt(0)).setColorFilter(focused ? null : BRIGHT_DIM);
+        }
         if (!animate || !f.isAttachedToWindow() || f.getWidth() == 0) {
             f.setScaleX(scale);
             f.setScaleY(scale);
@@ -2206,7 +2217,38 @@ public class HomeGrid implements SettingsPanel.Host {
         img.setImageBitmap(it.banner);
         cell.addView(img, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        dimIfBright(cell, img, it.banner);
         return cell;
+    }
+
+    /** Multiplies a very light picture down to about 70%. Also the tag marking such a tile. */
+    private static final android.graphics.PorterDuffColorFilter BRIGHT_DIM =
+            new android.graphics.PorterDuffColorFilter(0xFFB4B4B4,
+                    android.graphics.PorterDuff.Mode.MULTIPLY);
+
+    /** Tones down the tile's picture while unfocused if it is mostly near-white. */
+    private void dimIfBright(FrameLayout cell, ImageView iv, Bitmap b) {
+        if (b == null || !isBright(b)) return;
+        cell.setTag(BRIGHT_DIM);
+        iv.setColorFilter(BRIGHT_DIM);
+    }
+
+    /** True when the picture's opaque pixels average above about 70% brightness. */
+    private static boolean isBright(Bitmap b) {
+        int w = b.getWidth(), h = b.getHeight();
+        if (w < 4 || h < 4) return false;
+        long sum = 0;
+        int n = 0;
+        for (int yi = 0; yi < 8; yi++) {
+            for (int xi = 0; xi < 12; xi++) {
+                int p = b.getPixel((xi * 2 + 1) * w / 24, (yi * 2 + 1) * h / 16);
+                if ((p >>> 24) < 0x80) continue;
+                sum += (299 * ((p >> 16) & 0xFF) + 587 * ((p >> 8) & 0xFF)
+                        + 114 * (p & 0xFF)) / 1000;
+                n++;
+            }
+        }
+        return n >= 20 && sum / n > 180;
     }
 
     /** The Canali TV tiles built, so a change of background can repaint their gradient. */
@@ -2306,6 +2348,7 @@ public class HomeGrid implements SettingsPanel.Host {
         ic.setImageBitmap(shown);
         cell.addView(ic, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        dimIfBright(cell, ic, shown);
         return cell;
     }
 
