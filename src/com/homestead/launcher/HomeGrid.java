@@ -165,8 +165,8 @@ public class HomeGrid implements SettingsPanel.Host {
     private final List<TextView> shortcutLabels = new ArrayList<TextView>();
     private final List<View> shortcutPills = new ArrayList<View>();
     private String pillsKey = "";
-    /** How many quick settings the bar shows before "More settings" and "Settings". */
-    private static final int BAR_SHORTCUTS = 3;
+    /** How many quick settings the side rail shows above the Appstore and the two settings pages. */
+    private static final int RAIL_SHORTCUTS = 4;
     /** A soft, colour-shifting glow behind the dock - see setGlow(). */
     private final View glow;
     private int glowColor;
@@ -254,10 +254,12 @@ public class HomeGrid implements SettingsPanel.Host {
             @Override protected void onAttachedToWindow() {
                 super.onAttachedToWindow();
                 armIdle();
+                watchNetwork();
             }
             @Override protected void onDetachedFromWindow() {
                 super.onDetachedFromWindow();
                 cancelIdle();
+                unwatchNetwork();
             }
             @Override public void onWindowFocusChanged(boolean has) {
                 super.onWindowFocusChanged(has);
@@ -275,6 +277,13 @@ public class HomeGrid implements SettingsPanel.Host {
                     lastKeyDevice = e.getDeviceId();
                     lastKeySource = e.getSource();
                     lastKeyAt = android.os.SystemClock.uptimeMillis();
+                }
+                // Back from the side rail returns to the start of the home screen (Canali TV,
+                // or the first tile), rather than doing nothing.
+                if (e.getKeyCode() == android.view.KeyEvent.KEYCODE_BACK && panels.isEmpty()
+                        && railHasFocus()) {
+                    if (e.getAction() == android.view.KeyEvent.ACTION_UP) takeStartFocus();
+                    return true;
                 }
                 if (e.getKeyCode() == android.view.KeyEvent.KEYCODE_BACK && !panels.isEmpty()) {
                     if (e.getAction() == android.view.KeyEvent.ACTION_UP) {
@@ -364,7 +373,21 @@ public class HomeGrid implements SettingsPanel.Host {
         LinearLayout.LayoutParams clockLp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         clockLp.topMargin = dp(2);
-        topLeft.addView(clock, clockLp);
+        // A small network icon sits left of the digits, as on the VIDAA home: the Wi-Fi mark
+        // while there is a connection, an amber crossed one when there is not.
+        LinearLayout clockRow = new LinearLayout(c);
+        clockRow.setOrientation(LinearLayout.HORIZONTAL);
+        clockRow.setGravity(Gravity.CENTER_VERTICAL);
+        netIcon = new ImageView(c);
+        netIcon.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        LinearLayout.LayoutParams nlp = new LinearLayout.LayoutParams(dp(NET_ICON_DP), dp(NET_ICON_DP));
+        nlp.rightMargin = dp(14);
+        nlp.topMargin = dp(6);
+        clockRow.addView(netIcon, nlp);
+        clockRow.addView(clock, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        topLeft.addView(clockRow, clockLp);
+        showNet(isOnline());
 
         dateLine = new TextView(c);
         dateLine.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
@@ -426,12 +449,85 @@ public class HomeGrid implements SettingsPanel.Host {
         updateClock();
     }
 
-    // ---------------------------------------------------------------- top bar
+    // ---------------------------------------------------------------- network status
+
+    private static final int NET_ICON_DP = 26;
+    private ImageView netIcon;
+    private Bitmap netOnBmp, netOffBmp;
+    private android.net.ConnectivityManager.NetworkCallback netCallback;
+
+    private boolean isOnline() {
+        try {
+            android.net.ConnectivityManager cm = (android.net.ConnectivityManager)
+                    ctx.getSystemService(Context.CONNECTIVITY_SERVICE);
+            android.net.NetworkInfo ni = cm == null ? null : cm.getActiveNetworkInfo();
+            return ni != null && ni.isConnected();
+        } catch (Throwable t) {
+            return true;   // cannot tell: do not raise a false alarm
+        }
+    }
+
+    private void showNet(boolean up) {
+        if (netOnBmp == null) {
+            int px = dp(NET_ICON_DP);
+            netOnBmp = ShortcutIcons.render("network", px);
+            // The same mark in amber with a slash through it.
+            netOffBmp = Bitmap.createBitmap(px, px, Bitmap.Config.ARGB_8888);
+            android.graphics.Canvas cv = new android.graphics.Canvas(netOffBmp);
+            android.graphics.Paint tint = new android.graphics.Paint(
+                    android.graphics.Paint.ANTI_ALIAS_FLAG);
+            tint.setColorFilter(new android.graphics.PorterDuffColorFilter(0xFFE8C468,
+                    android.graphics.PorterDuff.Mode.SRC_IN));
+            cv.drawBitmap(netOnBmp, 0, 0, tint);
+            android.graphics.Paint line = new android.graphics.Paint(
+                    android.graphics.Paint.ANTI_ALIAS_FLAG);
+            line.setColor(0xFFE8C468);
+            line.setStrokeWidth(px * 0.09f);
+            line.setStrokeCap(android.graphics.Paint.Cap.ROUND);
+            cv.drawLine(px * 0.14f, px * 0.14f, px * 0.86f, px * 0.86f, line);
+        }
+        netIcon.setImageBitmap(up ? netOnBmp : netOffBmp);
+        netIcon.setAlpha(up ? 0.85f : 1f);
+    }
+
+    /** Follows the connection while the home screen is on screen. */
+    private void watchNetwork() {
+        if (netCallback != null) return;
+        try {
+            android.net.ConnectivityManager cm = (android.net.ConnectivityManager)
+                    ctx.getSystemService(Context.CONNECTIVITY_SERVICE);
+            if (cm == null) return;
+            netCallback = new android.net.ConnectivityManager.NetworkCallback() {
+                private void refresh() {
+                    root.post(new Runnable() {
+                        public void run() { showNet(isOnline()); }
+                    });
+                }
+                @Override public void onAvailable(android.net.Network n) { refresh(); }
+                @Override public void onLost(android.net.Network n) { refresh(); }
+            };
+            cm.registerNetworkCallback(new android.net.NetworkRequest.Builder().build(), netCallback);
+            showNet(isOnline());
+        } catch (Throwable t) {
+            netCallback = null;
+        }
+    }
+
+    private void unwatchNetwork() {
+        if (netCallback == null) return;
+        try {
+            ((android.net.ConnectivityManager) ctx.getSystemService(Context.CONNECTIVITY_SERVICE))
+                    .unregisterNetworkCallback(netCallback);
+        } catch (Throwable ignored) { }
+        netCallback = null;
+    }
+
+    // ---------------------------------------------------------------- quick settings
 
     /**
-     * The quick Fire TV settings: up to BAR_SHORTCUTS screens the user chose, then "More
-     * settings" (all of Amazon's), left of Inputs and Settings. The Inputs pill is only there
-     * on a TV that has inputs to jump to.
+     * The quick Fire TV settings: up to RAIL_SHORTCUTS screens the user chose, which become
+     * the first entries of the side rail. (The top bar's pills are no longer shown, so only
+     * the rail is rebuilt, and only when the choice changes.)
      */
     private void rebuildShortcutPills() {
         boolean inputs = false;
@@ -450,29 +546,15 @@ public class HomeGrid implements SettingsPanel.Host {
                 key.append(',').append(screens.get(i)[SystemSettingsPanel.ID]);
             }
         }
-        // Same pills as before: leave them, so one with focus keeps it through a reload.
+        // Same entries as before: leave the rail, so one with focus keeps it through a reload.
         if (key.toString().equals(pillsKey)) return;
         pillsKey = key.toString();
 
-        shortcutRow.removeAllViews();
-        shortcutLabels.clear();
-        shortcutPills.clear();
-        if (!on) return;
-        int shown = 0;
-        for (int i = 0; i < screens.size() && shown < BAR_SHORTCUTS; i++) {
-            final String[] s = screens.get(i);
-            if (!want.contains(s[SystemSettingsPanel.ID])) continue;
-            addShortcutPill(SystemSettingsPanel.shortTitle(ctx, s[SystemSettingsPanel.ID]),
-                    ShortcutIcons.render(s[SystemSettingsPanel.ID], dp(ICON_SZ_DP)),
-                    new Runnable() {
-                        public void run() {
-                            logOpen(s[SystemSettingsPanel.TITLE]);
-                            SetupPanel.start(ctx, SystemSettingsPanel.intentFor(
-                                    s[SystemSettingsPanel.ACTION]));
-                        }
-                    });
-            shown++;
+        List<String[]> chosen = new ArrayList<String[]>();
+        for (int i = 0; on && i < screens.size() && chosen.size() < RAIL_SHORTCUTS; i++) {
+            if (want.contains(screens.get(i)[SystemSettingsPanel.ID])) chosen.add(screens.get(i));
         }
+        rebuildRail(chosen);
     }
 
     private void addShortcutPill(String text, Bitmap icon, Runnable action) {
@@ -614,14 +696,32 @@ public class HomeGrid implements SettingsPanel.Host {
         railBg = new RailGlass(Math.max(2f, dp(1)), RAIL_REST);
         rail.setBackground(railBg);
 
-        addRailItem(ShortcutIcons.render("network", dp(RAIL_ICON_DP)),
-                ctx.getString(R.string.sys_network), new Runnable() {
-                    public void run() {
-                        logOpen("Network (rail)");
-                        SetupPanel.start(ctx, SystemSettingsPanel.intentFor(
-                                "android.settings.WIFI_SETTINGS"));
-                    }
-                });
+        // The entries come with the quick settings: see rebuildRail().
+        root.addView(rail, new FrameLayout.LayoutParams(dp(AppModel.RAIL_DP),
+                ViewGroup.LayoutParams.MATCH_PARENT, Gravity.LEFT));
+    }
+
+    /**
+     * The rail's entries: the quick settings the user chose (up to RAIL_SHORTCUTS, none when
+     * they are off or in Simple mode), then the Appstore, System settings and Settings, which
+     * are always there. Rebuilt when the choice changes.
+     */
+    private void rebuildRail(List<String[]> quick) {
+        boolean hadFocus = railHasFocus();
+        rail.removeAllViews();
+        railItems.clear();
+        railLabels.clear();
+        for (int i = 0; i < quick.size(); i++) {
+            final String[] s = quick.get(i);
+            addRailItem(ShortcutIcons.render(s[SystemSettingsPanel.ID], dp(RAIL_ICON_DP)),
+                    SystemSettingsPanel.title(ctx, s[SystemSettingsPanel.ID]), new Runnable() {
+                        public void run() {
+                            logOpen(s[SystemSettingsPanel.TITLE] + " (rail)");
+                            SetupPanel.start(ctx, SystemSettingsPanel.intentFor(
+                                    s[SystemSettingsPanel.ACTION]));
+                        }
+                    });
+        }
         addRailItem(ShortcutIcons.render("applications", dp(RAIL_ICON_DP)),
                 ctx.getString(R.string.rail_apps), new Runnable() {
                     public void run() {
@@ -652,8 +752,12 @@ public class HomeGrid implements SettingsPanel.Host {
             if (i == 0) v.setNextFocusUpId(v.getId());
             if (i == railItems.size() - 1) v.setNextFocusDownId(v.getId());
         }
-        root.addView(rail, new FrameLayout.LayoutParams(dp(AppModel.RAIL_DP),
-                ViewGroup.LayoutParams.MATCH_PARENT, Gravity.LEFT));
+        // Rebuilt while open (a choice made from a page opened on the rail): labels show.
+        if (railOpen) {
+            for (int i = 0; i < railLabels.size(); i++) railLabels.get(i).setAlpha(1f);
+        }
+        railLast = Math.min(railLast, railItems.size() - 1);
+        if (hadFocus && panels.isEmpty()) focusRail();
     }
 
     private void addRailItem(Bitmap icon, String text, final Runnable action) {
@@ -1178,15 +1282,11 @@ public class HomeGrid implements SettingsPanel.Host {
 
     /**
      * The restore tile is always fixed. Settings and TV Health can be hidden like any other
-     * tile, but only while quick settings are on - with them off, these two stay the one
-     * way back in, same as before.
+     * tile: the side rail always has Settings and System settings, and TV Health is on the
+     * Settings page.
      */
     private boolean fixedTile(AppModel.Item t) {
-        if (t.type == AppModel.TYPE_RESTORE) return true;
-        if (t.type == AppModel.TYPE_SETTINGS || t.type == AppModel.TYPE_HEALTH) {
-            return Prefs.shortcutsPlace(ctx) == Prefs.SHORTCUTS_OFF;
-        }
-        return false;
+        return t.type == AppModel.TYPE_RESTORE;
     }
 
     /** An app the user installed, which the system lets them remove. */
@@ -1307,6 +1407,7 @@ public class HomeGrid implements SettingsPanel.Host {
             View origin = railOrigin;
             railOrigin = null;
             if (origin != null && origin.isAttachedToWindow()) origin.requestFocus();
+            else if (origin != null) focusRail();   // the rail was rebuilt under the page
             else takeFocus();
             // The restore tile was under the page; its time on screen starts now.
             if (restoreSlot != null) {

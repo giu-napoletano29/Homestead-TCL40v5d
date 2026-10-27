@@ -60,7 +60,7 @@
   <string name="sys_header_own">Homestead\'s own</string>
   <string name="sys_screen_sound">Screen &amp; sound</string>
   <string name="sys_tv_remote">TV remote buttons</string>
-  <string name="sys_header_topbar">In the top bar</string>
+  <string name="sys_header_topbar">In the side bar</string>
   <string name="sys_quick_settings">Quick settings</string>
   <string name="sys_choose_quick">Choose quick settings</string>
   <string name="sys_header_launcher">Amazon\'s launcher</string>

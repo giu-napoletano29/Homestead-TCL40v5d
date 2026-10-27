@@ -34,7 +34,7 @@
   <string name="sys_header_own">Proprie di Homestead</string>
   <string name="sys_screen_sound">Schermo e audio</string>
   <string name="sys_tv_remote">Tasti del telecomando TV</string>
-  <string name="sys_header_topbar">Nella barra in alto</string>
+  <string name="sys_header_topbar">Nella barra laterale</string>
   <string name="sys_quick_settings">Impostazioni rapide</string>
   <string name="sys_choose_quick">Scegli le impostazioni rapide</string>
   <string name="sys_header_launcher">Launcher di Amazon</string>

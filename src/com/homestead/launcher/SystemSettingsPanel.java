@@ -168,11 +168,12 @@ public final class SystemSettingsPanel {
                 host.rebuildGrid();
             }
         });
-        place.setHelp("Small buttons at the top right of the home screen for the screens you "
-                + "choose, then System settings and Settings. Not in Simple mode.");
+        place.setHelp("The screens you choose become the first entries of the side bar, above "
+                + "the Appstore, System settings and Settings, which are always there. Not in "
+                + "Simple mode.");
         p.addRow(c.getString(R.string.sys_choose_quick), "", new Runnable() {
             public void run() { host.showPanel(buildChoose(c, host)); }
-        }).opens().setHelp("Which screens get a button. The bar shows the first three.");
+        }).opens().setHelp("Which screens get an entry. The side bar shows the first four.");
 
         p.addHeader(c.getString(R.string.sys_header_launcher));
         if (AppModel.amazonLauncherOn(c)) {
@@ -193,7 +194,7 @@ public final class SystemSettingsPanel {
 
     private static View buildChoose(final Context c, final SettingsPanel.Host host) {
         final Panel p = new Panel(c, "Choose shortcuts", null, Panel.SHEET);
-        p.addHeader("In the top bar");
+        p.addHeader(c.getString(R.string.sys_header_topbar));
         final java.util.Set<String> on = Prefs.shortcuts(c);
         List<String[]> open = available(c, null);
         for (int i = 0; i < open.size(); i++) {

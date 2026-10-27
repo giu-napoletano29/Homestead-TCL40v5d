@@ -13,6 +13,8 @@
   <!-- The in-app ADB client (this TV's own adbd) and the daily GitHub Releases update
        check/download. No telemetry. See SECURITY.md. -->
   <uses-permission android:name="android.permission.INTERNET"/>
+  <!-- Reads whether there is a connection, for the network icon beside the home clock. -->
+  <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
   <!-- Development permission, granted via `pm grant`; lets TV Health apply settings
        fixes. Without it that page is read-only and shows the command instead. -->
   <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS"/>

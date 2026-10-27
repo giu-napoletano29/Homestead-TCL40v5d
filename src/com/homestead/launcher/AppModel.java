@@ -164,17 +164,10 @@ public final class AppModel {
         for (int i = 0; i < ITEMS.size(); i++) {
             Item it = ITEMS.get(i);
             // The restore tile only exists while there is something to put back, and only
-            // until its time on screen is up. Settings and TV Health can be hidden, like the
-            // Settings pill duplicates them, but only while quick settings are on - with
-            // them off, these two stay the one way back in.
+            // until its time on screen is up. Settings and TV Health hide like any tile: the
+            // side rail always carries Settings and System settings.
             if (it.type == TYPE_RESTORE) {
                 if (restorePopupLive()) out.add(it);
-                continue;
-            }
-            if (it.type == TYPE_SETTINGS || it.type == TYPE_HEALTH) {
-                if (Prefs.shortcutsPlace(c) == Prefs.SHORTCUTS_OFF || !hidden.contains(it.key())) {
-                    out.add(it);
-                }
                 continue;
             }
             if (!hidden.contains(it.key())) out.add(it);
