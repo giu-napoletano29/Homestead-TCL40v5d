@@ -189,14 +189,74 @@ final class Backgrounds {
 
     static Preset current(Context c) {
         String id = currentId(c);
-        if (PHOTO_ID.equals(id)) return PHOTO_LOOK;
+        if (PHOTO_ID.equals(id) || artFor(id) != null) return PHOTO_LOOK;
         for (int i = 0; i < PRESETS.length; i++) {
             if (PRESETS[i].id.equals(id)) return PRESETS[i];
         }
         return PRESETS[0];
     }
 
-    static boolean photoChosen(Context c) { return PHOTO_ID.equals(currentId(c)); }
+    /** A public-domain painting bundled in res/raw, offered beside the presets. */
+    static final class Art {
+        final String id, name;
+        final int res;
+        Art(String id, String name, int res) { this.id = id; this.name = name; this.res = res; }
+    }
+
+    /** Shown as photos: the home screen decodes, dims and scrims them the same way. */
+    static final Art[] ARTS = {
+            new Art("art_starry",  "The Starry Night, Van Gogh",   R.raw.art_starry),
+            new Art("art_wave",    "The Great Wave, Hokusai",      R.raw.art_wave),
+            new Art("art_kiss",    "The Kiss, Klimt",              R.raw.art_kiss),
+            new Art("art_lilies",  "Water Lilies, Monet",          R.raw.art_lilies),
+    };
+
+    static Art artFor(String id) {
+        for (int i = 0; i < ARTS.length; i++) {
+            if (ARTS[i].id.equals(id)) return ARTS[i];
+        }
+        return null;
+    }
+
+    /** The painting's JPEG copied out of the APK once, so it loads like any photo file. */
+    private static File artFile(Context c, Art a) {
+        File f = new File(c.getFilesDir(), a.id + ".jpg");
+        if (f.isFile() && f.length() > 0) return f;
+        java.io.InputStream in = null;
+        java.io.OutputStream out = null;
+        try {
+            in = c.getResources().openRawResource(a.res);
+            out = new java.io.FileOutputStream(f);
+            byte[] buf = new byte[16384];
+            int n;
+            while ((n = in.read(buf)) > 0) out.write(buf, 0, n);
+            return f;
+        } catch (Throwable t) {
+            Log.w(TAG, "painting could not be copied: " + t);
+            f.delete();
+            return null;
+        } finally {
+            try { if (in != null) in.close(); } catch (Throwable ignored) { }
+            try { if (out != null) out.close(); } catch (Throwable ignored) { }
+        }
+    }
+
+    /** A small decode of a painting, for its row in the Background page. */
+    static Bitmap artThumb(Context c, Art a) {
+        try {
+            BitmapFactory.Options o = new BitmapFactory.Options();
+            o.inSampleSize = 16;
+            return BitmapFactory.decodeResource(c.getResources(), a.res, o);
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    /** True for the user's photo and for a bundled painting: both are shown as a picture. */
+    static boolean photoChosen(Context c) {
+        String id = currentId(c);
+        return PHOTO_ID.equals(id) || artFor(id) != null;
+    }
 
     /**
      * Save a choice. Its old position is saved too where it had one, so going back to a
@@ -212,6 +272,8 @@ final class Backgrounds {
 
     /** The value shown on the Settings row. */
     static String label(Context c) {
+        Art art = artFor(currentId(c));
+        if (art != null) return art.name;
         if (!photoChosen(c)) return current(c).name;
         return photoFile(c) != null ? "Photo" : "Photo (no file yet)";
     }
@@ -232,6 +294,8 @@ final class Backgrounds {
      */
     static File photoFile(Context c) {
         try {
+            Art art = artFor(currentId(c));
+            if (art != null) return artFile(c, art);
             File own = BackgroundProvider.photoFile(c);
             if (own.isFile() && own.length() > 0) return own;
             File dir = c.getExternalFilesDir(null);
@@ -330,6 +394,100 @@ final class Backgrounds {
         int a = dimAlpha(c);
         if (a == 0) return img;
         return new LayerDrawable(new Drawable[]{ img, new ColorDrawable(a << 24) });
+    }
+
+    /**
+     * A dark gradient over the lower part of the screen, clear at the top and almost opaque
+     * by the bottom, so the home screen's tiles keep contrast whatever the look underneath -
+     * a preset's own base colour, or (for a photo) one sampled from it. Tizen and VIDAA both
+     * do this over their own hero art rather than dimming the whole screen evenly.
+     */
+    static Drawable withScrim(Context c, Drawable base, int darkColor) {
+        int rgb = darkColor & 0x00FFFFFF;
+        // Five evenly spaced stops: clear for the top quarter, then fading into the dark
+        // colour as the dock starts (halfway down) and almost solid under it.
+        GradientDrawable scrim = new GradientDrawable(
+                GradientDrawable.Orientation.TOP_BOTTOM,
+                new int[]{ rgb, rgb, rgb | 0xD4000000, rgb | 0xF5000000, rgb | 0xFC000000 });
+        return new LayerDrawable(new Drawable[]{ base, scrim });
+    }
+
+    /**
+     * A soft, small copy of the picture for the idle clock's backdrop: shrunk to a tenth and
+     * box-blurred, which is all a blur needs here (a real one needs API 31). Left small -
+     * a BitmapDrawable stretches it over the screen, so it costs almost no memory. Null if
+     * anything goes wrong; the caller then keeps its plain backdrop.
+     */
+    static Bitmap blurred(Bitmap src) {
+        try {
+            int w = Math.max(8, src.getWidth() / 10), h = Math.max(8, src.getHeight() / 10);
+            Bitmap small = Bitmap.createScaledBitmap(src, w, h, true);
+            int[] a = new int[w * h];
+            int[] b = new int[w * h];
+            small.getPixels(a, 0, w, 0, 0, w, h);
+            for (int pass = 0; pass < 2; pass++) {
+                boxBlur(a, b, w, h, 5, true);
+                boxBlur(b, a, w, h, 5, false);
+            }
+            Bitmap out = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
+            out.setPixels(a, 0, w, 0, 0, w, h);
+            return out;
+        } catch (Throwable t) {
+            Log.w(TAG, "idle backdrop blur failed: " + t);
+            return null;
+        }
+    }
+
+    /** One box-blur pass along rows (horiz) or columns, edges repeated. */
+    private static void boxBlur(int[] in, int[] out, int w, int h, int r, boolean horiz) {
+        int len = horiz ? w : h, lines = horiz ? h : w, div = 2 * r + 1;
+        for (int l = 0; l < lines; l++) {
+            int sr = 0, sg = 0, sb = 0;
+            for (int i = -r; i <= r; i++) {
+                int p = in[horiz ? l * w + Math.min(len - 1, Math.max(0, i))
+                        : Math.min(len - 1, Math.max(0, i)) * w + l];
+                sr += (p >> 16) & 0xFF;
+                sg += (p >> 8) & 0xFF;
+                sb += p & 0xFF;
+            }
+            for (int i = 0; i < len; i++) {
+                int at = horiz ? l * w + i : i * w + l;
+                out[at] = 0xFF000000 | ((sr / div) << 16) | ((sg / div) << 8) | (sb / div);
+                int ia = Math.min(len - 1, i + r + 1), is = Math.max(0, i - r);
+                int add = in[horiz ? l * w + ia : ia * w + l];
+                int sub = in[horiz ? l * w + is : is * w + l];
+                sr += ((add >> 16) & 0xFF) - ((sub >> 16) & 0xFF);
+                sg += ((add >> 8) & 0xFF) - ((sub >> 8) & 0xFF);
+                sb += (add & 0xFF) - (sub & 0xFF);
+            }
+        }
+    }
+
+    /**
+     * A dark tone sampled from the lower part of a photo, for withScrim() - coherent with
+     * that photo rather than one fixed colour for every picture someone might choose.
+     */
+    static int scrimColorFor(Bitmap b) {
+        if (b == null) return 0xFF14100C;
+        int w = b.getWidth(), h = b.getHeight();
+        if (w <= 0 || h <= 0) return 0xFF14100C;
+        int y0 = Math.max(0, (int) (h * 0.75f));
+        long r = 0, g = 0, bl = 0;
+        int n = 0;
+        int stepX = Math.max(1, w / 24), stepY = Math.max(1, (h - y0) / 10);
+        for (int y = y0; y < h; y += stepY) {
+            for (int x = 0; x < w; x += stepX) {
+                int px = b.getPixel(x, y);
+                r += (px >> 16) & 0xFF;
+                g += (px >> 8) & 0xFF;
+                bl += px & 0xFF;
+                n++;
+            }
+        }
+        if (n == 0) return 0xFF14100C;
+        // Darkened well below the sampled average: a scrim reads as a scrim, not a filter.
+        int rr = (int) (r / n * 0.38f), gg = (int) (g / n * 0.38f), bb = (int) (bl / n * 0.38f);
+        return 0xFF000000 | (rr << 16) | (gg << 8) | bb;
     }
 
     /**

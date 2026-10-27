@@ -201,7 +201,7 @@ final class ChannelsPanel {
         title.setText("Canali TV");
         title.setTextColor(Color.WHITE);
         title.setTextSize(TypedValue.COMPLEX_UNIT_SP, 30);
-        title.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        title.setTypeface(Fonts.get(c, Fonts.MEDIUM));
         page.addView(title);
         TextView sub = new TextView(c);
         sub.setText("Le dirette delle app installate. Premi OK su un canale per guardarlo.");
@@ -239,7 +239,7 @@ final class ChannelsPanel {
                 h.setTextColor(0xFF8FB0D8);
                 h.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
                 h.setLetterSpacing(0.14f);
-                h.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+                h.setTypeface(Fonts.get(c, Fonts.MEDIUM));
                 LinearLayout.LayoutParams hlp = new LinearLayout.LayoutParams(
                         ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
                 hlp.topMargin = AppModel.dp(c, column.getChildCount() == 0 ? 8 : 26);

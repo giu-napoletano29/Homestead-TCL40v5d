@@ -87,7 +87,7 @@ public class Panel {
         list.setOrientation(LinearLayout.VERTICAL);
 
         TextView t = text(title, style == SHEET ? 24 : 28, TEXT);
-        t.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        t.setTypeface(Fonts.get(c, Fonts.MEDIUM));
         list.addView(t, lp(0, dp(2)));
         if (subtitle != null) {
             list.addView(text(subtitle, 14, SUB), lp(0, dp(14)));
@@ -111,7 +111,7 @@ public class Panel {
                 ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
 
         helpTitle = text("", 19, TEXT);
-        helpTitle.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        helpTitle.setTypeface(Fonts.get(c, Fonts.MEDIUM));
         helpBody = text("", style == SHEET ? 13 : 15, SUB);
         helpBody.setLineSpacing(dp(style == SHEET ? 2 : 4), 1f);
         statusBox = new LinearLayout(c);
@@ -229,7 +229,7 @@ public class Panel {
     /** A section heading inside the list. */
     public void addHeader(String text) {
         TextView h = text(text.toUpperCase(Locale.US), 12, HEAD);
-        h.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        h.setTypeface(Fonts.get(ctx, Fonts.MEDIUM));
         h.setLetterSpacing(0.12f);
         column.addView(h, lp(firstHeader ? dp(4) : dp(22), dp(8)));
         firstHeader = false;
@@ -426,6 +426,7 @@ public class Panel {
         t.setText(s);
         t.setTextColor(color);
         t.setTextSize(TypedValue.COMPLEX_UNIT_SP, sp);
+        t.setTypeface(Fonts.get(ctx, Fonts.REGULAR));
         // Android 6+ hyphenates by default, which splits words like "op-tions" mid-line.
         if (android.os.Build.VERSION.SDK_INT >= 23) {
             t.setHyphenationFrequency(android.text.Layout.HYPHENATION_FREQUENCY_NONE);
@@ -576,8 +577,7 @@ public class Panel {
             cell.setBackground(bg);
 
             label.setTextColor(focused ? FOCUS_TEXT : TEXT);
-            label.setTypeface(Typeface.create(focused ? "sans-serif-medium" : "sans-serif",
-                    Typeface.NORMAL));
+            label.setTypeface(Fonts.get(panel.ctx, focused ? Fonts.MEDIUM : Fonts.REGULAR));
             int vc = focused ? onLight(valueColor) : valueColor;
             value.setTextColor(vc);
 

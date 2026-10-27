@@ -94,8 +94,11 @@ public final class AppModel {
     public static void invalidateMetrics() { cellW = 0; cellH = 0; }
     private static final int MARGIN_DP = 32;
     private static final int GAP_DP = 16;
+    /** The side rail's closed width; the grid starts after it, with a gap. */
+    public static final int RAIL_DP = 64;
+    public static final int RAIL_GAP_DP = 16;
     private static final int ICON_PX = 96;
-    private static final int CORNER_DP = 8;
+    private static final int CORNER_DP = 6;
 
     public static class Item {
         public int type;
@@ -191,9 +194,10 @@ public final class AppModel {
         if (cellW > 0) return;
         DisplayMetrics dm = c.getResources().getDisplayMetrics();
         int margin = dp(c, MARGIN_DP);
+        int left = dp(c, RAIL_DP + RAIL_GAP_DP);
         int gap = dp(c, GAP_DP);
         int cols = Prefs.columns(c);
-        cellW = (dm.widthPixels - 2 * margin - (cols - 1) * gap) / cols;
+        cellW = (dm.widthPixels - left - margin - (cols - 1) * gap) / cols;
         if (cellW <= 0) cellW = dp(c, 136);
         cellH = cellW * 9 / 16;
     }
@@ -301,14 +305,14 @@ public final class AppModel {
                 raw = null;
                 a.tvApp = (ci == 0) || a.banner != null;
                 if (a.banner != null) a.accent = dominantColor(a.banner);
-                // Icons are only shown when there is no banner, so only decode them then.
-                if (a.banner == null) {
-                    Drawable ic = null;
-                    try { ic = ri.loadIcon(pm); } catch (Throwable t) { ic = null; }
-                    if (wide) a.banner = iconTile(c, ic, cellW, cellH);
-                    else a.icon = toBitmap(c, ic, ICON_PX, ICON_PX, false);
-                    ic = null;
-                }
+                // The real icon, decoded either way: a banner is pre-rendered to the
+                // rectangular dock/grid cell shape, so it only looks right there - a square
+                // row (or anything else not that shape) needs the plain icon instead.
+                Drawable ic = null;
+                try { ic = ri.loadIcon(pm); } catch (Throwable t) { ic = null; }
+                a.icon = toBitmap(c, ic, ICON_PX, ICON_PX, false);
+                if (a.banner == null && wide) a.banner = iconTile(c, ic, cellW, cellH);
+                ic = null;
                 ITEMS.add(a);
             }
         }

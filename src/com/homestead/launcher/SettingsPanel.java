@@ -400,6 +400,27 @@ public final class SettingsPanel {
                 + "adb push background.jpg /sdcard/Download/\n"
                 + "adb shell \"content write --uri content://" + BackgroundProvider.AUTHORITY
                 + "/photo < /sdcard/Download/background.jpg\"");
+
+        // Public-domain paintings that come with the app, shown the way a photo is.
+        p.addHeader("Paintings");
+        for (int i = 0; i < Backgrounds.ARTS.length; i++) {
+            final Backgrounds.Art art = Backgrounds.ARTS[i];
+            final Panel.Row r = p.addRow(art.name, "", null);
+            android.graphics.Bitmap thumb = Backgrounds.artThumb(c, art);
+            if (thumb != null) {
+                r.setSwatch(new android.graphics.drawable.BitmapDrawable(c.getResources(), thumb));
+            }
+            r.cell.setOnClickListener(new View.OnClickListener() {
+                public void onClick(View v) {
+                    Backgrounds.choose(c, art.id);
+                    mark.run();
+                    host.rebuildGrid();
+                    changed.run();
+                }
+            });
+            rows.add(r);
+            ids.add(art.id);
+        }
         mark.run();
 
         p.addHeader("Photo");

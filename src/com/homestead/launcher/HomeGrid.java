@@ -81,18 +81,27 @@ public class HomeGrid implements SettingsPanel.Host {
     // up on the same rhythm regardless of column count.
     private static final int MARGIN_DP = 32;
     private static final int GAP_DP = 16;
-    private static final int CORNER_DP = 10;
+    private static final int CORNER_DP = 6;
+    /** Space between the square tiles under the dock; tighter than the dock's own gap. */
+    private static final int GRID_GAP_DP = 8;
+    private static final int GRID_ROW_GAP_DP = 24;
+    /** Room kept under the focused tile when the page scrolls to it. */
+    private static final int BOTTOM_ROOM_DP = 32;
+    /** Every tile is at full strength; focus is the white rim alone. */
+    private static final float UNFOCUSED_ALPHA = 1f;
     private static final int TOP_RESERVE_DP = 152;
     /** How far the dock sits above the bottom of the first screen. */
     private static final int DOCK_LIFT_DP = 56;
     private static final int TOPBAR_SIDE_DP = 32;
     private static final int TOPBAR_TOP_DP = 26;
-    private static final int DOCK_COUNT = 5;
+    /** The clock sits under the pill row: its top margin plus the pills' own height and a gap. */
+    private static final int CLOCK_TOP_DP = 28;
+    private static final int DOCK_COUNT = 4;
     // Dock tile height per Prefs.DOCK_SIZE_NAMES; tiles are 16:9, so Large and up scroll
     // sideways past the screen edge rather than shrinking to fit.
-    private static final int[] DOCK_H_DP = { 88, 112, 136, 160 };
-    private static final int DOCK_PAD_DP = 14;
-    private static final int DOCK_BOTTOM_DP = 26;
+    private static final int[] DOCK_H_DP = { 112, 136, 160, 184 };
+    private static final int DOCK_PAD_DP = 6;
+    private static final int DOCK_BOTTOM_DP = 6;
     private static final int ICON_SZ_DP = 26;
     /** The icon inside a top-bar pill; the pills are small, so it is smaller than ICON_SZ_DP. */
     private static final int PILL_ICON_DP = 17;
@@ -116,7 +125,7 @@ public class HomeGrid implements SettingsPanel.Host {
             new android.view.animation.DecelerateInterpolator(1.5f);
     // Tile focus feel: the "springs up and settles" motion of a premium TV launcher - a
     // gentle overshoot in, a softer relax out. See style() below.
-    private static final float FOCUS_SCALE = 1.12f;
+    private static final float FOCUS_SCALE = 1.04f;
     private static final int FOCUS_LIFT_DP = 10;    // z-lift, so a focused card casts a shadow
     private static final long FOCUS_IN_MS = 220L;   // grow + settle
     private static final long FOCUS_OUT_MS = 160L;  // relax back
@@ -134,13 +143,25 @@ public class HomeGrid implements SettingsPanel.Host {
     private final TextView greeting;
     private final TextView clock;
     private final TextView dateLine;
-    private final FrameLayout settingsPill;
-    private final TextView settingsLabel;
     private final FrameLayout inputsPill;
     private final TextView inputsLabel;
     /** The quick Fire TV settings pills, left of Inputs and Settings; rebuilt with the grid. */
     private final LinearLayout shortcutRow;
     private final LinearLayout pillRow;
+    /**
+     * The side rail - Network, Apps, System settings, Settings - icons alone at rest, widening
+     * with labels while one has focus, the way VIDAA's does. It replaces the two fixed pills
+     * the top bar used to end with.
+     */
+    private LinearLayout rail;
+    private final List<FrameLayout> railItems = new ArrayList<FrameLayout>();
+    private final List<TextView> railLabels = new ArrayList<TextView>();
+    private boolean railOpen;
+    private int railLast;
+    /** The rail item that opened the page now showing, so closing it lands back there. */
+    private View railOrigin;
+    private static final int RAIL_OPEN_DP = 264;
+    private static final int RAIL_ICON_DP = 24;
     private final List<TextView> shortcutLabels = new ArrayList<TextView>();
     private final List<View> shortcutPills = new ArrayList<View>();
     private String pillsKey = "";
@@ -294,7 +315,16 @@ public class HomeGrid implements SettingsPanel.Host {
         glowLp.topMargin = Math.round(screenH * 0.42f) - glowSize / 2;
         root.addView(glow, glowLp);
 
-        scroll = new ScrollView(c);
+        final Context scrollCtx = c;
+        scroll = new ScrollView(c) {
+            // Scrolling to a focused tile leaves room under it, so the last row never sits
+            // against the bottom of the screen.
+            @Override protected int computeScrollDeltaToGetChildRectOnScreen(
+                    android.graphics.Rect rect) {
+                rect.bottom += AppModel.dp(scrollCtx, BOTTOM_ROOM_DP);
+                return super.computeScrollDeltaToGetChildRectOnScreen(rect);
+            }
+        };
         scroll.setVerticalScrollBarEnabled(false);
         scroll.setClipChildren(false);
         scroll.setClipToPadding(false);
@@ -306,19 +336,22 @@ public class HomeGrid implements SettingsPanel.Host {
         column.setOrientation(LinearLayout.VERTICAL);
         column.setClipChildren(false);
         column.setClipToPadding(false);
-        column.setPadding(dp(MARGIN_DP), dp(TOP_RESERVE_DP), dp(MARGIN_DP), dp(MARGIN_DP));
+        column.setPadding(dp(AppModel.RAIL_DP + AppModel.RAIL_GAP_DP), dp(TOP_RESERVE_DP),
+                dp(MARGIN_DP), dp(MARGIN_DP));
         scroll.addView(column, new ScrollView.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
-        // Top-left: a small tracked-out greeting over a large plain clock, then the date -
-        // the only "chrome" on the whole screen besides the Settings pill.
+        // Top-right, under the pills: a small tracked-out greeting over a large plain clock,
+        // then the date as a quiet caption - right-aligned, the way Tizen and VIDAA both put
+        // theirs, which also leaves the left edge to the side rail.
         LinearLayout topLeft = new LinearLayout(c);
         topLeft.setOrientation(LinearLayout.VERTICAL);
+        topLeft.setGravity(Gravity.RIGHT);
 
         greeting = new TextView(c);
         greeting.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
         greeting.setLetterSpacing(0.12f);
-        greeting.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        greeting.setTypeface(Fonts.get(c, Fonts.MEDIUM));
         // Wrap-content and one line: a match-parent TextView doesn't re-measure its parent
         // on setText, so the column kept its old width and "GOOD AFTERNOON" was cut short.
         greeting.setSingleLine(true);
@@ -327,44 +360,41 @@ public class HomeGrid implements SettingsPanel.Host {
 
         clock = new TextView(c);
         clock.setTextSize(TypedValue.COMPLEX_UNIT_SP, 46);
-        clock.setTypeface(Typeface.create("sans-serif-light", Typeface.NORMAL));
+        clock.setTypeface(Fonts.get(c, Fonts.LIGHT));
         LinearLayout.LayoutParams clockLp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         clockLp.topMargin = dp(2);
         topLeft.addView(clock, clockLp);
 
         dateLine = new TextView(c);
-        dateLine.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
+        dateLine.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
+        dateLine.setTypeface(Fonts.get(c, Fonts.MEDIUM));
+        // A caption under the big numerals, not a second line of the same weight.
+        dateLine.setAllCaps(true);
+        dateLine.setLetterSpacing(0.14f);
         // Same as the greeting: wrap-content and one line, or a longer date is cut short.
         dateLine.setSingleLine(true);
-        topLeft.addView(dateLine, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        LinearLayout.LayoutParams dateLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        dateLp.topMargin = dp(2);
+        topLeft.addView(dateLine, dateLp);
 
         FrameLayout.LayoutParams topLeftLp = new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT,
-                Gravity.TOP | Gravity.LEFT);
-        topLeftLp.topMargin = dp(TOPBAR_TOP_DP);
-        topLeftLp.leftMargin = dp(TOPBAR_SIDE_DP);
+                Gravity.TOP | Gravity.RIGHT);
+        topLeftLp.topMargin = dp(CLOCK_TOP_DP);
+        topLeftLp.rightMargin = dp(TOPBAR_SIDE_DP);
         root.addView(topLeft, topLeftLp);
 
-        // Top-right: Inputs, then Settings - the two persistent actions, frosted pills over
+        // Top-right: the quick settings, then Inputs where the TV has any - frosted pills over
         // the glow the way the reference dock's own top bar sits over its ambient colour.
+        // Settings and System settings are on the side rail instead.
         inputsLabel = new TextView(c);
         inputsPill = buildPill(inputsLabel, ctx.getString(R.string.home_inputs_pill),
                 inputsIcon(dp(ICON_SZ_DP)), new Runnable() {
                     public void run() { jumpToInputs(); }
                 });
         inputsPill.setId(View.generateViewId());
-
-        settingsLabel = new TextView(c);
-        settingsPill = buildPill(settingsLabel, ctx.getString(R.string.home_settings_pill),
-                settingsIcon(), new Runnable() {
-                    public void run() {
-                        logOpen("Settings (pill)");
-                        showPanel(SettingsPanel.build(ctx, panelHost));
-                    }
-                });
-        settingsPill.setId(View.generateViewId());
 
         pillRow = new LinearLayout(c);
         pillRow.setOrientation(LinearLayout.HORIZONTAL);
@@ -376,10 +406,7 @@ public class HomeGrid implements SettingsPanel.Host {
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         LinearLayout.LayoutParams inputsLp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        inputsLp.rightMargin = dp(8);
         pillRow.addView(inputsPill, inputsLp);
-        pillRow.addView(settingsPill, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
         FrameLayout.LayoutParams pillLp = new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT,
@@ -387,6 +414,12 @@ public class HomeGrid implements SettingsPanel.Host {
         pillLp.topMargin = dp(TOPBAR_TOP_DP);
         pillLp.rightMargin = dp(TOPBAR_SIDE_DP);
         root.addView(pillRow, pillLp);
+        // The side rail carries Network, Apps and both settings pages now, so the top bar is
+        // gone. The pills stay built (the quick-settings code still drives them) but hidden
+        // and unfocusable, which keeps Up from the dock from landing on one.
+        pillRow.setVisibility(View.GONE);
+
+        buildRail();
 
         applyBackground();
         build();
@@ -440,14 +473,6 @@ public class HomeGrid implements SettingsPanel.Host {
                     });
             shown++;
         }
-        final String sysLabel = ctx.getString(R.string.sys_title);
-        addShortcutPill(sysLabel, ShortcutIcons.render("more", dp(ICON_SZ_DP)),
-                new Runnable() {
-                    public void run() {
-                        logOpen(sysLabel);
-                        showPanel(SystemSettingsPanel.build(ctx, panelHost));
-                    }
-                });
     }
 
     private void addShortcutPill(String text, Bitmap icon, Runnable action) {
@@ -461,15 +486,6 @@ public class HomeGrid implements SettingsPanel.Host {
         shortcutRow.addView(pill, lp);
         shortcutLabels.add(label);
         shortcutPills.add(pill);
-    }
-
-    /** The Settings item's own icon, already drawn once by AppModel; reused here at pill size. */
-    /**
-     * Homestead's own gear, fixed - never Amazon's icon, so this pill (always Homestead's
-     * settings) cannot be mistaken for the grid tile above, whose icon changes with it.
-     */
-    private Bitmap settingsIcon() {
-        return AppModel.gearIcon(dp(ICON_SZ_DP));
     }
 
     /** A plain monitor glyph for the Inputs pill - this is chrome, not a grid item, so it is
@@ -506,6 +522,253 @@ public class HomeGrid implements SettingsPanel.Host {
         }
     }
 
+    // ---------------------------------------------------------------- side rail
+
+    private static final int RAIL_REST = 0x66000000, RAIL_OPEN = 0xEA000000;
+    private RailGlass railBg;
+
+    /**
+     * The rail's background, glass without blur (a real blur needs API 31): a tinted
+     * translucent fill with a soft sheen from the top, a faint white glow inside its right
+     * edge and a thin white line on that edge that fades out towards the top and bottom.
+     * The fill colour is animated by the rail's open/close.
+     */
+    private static final class RailGlass extends Drawable {
+        private final android.graphics.Paint paint =
+                new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
+        private final float line, glowW;
+        private int fill;
+        private int tint;
+        private float open;
+        /** How strong the edge glow and line are: full when closed, much fainter when open. */
+        private int edgeAlpha = 255;
+        private android.graphics.LinearGradient sheen, rim, glow;
+
+        RailGlass(float line, int fill) {
+            this.line = line;
+            this.glowW = line * 12f;
+            this.fill = fill;
+        }
+
+        /** open is 0 (closed) to 1 (open). */
+        /** The background's main colour, dark: the fill takes its hue from it. */
+        void setHue(int rgb) {
+            tint = rgb & 0x00FFFFFF;
+            invalidateSelf();
+        }
+
+        void setFill(int c, float open) {
+            fill = c;
+            this.open = open;
+            edgeAlpha = Math.round(255f * (0.30f - 0.25f * open));
+            invalidateSelf();
+        }
+
+        @Override protected void onBoundsChange(android.graphics.Rect r) {
+            android.graphics.Shader.TileMode clamp = android.graphics.Shader.TileMode.CLAMP;
+            sheen = new android.graphics.LinearGradient(0, r.top, 0, r.bottom,
+                    0x26FFFFFF, 0x08FFFFFF, clamp);
+            rim = new android.graphics.LinearGradient(0, r.top, 0, r.bottom,
+                    new int[]{ 0x00FFFFFF, 0x99FFFFFF, 0x99FFFFFF, 0x00FFFFFF },
+                    new float[]{ 0f, 0.28f, 0.72f, 1f }, clamp);
+            glow = new android.graphics.LinearGradient(r.right - glowW, 0, r.right, 0,
+                    0x00FFFFFF, 0x2EFFFFFF, clamp);
+        }
+
+        @Override public void draw(android.graphics.Canvas cv) {
+            android.graphics.Rect b = getBounds();
+            if (b.isEmpty()) return;
+            paint.setShader(null);
+            // The fill's alpha is animated; its colour is the background's while the rail is
+            // closed, and open it keeps only a hint of it (a quarter) over the black.
+            float k = 1f - 0.75f * open;
+            int rgb = (Math.round(((tint >> 16) & 0xFF) * k) << 16)
+                    | (Math.round(((tint >> 8) & 0xFF) * k) << 8)
+                    | Math.round((tint & 0xFF) * k);
+            paint.setColor((fill & 0xFF000000) | rgb);
+            cv.drawRect(b, paint);
+            paint.setShader(sheen);
+            paint.setAlpha(255);
+            cv.drawRect(b, paint);
+            paint.setAlpha(edgeAlpha);
+            paint.setShader(glow);
+            cv.drawRect(b.right - glowW, b.top, b.right, b.bottom, paint);
+            paint.setShader(rim);
+            cv.drawRect(b.right - line, b.top, b.right, b.bottom, paint);
+            paint.setShader(null);
+        }
+
+        @Override public void setAlpha(int a) { }
+        @Override public void setColorFilter(android.graphics.ColorFilter f) { }
+        @Override public int getOpacity() { return android.graphics.PixelFormat.TRANSLUCENT; }
+    }
+    private android.animation.ValueAnimator railAnim;
+
+    private void buildRail() {
+        rail = new LinearLayout(ctx);
+        rail.setOrientation(LinearLayout.VERTICAL);
+        rail.setGravity(Gravity.CENTER_VERTICAL);
+        rail.setPadding(0, dp(20), 0, dp(20));
+        railBg = new RailGlass(Math.max(2f, dp(1)), RAIL_REST);
+        rail.setBackground(railBg);
+
+        addRailItem(ShortcutIcons.render("network", dp(RAIL_ICON_DP)),
+                ctx.getString(R.string.sys_network), new Runnable() {
+                    public void run() {
+                        logOpen("Network (rail)");
+                        SetupPanel.start(ctx, SystemSettingsPanel.intentFor(
+                                "android.settings.WIFI_SETTINGS"));
+                    }
+                });
+        addRailItem(ShortcutIcons.render("applications", dp(RAIL_ICON_DP)),
+                ctx.getString(R.string.rail_apps), new Runnable() {
+                    public void run() {
+                        logOpen("Appstore (rail)");
+                        openAppstore();
+                    }
+                });
+        addRailItem(ShortcutIcons.render("settings", dp(RAIL_ICON_DP)),
+                ctx.getString(R.string.sys_title), new Runnable() {
+                    public void run() {
+                        logOpen("System settings (rail)");
+                        showPanel(SystemSettingsPanel.build(ctx, panelHost));
+                    }
+                });
+        addRailItem(ShortcutIcons.render("preferences", dp(RAIL_ICON_DP)),
+                ctx.getString(R.string.home_settings_pill), new Runnable() {
+                    public void run() {
+                        logOpen("Settings (rail)");
+                        showPanel(SettingsPanel.build(ctx, panelHost));
+                    }
+                });
+
+        // Nothing to the left of the rail, and Up/Down stop at its ends rather than hunting
+        // for the nearest focusable thing (a pill, a tile) somewhere else on the screen.
+        for (int i = 0; i < railItems.size(); i++) {
+            View v = railItems.get(i);
+            v.setNextFocusLeftId(v.getId());
+            if (i == 0) v.setNextFocusUpId(v.getId());
+            if (i == railItems.size() - 1) v.setNextFocusDownId(v.getId());
+        }
+        root.addView(rail, new FrameLayout.LayoutParams(dp(AppModel.RAIL_DP),
+                ViewGroup.LayoutParams.MATCH_PARENT, Gravity.LEFT));
+    }
+
+    private void addRailItem(Bitmap icon, String text, final Runnable action) {
+        final FrameLayout cell = new FrameLayout(ctx);
+        cell.setId(View.generateViewId());
+        cell.setFocusable(true);
+        cell.setFocusableInTouchMode(true);
+        final int index = railItems.size();
+
+        LinearLayout row = new LinearLayout(ctx);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        // Centres the icon in the collapsed rail (64dp wide).
+        row.setPadding(dp(20), 0, dp(8), 0);
+
+        ImageView iv = new ImageView(ctx);
+        iv.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        iv.setImageBitmap(icon);
+        row.addView(iv, new LinearLayout.LayoutParams(dp(RAIL_ICON_DP), dp(RAIL_ICON_DP)));
+
+        TextView label = new TextView(ctx);
+        label.setText(text);
+        label.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
+        label.setTypeface(Fonts.get(ctx, Fonts.MEDIUM));
+        label.setTextColor(0xFFF3F0EA);
+        label.setSingleLine(true);
+        label.setAlpha(0f);
+        LinearLayout.LayoutParams llp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        llp.leftMargin = dp(16);
+        row.addView(label, llp);
+        railLabels.add(label);
+
+        cell.addView(row, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+
+        cell.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+            public void onFocusChange(View v, boolean has) {
+                railStyle(cell, has);
+                if (has) {
+                    railLast = index;
+                    setRailOpen(true);
+                } else {
+                    // Moving between two rail items passes through "no focus" for a moment.
+                    root.post(new Runnable() {
+                        public void run() { if (!railHasFocus()) setRailOpen(false); }
+                    });
+                }
+            }
+        });
+        cell.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                railOrigin = cell;
+                action.run();
+                // Only a page that opened (synchronously) is closed back to this item.
+                if (panels.isEmpty()) railOrigin = null;
+            }
+        });
+        railStyle(cell, false);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(52));
+        lp.topMargin = dp(2);
+        lp.bottomMargin = dp(2);
+        rail.addView(cell, lp);
+        railItems.add(cell);
+    }
+
+    private void railStyle(FrameLayout cell, boolean focused) {
+        // A plain band across the rail's whole width: no rounding, no border, and see-through
+        // enough that the rail's own dark still reads through it.
+        cell.setBackgroundColor(focused ? 0x40FFFFFF : 0x00000000);
+    }
+
+    private boolean railHasFocus() {
+        for (int i = 0; i < railItems.size(); i++) {
+            if (railItems.get(i).hasFocus()) return true;
+        }
+        return false;
+    }
+
+    /** Opens the rail over the grid with its labels, or folds it back to icons. */
+    private void setRailOpen(boolean open) {
+        if (open == railOpen) return;
+        railOpen = open;
+        if (railAnim != null) railAnim.cancel();
+        final int closed = dp(AppModel.RAIL_DP), wide = dp(RAIL_OPEN_DP);
+        final int from = rail.getLayoutParams().width;
+        final int to = open ? wide : closed;
+        railAnim = android.animation.ValueAnimator.ofInt(from, to);
+        railAnim.setDuration(open ? 200 : 160);
+        railAnim.setInterpolator(FOCUS_INTERP);
+        railAnim.addUpdateListener(new android.animation.ValueAnimator.AnimatorUpdateListener() {
+            public void onAnimationUpdate(android.animation.ValueAnimator va) {
+                int w = (Integer) va.getAnimatedValue();
+                float f = Math.max(0f, Math.min(1f, (w - closed) / (float) (wide - closed)));
+                rail.getLayoutParams().width = w;
+                rail.requestLayout();
+                railBg.setFill((Integer) new android.animation.ArgbEvaluator()
+                        .evaluate(f, RAIL_REST, RAIL_OPEN), f);
+                for (int i = 0; i < railLabels.size(); i++) railLabels.get(i).setAlpha(f);
+            }
+        });
+        railAnim.start();
+    }
+
+    /** Focus onto the rail, on the item last used. */
+    private void focusRail() {
+        if (railItems.isEmpty()) return;
+        railItems.get(Math.min(railLast, railItems.size() - 1)).requestFocus();
+    }
+
+    /** The Amazon Appstore - where new apps come from; managing installed ones is in System settings. */
+    private void openAppstore() {
+        android.content.Intent i = ctx.getPackageManager().getLaunchIntentForPackage("com.amazon.venezia");
+        if (i != null) SetupPanel.start(ctx, i);
+    }
+
     private FrameLayout buildPill(final TextView label, String text, Bitmap icon,
                                    final Runnable action) {
         final FrameLayout cell = new FrameLayout(ctx);
@@ -530,7 +793,7 @@ public class HomeGrid implements SettingsPanel.Host {
 
         label.setText(text);
         label.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
-        label.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        label.setTypeface(Fonts.get(ctx, Fonts.MEDIUM));
         row.addView(label);
 
         cell.addView(row, new FrameLayout.LayoutParams(
@@ -621,12 +884,24 @@ public class HomeGrid implements SettingsPanel.Host {
         if (state.equals(painted)) return;
         painted = state;
         look = p;
-        root.setBackground(photo != null ? Backgrounds.photoDrawable(ctx, photo)
-                : Backgrounds.drawable(p));
+        root.setBackground(photo != null
+                ? Backgrounds.withScrim(ctx, Backgrounds.photoDrawable(ctx, photo),
+                        Backgrounds.scrimColorFor(photo))
+                : Backgrounds.withScrim(ctx, Backgrounds.drawable(p), p.from));
+        // The rail takes a little of the background's colour: a photo's own dark tone, or a
+        // preset's main colour taken down to a dark shade of it.
+        int railTone;
+        if (photo != null) {
+            railTone = Backgrounds.scrimColorFor(photo);
+        } else {
+            int t = p.tint();
+            railTone = Color.rgb(Color.red(t) * 35 / 100, Color.green(t) * 35 / 100,
+                    Color.blue(t) * 35 / 100);
+        }
+        railBg.setHue(railTone);
         paintText(greeting);
         paintText(clock);
         paintText(dateLine);
-        paintText(settingsLabel);
         paintText(inputsLabel);
         for (int i = 0; i < shortcutLabels.size(); i++) paintText(shortcutLabels.get(i));
         for (int i = 0; i < column.getChildCount(); i++) {
@@ -756,13 +1031,25 @@ public class HomeGrid implements SettingsPanel.Host {
         int mid = Color.rgb(Color.red(tint) / 5, Color.green(tint) / 5, Color.blue(tint) / 5);
         bg.setColors(new int[]{ mid, 0xFF020304 });
         v.setBackground(bg);
+        // With a photo or painting as the background, the idle clock sits on a blurred copy
+        // of it, dimmed hard: still a quiet, dark screen (and no bright static picture for a
+        // TV to burn in), but recognisably the same wallpaper.
+        Bitmap shot = Backgrounds.photoChosen(ctx) ? Backgrounds.lastPhoto() : null;
+        Bitmap soft = shot != null ? Backgrounds.blurred(shot) : null;
+        if (soft != null) {
+            android.graphics.drawable.BitmapDrawable bd =
+                    new android.graphics.drawable.BitmapDrawable(ctx.getResources(), soft);
+            bd.setFilterBitmap(true);
+            v.setBackground(new android.graphics.drawable.LayerDrawable(
+                    new Drawable[]{ bd, new android.graphics.drawable.ColorDrawable(0xC2000000) }));
+        }
 
         idleBox = new LinearLayout(ctx);
         idleBox.setOrientation(LinearLayout.VERTICAL);
         idleBox.setGravity(Gravity.CENTER_HORIZONTAL);
         idleClock = new TextView(ctx);
         idleClock.setTextSize(TypedValue.COMPLEX_UNIT_SP, 120);
-        idleClock.setTypeface(Typeface.create("sans-serif-thin", Typeface.NORMAL));
+        idleClock.setTypeface(Fonts.get(ctx, Fonts.THIN));
         idleClock.setTextColor(0xE6FFFFFF);
         idleClock.setIncludeFontPadding(false);
         idleBox.addView(idleClock);
@@ -989,6 +1276,7 @@ public class HomeGrid implements SettingsPanel.Host {
         // behind the dimmed background, which looks like focus has vanished.
         scroll.setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);
         pillRow.setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);
+        rail.setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);
         View under = panels.isEmpty() ? null : panels.get(panels.size() - 1);
         // Taken first: blocking and hiding the page below can clear its focus.
         if (under != null) panelFocus.set(panelFocus.size() - 1, under.findFocus());
@@ -1012,7 +1300,12 @@ public class HomeGrid implements SettingsPanel.Host {
         if (panels.isEmpty()) {
             scroll.setDescendantFocusability(ViewGroup.FOCUS_BEFORE_DESCENDANTS);
             pillRow.setDescendantFocusability(ViewGroup.FOCUS_BEFORE_DESCENDANTS);
-            takeFocus();
+            rail.setDescendantFocusability(ViewGroup.FOCUS_BEFORE_DESCENDANTS);
+            // Back to the rail item that opened the page, else the grid as before.
+            View origin = railOrigin;
+            railOrigin = null;
+            if (origin != null && origin.isAttachedToWindow()) origin.requestFocus();
+            else takeFocus();
             // The restore tile was under the page; its time on screen starts now.
             if (restoreSlot != null) {
                 if (AppModel.restorePopupLive()) armRestore();
@@ -1174,13 +1467,19 @@ public class HomeGrid implements SettingsPanel.Host {
         int y = scroll.getScrollY();
         int[] rx = getRowScrollX();
         View focus = root.findFocus();
-        boolean onPill = focus != null && (focus == settingsPill || focus == inputsPill
+        boolean onPill = focus != null && (focus == inputsPill
                 || shortcutPills.contains(focus));
+        boolean onRail = railHasFocus();
         build();
         // Leave focus alone while a panel is open, or the grid would take it from the panel.
-        // And on a pill: a reload of the model must not pull it back to a tile.
-        if (panels.isEmpty() && onPill) {
-            if (!focus.isAttachedToWindow()) settingsPill.requestFocus();
+        // And on a pill or the rail: a reload of the model must not pull it back to a tile.
+        if (panels.isEmpty() && onRail) {
+            // The rail is not rebuilt, so its focus is still where it was.
+        } else if (panels.isEmpty() && onPill) {
+            if (!focus.isAttachedToWindow()) {
+                View anchor = topAnchor();
+                if (anchor != null) anchor.requestFocus(); else takeFocus();
+            }
         } else if (panels.isEmpty()) {
             if (keep == null || !selectKey(keep)) takeFocus();
         }
@@ -1342,7 +1641,7 @@ public class HomeGrid implements SettingsPanel.Host {
         title.setText(it.label);
         title.setTextColor(Color.WHITE);
         title.setTextSize(TypedValue.COMPLEX_UNIT_SP, 24);
-        title.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        title.setTypeface(Fonts.get(ctx, Fonts.MEDIUM));
         text.addView(title);
 
         List<String> pkgs = AppModel.reverted(ctx);
@@ -1569,21 +1868,37 @@ public class HomeGrid implements SettingsPanel.Host {
      */
     private void wireTopRow(View cell) {
         if (cell.getId() == View.NO_ID) cell.setId(View.generateViewId());
-        cell.setNextFocusUpId(settingsPill.getId());
+        View anchor = topAnchor();
+        if (anchor != null) cell.setNextFocusUpId(anchor.getId());
         if (!topRowWired) {
             topRowWired = true;
-            settingsPill.setNextFocusDownId(cell.getId());
             inputsPill.setNextFocusDownId(cell.getId());
             for (int i = 0; i < shortcutPills.size(); i++) {
                 shortcutPills.get(i).setNextFocusDownId(cell.getId());
             }
+            // Right from the rail lands on the first tile of the first row.
+            for (int i = 0; i < railItems.size(); i++) {
+                railItems.get(i).setNextFocusRightId(cell.getId());
+            }
         }
+    }
+
+    /**
+     * The pill Up from the first row reaches: Inputs when it is there (the rightmost pill),
+     * else the last quick setting, else none - with the quick settings off and no inputs,
+     * the top bar is empty and Up has nowhere to go.
+     */
+    private View topAnchor() {
+        if (pillRow.getVisibility() != View.VISIBLE) return null;
+        if (inputsPill.getVisibility() == View.VISIBLE) return inputsPill;
+        if (!shortcutPills.isEmpty()) return shortcutPills.get(shortcutPills.size() - 1);
+        return null;
     }
 
     private void addDock(AppModel.Item liveTv, List<AppModel.Item> dockApps) {
         TextView title = new TextView(ctx);
         title.setTextSize(TypedValue.COMPLEX_UNIT_SP, 24);
-        title.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        title.setTypeface(Fonts.get(ctx, Fonts.MEDIUM));
         title.setMaxLines(1);
         title.setEllipsize(TextUtils.TruncateAt.END);
         paintText(title);
@@ -1593,15 +1908,11 @@ public class HomeGrid implements SettingsPanel.Host {
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         tlp.bottomMargin = dp(10);
 
-        // Pin the dock to the bottom of the screen, wallpaper open above it, the way the
-        // reference dock sits: a spacer fills whatever the title + band leave of the first
-        // screen. The grid follows below the fold, and keepAtTop() brings the dock back.
-        title.measure(View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
-                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
+        // The dock starts halfway down the screen, wallpaper open above it, the way the
+        // reference dock sits: a spacer fills the rest of the first half. The grid follows
+        // right under it, and keepAtTop() brings the dock back.
         int screenH = ctx.getResources().getDisplayMetrics().heightPixels;
-        int bandH = dp(DOCK_H_DP[Prefs.dockSize(ctx)]) + 2 * dp(DOCK_PAD_DP);
-        int spacer = screenH - dp(TOP_RESERVE_DP) - title.getMeasuredHeight() - tlp.bottomMargin
-                - bandH - dp(DOCK_BOTTOM_DP);
+        int spacer = screenH / 2 - dp(TOP_RESERVE_DP);
         // The restore tile sits above the spacer while it is up: take its room from the spacer,
         // so the dock stays at the bottom of the screen instead of being pushed down by it.
         if (restoreSlot != null) {
@@ -1610,9 +1921,6 @@ public class HomeGrid implements SettingsPanel.Host {
                     View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
             spacer -= restoreSlot.getMeasuredHeight() + dp(GAP_DP);
         }
-        // Not quite at the bottom edge: a little higher leaves less empty wallpaper in the
-        // middle and shows more of the grid's first row below.
-        spacer -= dp(DOCK_LIFT_DP);
         if (spacer > 0) column.addView(new View(ctx), new LinearLayout.LayoutParams(1, spacer));
 
         column.addView(title, tlp);
@@ -1624,7 +1932,19 @@ public class HomeGrid implements SettingsPanel.Host {
         rows.add(hs);
 
         int h = dp(DOCK_H_DP[Prefs.dockSize(ctx)]);
-        int normalW = h * 16 / 9;
+        // 3:2, narrower than the 16:9 banners: they are centre-cropped to fit (see buildTile).
+        int baseW = h * 3 / 2;
+        int featuredW = baseW + baseW / 2;
+        // The whole tiles that fit between Canali TV and the right edge, widened a touch so
+        // they fill that space exactly: the last one ends on the grid's right edge and the
+        // next starts past it, instead of showing a sliver of itself.
+        int gap = dp(GAP_DP);
+        int avail = ctx.getResources().getDisplayMetrics().widthPixels
+                - dp(AppModel.RAIL_DP + AppModel.RAIL_GAP_DP) - dp(MARGIN_DP);
+        int rest = avail;
+        if (liveTv != null) rest -= featuredW + gap + Math.max(1, dp(1)) + gap;
+        int fit = Math.max(1, (rest + gap) / (baseW + gap));
+        int normalW = Math.max(baseW, (rest - gap * (fit - 1)) / fit);
 
         LinearLayout row = new LinearLayout(ctx);
         row.setOrientation(LinearLayout.HORIZONTAL);
@@ -1634,12 +1954,16 @@ public class HomeGrid implements SettingsPanel.Host {
         // since clipChildren(false) alone still clips to the padding, which cut the focused
         // tile (and its focus rim) off at its unscaled edges. The sides grow with the widest
         // tile, so an end tile's zoom still fits at the larger dock sizes.
-        int featuredW = normalW + normalW / 2;
-        int widest = (liveTv != null) ? featuredW : normalW;
-        int grow = Math.round(widest * (FOCUS_SCALE - 1f) / 2f) + dp(2);
         int padV = dp(DOCK_PAD_DP);
-        int padH = Math.max(padV, grow);
-        row.setPadding(padH, padV, padH, padV);
+        // The first tile sits exactly on the grid's left edge; a focused one grows into the
+        // band's room on that side (the gap beside the rail) rather than being pushed in.
+        int padH = 0;
+        // The band reaches left under the gap beside the rail (see blp below), so a tile
+        // scrolled out of view is cut where the rail begins; this padding puts the first
+        // tile back on the grid's own left edge.
+        // On the right, room for the last tile's growth, or its focus rim is cut off there.
+        int padEnd = Math.round(normalW * (FOCUS_SCALE - 1f) / 2f) + dp(1);
+        row.setPadding(padH + dp(AppModel.RAIL_GAP_DP), padV, padEnd, padV);
         row.setClipToPadding(false);
 
         // Live TV first: the first tile of the dock, half as wide again as the others.
@@ -1649,6 +1973,17 @@ public class HomeGrid implements SettingsPanel.Host {
             stopAt(cell, true, dockApps.isEmpty());
             row.addView(cell, new LinearLayout.LayoutParams(featuredW, h));
             dockKeys.add(liveTv.key());
+            // Canali TV is a page, not an app: a thin vertical rule sets it apart from the
+            // apps beside it, the way the VIDAA dock separates its own first entry.
+            if (!dockApps.isEmpty()) {
+                View rule = new View(ctx);
+                rule.setBackgroundColor(0x33FFFFFF);
+                LinearLayout.LayoutParams rlp = new LinearLayout.LayoutParams(
+                        Math.max(1, dp(1)), (int) (h * 0.72f));
+                rlp.gravity = Gravity.CENTER_VERTICAL;
+                rlp.leftMargin = dp(GAP_DP);
+                row.addView(rule, rlp);
+            }
         }
         for (int i = 0; i < dockApps.size(); i++) {
             AppModel.Item it = dockApps.get(i);
@@ -1666,25 +2001,31 @@ public class HomeGrid implements SettingsPanel.Host {
         // The band clips the scroll view to its own edges, so tiles that don't fit (at the
         // larger dock sizes) are cut off cleanly inside it instead of running on past its
         // end. The row's padding keeps a focused tile's zoom inside that clip.
+        // No fill: the tiles sit straight on the wallpaper, as they do on VIDAA and Tizen.
         FrameLayout band = new FrameLayout(ctx);
-        GradientDrawable bandBg = new GradientDrawable();
-        bandBg.setCornerRadius(dp(CORNER_DP + 8));
-        bandBg.setColor(DOCK_BAND_COLOR);
-        band.setBackground(bandBg);
         band.addView(hs, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
         LinearLayout.LayoutParams blp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         blp.bottomMargin = dp(DOCK_BOTTOM_DP);
+        blp.leftMargin = -dp(AppModel.RAIL_GAP_DP);
         column.addView(band, blp);
     }
 
-    /** The single grid below the dock: banner tiles and icon+label cards, side by side. */
+    /**
+     * The single grid below the dock: square icon cards, side by side - a visual step down
+     * from the dock's wide 16:9 tiles, the way Tizen and VIDAA both shrink to a denser,
+     * squarer shelf under their own hero row.
+     */
     private void addTileGrid(List<AppModel.Item> items) {
-        int w = AppModel.cellW(ctx);
-        int h = AppModel.cellH(ctx);
-        int cols = AppModel.columns(ctx);
+        // Two columns more than the setting, in the same row width: squares well under the
+        // dock's tiles, still filling the row edge to edge, and low enough that the first
+        // row clears the bottom of the screen while the dock is at the top.
+        int base = AppModel.columns(ctx);
+        int cols = base + 2;
+        int rowW = AppModel.cellW(ctx) * base + dp(GAP_DP) * (base - 1);
+        int w = (rowW - dp(GRID_GAP_DP) * (cols - 1)) / cols;
         LinearLayout row = null;
         for (int i = 0; i < items.size(); i++) {
             if (i % cols == 0) {
@@ -1693,18 +2034,20 @@ public class HomeGrid implements SettingsPanel.Host {
                 row.setClipChildren(false);
                 LinearLayout.LayoutParams rlp = new LinearLayout.LayoutParams(
                         ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-                if (i > 0) rlp.topMargin = dp(GAP_DP);
+                // Rows sit further apart than tiles do side by side, so the second row stays
+                // below the screen's edge while the dock is at the top.
+                if (i > 0) rlp.topMargin = dp(GRID_ROW_GAP_DP);
                 column.addView(row, rlp);
             }
             AppModel.Item it = items.get(i);
-            View cell = (it.banner != null) ? buildTile(it) : buildCard(it);
+            View cell = buildSquareCard(it);
             // Only when there is no dock above this grid - otherwise UP from here must
             // reach the dock normally, not jump straight past it to the pill.
             if (i < cols && dockKeys.isEmpty()) wireTopRow(cell);
             boolean rowEnd = i % cols == cols - 1 || i == items.size() - 1;
             stopAt(cell, i % cols == 0, rowEnd);
-            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(w, h);
-            if (i % cols != 0) lp.leftMargin = dp(GAP_DP);
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(w, w);
+            if (i % cols != 0) lp.leftMargin = dp(GRID_GAP_DP);
             row.addView(cell, lp);
         }
     }
@@ -1734,7 +2077,6 @@ public class HomeGrid implements SettingsPanel.Host {
                     focusedCell = v;
                     focusedKey = it.key();
                     style(v, true);
-                    setGlow(it.accent);
                     if (dockKeys.contains(it.key())) {
                         keepAtTop();
                         revealInDock(v);
@@ -1804,16 +2146,19 @@ public class HomeGrid implements SettingsPanel.Host {
         if (!(v instanceof FrameLayout)) return;
         FrameLayout f = (FrameLayout) v;
         f.animate().cancel();
-        f.setForeground(focused ? focusRim() : outline());
+        // The white rim marks the focused tile; the others have no border at all.
+        f.setForeground(focused ? focusRim() : null);
         float scale = focused ? FOCUS_SCALE : 1f;
         float z = focused ? dp(FOCUS_LIFT_DP) : 0f;
+        float alpha = focused ? 1f : UNFOCUSED_ALPHA;
         if (!animate || !f.isAttachedToWindow() || f.getWidth() == 0) {
             f.setScaleX(scale);
             f.setScaleY(scale);
             f.setTranslationZ(z);
+            f.setAlpha(alpha);
             return;
         }
-        f.animate().scaleX(scale).scaleY(scale).translationZ(z)
+        f.animate().scaleX(scale).scaleY(scale).translationZ(z).alpha(alpha)
                 .setDuration(focused ? FOCUS_IN_MS : FOCUS_OUT_MS)
                 .setInterpolator(focused ? FOCUS_IN_INTERP : FOCUS_OUT_INTERP)
                 .withLayer()
@@ -1825,12 +2170,16 @@ public class HomeGrid implements SettingsPanel.Host {
      * the focus search picks the nearest cell that way anywhere on the page, often in another
      * row (a scrolled card row has cards off the left edge), which reads as a jump.
      */
-    private static void stopAt(View cell, final boolean first, final boolean last) {
+    private void stopAt(View cell, final boolean first, final boolean last) {
         if (!first && !last) return;
         cell.setOnKeyListener(new View.OnKeyListener() {
             public boolean onKey(View v, int code, android.view.KeyEvent e) {
-                return (first && code == android.view.KeyEvent.KEYCODE_DPAD_LEFT)
-                        || (last && code == android.view.KeyEvent.KEYCODE_DPAD_RIGHT);
+                // Left past the first cell of a row goes to the side rail, not off the page.
+                if (first && code == android.view.KeyEvent.KEYCODE_DPAD_LEFT) {
+                    if (e.getAction() == android.view.KeyEvent.ACTION_DOWN) focusRail();
+                    return true;
+                }
+                return last && code == android.view.KeyEvent.KEYCODE_DPAD_RIGHT;
             }
         });
     }
@@ -1851,7 +2200,9 @@ public class HomeGrid implements SettingsPanel.Host {
         plate.setColor(CARD_COLOR);
         cell.setBackground(plate);
         ImageView img = new ImageView(ctx);
-        img.setScaleType(ImageView.ScaleType.FIT_XY);
+        // The banners are 16:9 and the dock's tiles are narrower: crop the sides, which hold
+        // only margin, rather than stretch.
+        img.setScaleType(ImageView.ScaleType.CENTER_CROP);
         img.setImageBitmap(it.banner);
         cell.addView(img, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
@@ -1890,7 +2241,7 @@ public class HomeGrid implements SettingsPanel.Host {
         name.setText(it.label);
         name.setTextColor(Color.WHITE);
         name.setTextSize(TypedValue.COMPLEX_UNIT_SP, 22);
-        name.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        name.setTypeface(Fonts.get(ctx, Fonts.MEDIUM));
         name.setSingleLine(true);
         col.addView(name);
         row.addView(col, new LinearLayout.LayoutParams(
@@ -1910,6 +2261,99 @@ public class HomeGrid implements SettingsPanel.Host {
                 new int[]{ hi, lo });
         g.setCornerRadius(dp(CORNER_DP));
         cell.setBackground(g);
+    }
+
+    /**
+     * A square cell for the grid below the dock: just the app's icon, large, centered, no
+     * label - a banner would stretch badly into a square shape, and a big icon alone is
+     * exactly what Tizen and VIDAA show in their own icon shelf. The card behind it is the
+     * app's own colour (from its banner, where it has one) darkened to a background, so
+     * each tile still reads as that app's rather than a generic grey one; anything without
+     * either a colour or a plain icon (an input, Live TV, Settings...) falls back to the
+     * normal flat card instead.
+     */
+    private View buildSquareCard(AppModel.Item it) {
+        if (it.type == AppModel.TYPE_CHANNELS) return buildChannelsTile(it);
+        boolean textTile = it.type == AppModel.TYPE_INPUT || AppModel.isLive(it.type);
+        if (textTile || it.icon == null) return buildCard(it);
+        FrameLayout cell = newCell(it);
+        GradientDrawable card = new GradientDrawable();
+        card.setCornerRadius(dp(CORNER_DP));
+        int iw = it.icon.getWidth(), ih = it.icon.getHeight();
+        boolean squareIcon = Math.abs(iw - ih) <= Math.max(2, Math.max(iw, ih) / 20);
+        int plate = squareCardColor(it);
+        Bitmap shown = it.icon;
+        boolean fill = squareIcon;
+        if (!squareIcon) {
+            // A wide or tall logo (Prime Video's) would be stretched to fill a square. Its
+            // colour is extended past its short sides into a square instead, so the logo
+            // stays undistorted and the tile still reads as one piece.
+            Bitmap sq = squareFrom(it.icon);
+            if (sq != null) {
+                shown = sq;
+                fill = true;
+            } else {
+                int edge = it.icon.getPixel(1, ih / 2);
+                if ((edge >>> 24) >= 0x80) plate = edge | 0xFF000000;
+            }
+        }
+        card.setColor(plate);
+        cell.setBackground(card);
+        cardCells.put(cell, Boolean.FALSE);
+        ImageView ic = new ImageView(ctx);
+        // A square icon is the tile: edge to edge, with no margin around it.
+        ic.setScaleType(fill ? ImageView.ScaleType.FIT_XY : ImageView.ScaleType.FIT_CENTER);
+        ic.setImageBitmap(shown);
+        cell.addView(ic, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        return cell;
+    }
+
+    /**
+     * A wide (or tall) icon placed in a square the size of its long side, with the space
+     * above and below filled by a gradient from the icon's own top edge colour to its bottom
+     * one - so a logo on a coloured strip becomes a logo on a coloured square, the seam
+     * invisible when the strip is a smooth fade. Null when an edge is transparent.
+     */
+    private static Bitmap squareFrom(Bitmap src) {
+        int w = src.getWidth(), h = src.getHeight();
+        if (w < 4 || h < 4) return null;
+        boolean wide = w > h;
+        int a = wide ? src.getPixel(w / 2, 1) : src.getPixel(1, h / 2);
+        int b = wide ? src.getPixel(w / 2, h - 2) : src.getPixel(w - 2, h / 2);
+        if ((a >>> 24) < 0x80 || (b >>> 24) < 0x80) return null;
+        a |= 0xFF000000;
+        b |= 0xFF000000;
+        int s = Math.max(w, h);
+        int shortSide = Math.min(w, h);
+        float off = (s - shortSide) / 2f;
+        float p0 = off / s, p1 = (off + shortSide) / s;
+        try {
+            Bitmap out = Bitmap.createBitmap(s, s, Bitmap.Config.ARGB_8888);
+            android.graphics.Canvas cv = new android.graphics.Canvas(out);
+            android.graphics.Paint paint = new android.graphics.Paint(
+                    android.graphics.Paint.ANTI_ALIAS_FLAG);
+            paint.setShader(new android.graphics.LinearGradient(
+                    0, 0, wide ? 0 : s, wide ? s : 0,
+                    new int[]{ a, a, b, b }, new float[]{ 0f, p0, p1, 1f },
+                    android.graphics.Shader.TileMode.CLAMP));
+            cv.drawRect(0, 0, s, s, paint);
+            cv.drawBitmap(src, wide ? 0 : off, wide ? off : 0, null);
+            return out;
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    /** Darkened toward the app's own colour rather than the background look's, where one exists. */
+    private int squareCardColor(AppModel.Item it) {
+        if (look == Backgrounds.PHOTO_LOOK) return cardColor(false);
+        int t = it.accent != 0 ? it.accent : look.tint();
+        float k = 0.55f;
+        int r = Math.round(Color.red(t) * (1 - k) + 0x0A * k);
+        int g = Math.round(Color.green(t) * (1 - k) + 0x0E * k);
+        int b = Math.round(Color.blue(t) * (1 - k) + 0x14 * k);
+        return Color.rgb(r, g, b);
     }
 
     /** An input, Live TV, Settings, TV Health, Amazon Home, or a non-TV app: one flat card. */

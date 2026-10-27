@@ -505,7 +505,7 @@ public final class OnboardingPanel {
         b.setText(label);
         b.setTextColor(primary ? WHITE : BODY);
         b.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
-        b.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        b.setTypeface(Fonts.get(c, Fonts.MEDIUM));
         b.setGravity(Gravity.CENTER);
         b.setPadding(dp(26), dp(13), dp(26), dp(13));
         final GradientDrawable bg = new GradientDrawable();
@@ -547,7 +547,7 @@ public final class OnboardingPanel {
         check.setGravity(Gravity.CENTER);
         check.setTextColor(NAVY);
         check.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
-        check.setTypeface(Typeface.DEFAULT_BOLD);
+        check.setTypeface(Fonts.get(c, Fonts.BOLD));
         int cs = dp(26);
         LinearLayout.LayoutParams klp = new LinearLayout.LayoutParams(cs, cs);
         klp.rightMargin = dp(18);
@@ -630,7 +630,7 @@ public final class OnboardingPanel {
         num.setGravity(Gravity.CENTER);
         num.setTextColor(NAVY);
         num.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
-        num.setTypeface(Typeface.DEFAULT_BOLD);
+        num.setTypeface(Fonts.get(c, Fonts.BOLD));
         GradientDrawable ng = new GradientDrawable();
         ng.setShape(GradientDrawable.OVAL);
         ng.setColor(HEAD);
@@ -651,7 +651,7 @@ public final class OnboardingPanel {
     private TextView pill() {
         TextView t = new TextView(c);
         t.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
-        t.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        t.setTypeface(Fonts.get(c, Fonts.MEDIUM));
         t.setPadding(dp(16), dp(11), dp(20), dp(11));
         GradientDrawable g = new GradientDrawable();
         g.setCornerRadius(dp(8));
@@ -672,7 +672,7 @@ public final class OnboardingPanel {
         bx.setGravity(Gravity.CENTER);
         bx.setTextColor(on ? NAVY : MUTE);
         bx.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
-        bx.setTypeface(Typeface.DEFAULT_BOLD);
+        bx.setTypeface(Fonts.get(c, Fonts.BOLD));
         GradientDrawable g = new GradientDrawable();
         g.setCornerRadius(dp(6));
         if (on) g.setColor(OK); else { g.setColor(Color.TRANSPARENT); g.setStroke(dp(2), MUTE); }
@@ -722,7 +722,7 @@ public final class OnboardingPanel {
 
     private TextView title(String s) {
         TextView t = text(s, 30, WHITE, Typeface.NORMAL);
-        t.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        t.setTypeface(Fonts.get(c, Fonts.MEDIUM));
         return t;
     }
 
@@ -732,7 +732,7 @@ public final class OnboardingPanel {
         t.setTextColor(HEAD);
         t.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
         t.setLetterSpacing(0.14f);
-        t.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        t.setTypeface(Fonts.get(c, Fonts.MEDIUM));
         return t;
     }
 
@@ -757,8 +757,7 @@ public final class OnboardingPanel {
         t.setText(s);
         t.setTextColor(color);
         t.setTextSize(TypedValue.COMPLEX_UNIT_SP, sizeSp);
-        if (style == Typeface.BOLD) t.setTypeface(Typeface.DEFAULT_BOLD);
-        else t.setTypeface(Typeface.create("sans-serif", Typeface.NORMAL));
+        t.setTypeface(Fonts.get(c, style == Typeface.BOLD ? Fonts.BOLD : Fonts.REGULAR));
         return t;
     }
 
