@@ -27,7 +27,7 @@ final class ShortcutIcons {
 
     private ShortcutIcons() { }
 
-    /** A square bitmap of the icon for a screen id (see FireTvSettingsPanel). */
+    /** A square bitmap of the icon for a screen id (see SystemSettingsPanel). */
     static Bitmap render(String id, int px) {
         Bitmap b = Bitmap.createBitmap(px, px, Bitmap.Config.ARGB_8888);
         Canvas c = new Canvas(b);

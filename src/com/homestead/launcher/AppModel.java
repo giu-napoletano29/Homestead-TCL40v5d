@@ -160,15 +160,18 @@ public final class AppModel {
         List<Item> out = new ArrayList<Item>(ITEMS.size());
         for (int i = 0; i < ITEMS.size(); i++) {
             Item it = ITEMS.get(i);
-            // Settings and TV Health are never hidden; they are the way to unhide. Nor is the
-            // restore tile, which only exists while there is something to put back, and only
-            // until its time on screen is up.
+            // The restore tile only exists while there is something to put back, and only
+            // until its time on screen is up. Settings and TV Health can be hidden, like the
+            // Settings pill duplicates them, but only while quick settings are on - with
+            // them off, these two stay the one way back in.
             if (it.type == TYPE_RESTORE) {
                 if (restorePopupLive()) out.add(it);
                 continue;
             }
             if (it.type == TYPE_SETTINGS || it.type == TYPE_HEALTH) {
-                out.add(it);
+                if (Prefs.shortcutsPlace(c) == Prefs.SHORTCUTS_OFF || !hidden.contains(it.key())) {
+                    out.add(it);
+                }
                 continue;
             }
             if (!hidden.contains(it.key())) out.add(it);
@@ -234,11 +237,21 @@ public final class AppModel {
             ITEMS.add(amazon);
         }
 
+        // Amazon's own settings icon only stands for Amazon's own settings: with the
+        // launcher off this tile falls back to Homestead's, so it gets Homestead's own gear
+        // instead, never Amazon's - the same distinction the Settings pill makes.
         Item settings = new Item();
         settings.type = TYPE_SETTINGS;
-        settings.label = "TV Settings";
-        d = fire ? fireOsIcon(c, AMAZON_LAUNCHER, "ic_settings_default_60dp") : null;
-        settings.icon = d != null ? toBitmap(c, d, ICON_PX, ICON_PX, false) : gearIcon(ICON_PX);
+        if (amazonLauncherOn(c)) {
+            settings.label = "Amazon Settings";
+            d = fire ? fireOsIcon(c, AMAZON_LAUNCHER, "ic_settings_default_60dp") : null;
+            settings.icon = d != null ? toBitmap(c, d, ICON_PX, ICON_PX, false) : gearIcon(ICON_PX);
+        } else {
+            // Two words: "Settings" alone has no space to break the tile's text at, so the
+            // last letter is orphaned onto its own line.
+            settings.label = "My Settings";
+            settings.icon = gearIcon(ICON_PX);
+        }
         ITEMS.add(settings);
 
         Item health = new Item();
@@ -558,7 +571,7 @@ public final class AppModel {
      * android.R.drawable.ic_menu_manage, one of the old pre-Material stock icons that read
      * as a system dialog glyph rather than part of this launcher.
      */
-    private static Bitmap gearIcon(int px) {
+    static Bitmap gearIcon(int px) {
         Bitmap bmp = Bitmap.createBitmap(px, px, Bitmap.Config.ARGB_8888);
         Canvas cv = new Canvas(bmp);
         float cx = px / 2f, cy = px / 2f;

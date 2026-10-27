@@ -253,7 +253,7 @@ public final class Prefs {
         sp(c).edit().putInt(K_SHORTCUTS_PLACE, v).apply();
     }
 
-    /** Screen ids (FireTvSettingsPanel) in the bar; four until chosen. */
+    /** Screen ids (SystemSettingsPanel) in the bar; four until chosen. */
     public static Set<String> shortcuts(Context c) {
         Set<String> s = sp(c).getStringSet(K_SHORTCUTS, null);
         if (s != null) return new HashSet<String>(s);

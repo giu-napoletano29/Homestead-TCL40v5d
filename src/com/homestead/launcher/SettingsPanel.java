@@ -88,33 +88,30 @@ public final class SettingsPanel {
             public void onClick(View v) { host.showPanel(SetupPanel.build(c, host)); }
         });
 
-        SetupPanel.addTurnOffRow(c, p, new Runnable() {
-            public void run() {
-                setup.setValue("Home button off");
-                setup.setValueColor(0xFFE8C468);
-            }
-        });
-        p.addNote(SetupPanel.TURN_OFF_HELP);
+        if (AppModel.amazonLauncherOn(c)) {
+            // With Amazon's launcher off there is nothing for this to hand Home back to.
+            SetupPanel.addTurnOffRow(c, p, new Runnable() {
+                public void run() {
+                    setup.setValue("Home button off");
+                    setup.setValueColor(0xFFE8C468);
+                }
+            });
+            p.addNote(SetupPanel.TURN_OFF_HELP);
+        }
+
+        p.addHeader("Device");
+
+        p.addRow("System settings", "", new Runnable() {
+            public void run() { host.showPanel(SystemSettingsPanel.build(c, host)); }
+        }).opens().setHelp("Amazon's own settings screens (network, Bluetooth, applications, "
+                + "My Fire TV), each opened directly; Homestead's own pages for what Amazon "
+                + "locks behind a permission; the TV remote's buttons; and the quick settings "
+                + "in the top bar.");
 
         p.addRow("TV Health", "check", new Runnable() {
             public void run() { host.showPanel(HealthPanel.build(c, host)); }
         }).opens().setHelp("This TV's speed and privacy settings and Amazon's advertising "
-                + "packages, with a fix for each one it flags.");
-
-        p.addRow("Debloat", Prefs.disabledByUs(c).size() + " off", new Runnable() {
-            public void run() { host.showPanel(DebloatPanel.build(c, host)); }
-        }).opens().setHelp("Switch Amazon's packages off, and back on again. Nothing is "
-                + "ever uninstalled.");
-
-        p.addRow("TV remote buttons", "", new Runnable() {
-            public void run() { host.showPanel(KeyBindings.build(c, host)); }
-        }).opens().setHelp("What the red, green, yellow and blue buttons of the TV's remote do "
-                + "when the TV passes them on over HDMI-CEC: Home, a page here, or an app.");
-
-        p.addRow("Fire TV settings", "", new Runnable() {
-            public void run() { host.showPanel(FireTvSettingsPanel.build(c, host)); }
-        }).opens().setHelp("Amazon's own settings screens (network, Bluetooth, applications, "
-                + "My Fire TV), each opened directly, and the quick settings in the top bar.");
+                + "packages, with a fix for each one it flags - Debloat is reached from here.");
 
         final Panel.Row watch = p.addRow("Warn if the system undoes Debloat",
                 onOff(Prefs.restoreWatch(c)), null).asSwitch();

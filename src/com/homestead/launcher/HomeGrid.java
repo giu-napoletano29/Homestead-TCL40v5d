@@ -140,6 +140,7 @@ public class HomeGrid implements SettingsPanel.Host {
     private final TextView inputsLabel;
     /** The quick Fire TV settings pills, left of Inputs and Settings; rebuilt with the grid. */
     private final LinearLayout shortcutRow;
+    private final LinearLayout pillRow;
     private final List<TextView> shortcutLabels = new ArrayList<TextView>();
     private final List<View> shortcutPills = new ArrayList<View>();
     private String pillsKey = "";
@@ -365,7 +366,7 @@ public class HomeGrid implements SettingsPanel.Host {
                 });
         settingsPill.setId(View.generateViewId());
 
-        LinearLayout pillRow = new LinearLayout(c);
+        pillRow = new LinearLayout(c);
         pillRow.setOrientation(LinearLayout.HORIZONTAL);
         pillRow.setClipChildren(false);
         shortcutRow = new LinearLayout(c);
@@ -409,11 +410,11 @@ public class HomeGrid implements SettingsPanel.Host {
 
         boolean on = Prefs.shortcutsPlace(ctx) != Prefs.SHORTCUTS_OFF && !Prefs.simpleMode(ctx);
         java.util.Set<String> want = Prefs.shortcuts(ctx);
-        List<String[]> screens = FireTvSettingsPanel.available(ctx, null);
+        List<String[]> screens = SystemSettingsPanel.available(ctx, null);
         StringBuilder key = new StringBuilder(on ? "on" : "off");
         for (int i = 0; i < screens.size(); i++) {
-            if (want.contains(screens.get(i)[FireTvSettingsPanel.ID])) {
-                key.append(',').append(screens.get(i)[FireTvSettingsPanel.ID]);
+            if (want.contains(screens.get(i)[SystemSettingsPanel.ID])) {
+                key.append(',').append(screens.get(i)[SystemSettingsPanel.ID]);
             }
         }
         // Same pills as before: leave them, so one with focus keeps it through a reload.
@@ -427,23 +428,23 @@ public class HomeGrid implements SettingsPanel.Host {
         int shown = 0;
         for (int i = 0; i < screens.size() && shown < BAR_SHORTCUTS; i++) {
             final String[] s = screens.get(i);
-            if (!want.contains(s[FireTvSettingsPanel.ID])) continue;
-            addShortcutPill(shortLabel(s[FireTvSettingsPanel.TITLE]),
-                    ShortcutIcons.render(s[FireTvSettingsPanel.ID], dp(ICON_SZ_DP)),
+            if (!want.contains(s[SystemSettingsPanel.ID])) continue;
+            addShortcutPill(shortLabel(s[SystemSettingsPanel.TITLE]),
+                    ShortcutIcons.render(s[SystemSettingsPanel.ID], dp(ICON_SZ_DP)),
                     new Runnable() {
                         public void run() {
-                            logOpen(s[FireTvSettingsPanel.TITLE]);
-                            SetupPanel.start(ctx, FireTvSettingsPanel.intentFor(
-                                    s[FireTvSettingsPanel.ACTION]));
+                            logOpen(s[SystemSettingsPanel.TITLE]);
+                            SetupPanel.start(ctx, SystemSettingsPanel.intentFor(
+                                    s[SystemSettingsPanel.ACTION]));
                         }
                     });
             shown++;
         }
-        addShortcutPill("More settings", ShortcutIcons.render("more", dp(ICON_SZ_DP)),
+        addShortcutPill("System settings", ShortcutIcons.render("more", dp(ICON_SZ_DP)),
                 new Runnable() {
                     public void run() {
-                        logOpen("More settings");
-                        FireTvSettingsPanel.openAll(ctx, panelHost);
+                        logOpen("System settings");
+                        showPanel(SystemSettingsPanel.build(ctx, panelHost));
                     }
                 });
     }
@@ -471,12 +472,12 @@ public class HomeGrid implements SettingsPanel.Host {
     }
 
     /** The Settings item's own icon, already drawn once by AppModel; reused here at pill size. */
+    /**
+     * Homestead's own gear, fixed - never Amazon's icon, so this pill (always Homestead's
+     * settings) cannot be mistaken for the grid tile above, whose icon changes with it.
+     */
     private Bitmap settingsIcon() {
-        List<AppModel.Item> all = AppModel.allItems();
-        for (int i = 0; i < all.size(); i++) {
-            if (all.get(i).type == AppModel.TYPE_SETTINGS) return all.get(i).icon;
-        }
-        return null;
+        return AppModel.gearIcon(dp(ICON_SZ_DP));
     }
 
     /** A plain monitor glyph for the Inputs pill - this is chrome, not a grid item, so it is
@@ -894,10 +895,17 @@ public class HomeGrid implements SettingsPanel.Host {
         return null;
     }
 
-    /** Settings and TV Health stay reachable so hidden tiles can always be restored. */
-    private static boolean fixedTile(AppModel.Item t) {
-        return t.type == AppModel.TYPE_SETTINGS || t.type == AppModel.TYPE_HEALTH
-                || t.type == AppModel.TYPE_RESTORE;
+    /**
+     * The restore tile is always fixed. Settings and TV Health can be hidden like any other
+     * tile, but only while quick settings are on - with them off, these two stay the one
+     * way back in, same as before.
+     */
+    private boolean fixedTile(AppModel.Item t) {
+        if (t.type == AppModel.TYPE_RESTORE) return true;
+        if (t.type == AppModel.TYPE_SETTINGS || t.type == AppModel.TYPE_HEALTH) {
+            return Prefs.shortcutsPlace(ctx) == Prefs.SHORTCUTS_OFF;
+        }
+        return false;
     }
 
     /** An app the user installed, which the system lets them remove. */
@@ -984,8 +992,11 @@ public class HomeGrid implements SettingsPanel.Host {
     }
 
     public void showPanel(final View v) {
-        // Stop the grid, and any panel underneath, from stealing D-pad focus.
+        // Stop the grid, the pill row above it, and any panel underneath, from stealing
+        // D-pad focus - otherwise Up from a page's first row can escape to a pill hidden
+        // behind the dimmed background, which looks like focus has vanished.
         scroll.setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);
+        pillRow.setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);
         View under = panels.isEmpty() ? null : panels.get(panels.size() - 1);
         // Taken first: blocking and hiding the page below can clear its focus.
         if (under != null) panelFocus.set(panelFocus.size() - 1, under.findFocus());
@@ -1008,6 +1019,7 @@ public class HomeGrid implements SettingsPanel.Host {
         root.removeView(top);
         if (panels.isEmpty()) {
             scroll.setDescendantFocusability(ViewGroup.FOCUS_BEFORE_DESCENDANTS);
+            pillRow.setDescendantFocusability(ViewGroup.FOCUS_BEFORE_DESCENDANTS);
             takeFocus();
             // The restore tile was under the page; its time on screen starts now.
             if (restoreSlot != null) {
@@ -2000,9 +2012,14 @@ public class HomeGrid implements SettingsPanel.Host {
 
     private void act(AppModel.Item it) {
         if (it.type == AppModel.TYPE_SETTINGS) {
-            // The tile opens the TV's own Settings; Homestead's are on the Settings pill.
+            // With the launcher on, Amazon's own Settings; Homestead's are on the Settings
+            // pill, and are this tile's own fallback with the launcher off - tried only
+            // then, because off, Amazon still answers the intent, with a do-nothing
+            // compliance stub (CTSDummySettingsHandler) the catch below would not catch.
             logOpen(it.label);
-            if (!SetupPanel.openTvSettings(ctx)) showPanel(SettingsPanel.build(ctx, panelHost));
+            if (!AppModel.amazonLauncherOn(ctx) || !SetupPanel.openTvSettings(ctx)) {
+                showPanel(SettingsPanel.build(ctx, panelHost));
+            }
             return;
         }
         if (it.type == AppModel.TYPE_HEALTH) {

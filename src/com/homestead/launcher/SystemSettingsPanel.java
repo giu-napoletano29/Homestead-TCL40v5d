@@ -23,16 +23,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Everything about Amazon's settings and launcher in one place: the settings screens that
- * open from here, the one that needs Amazon's launcher, an optional row of shortcuts on the
- * home screen, and what to know with Amazon's launcher switched off.
+ * Everything about the TV itself, as opposed to Homestead's own look and behaviour (that is
+ * SettingsPanel): the settings screens Amazon answers directly, Homestead's own Screen &
+ * sound page for the handful Amazon locks behind a permission, a row for Amazon's full
+ * settings menu, and the shortcuts row on the home screen.
  *
- * Every screen is an action that com.amazon.tv.settings.v2 answers, aimed at that package
- * so a second handler (the quick settings overlay also answers some) cannot turn the press
- * into an app chooser. A screen is left out on a TV where the action finds nothing, or
- * where it needs a permission only Amazon's own apps hold.
+ * Every screen from Amazon is an action that com.amazon.tv.settings.v2 answers, aimed at
+ * that package so a second handler (the quick settings overlay also answers some) cannot
+ * turn the press into an app chooser. A screen is left out on a TV where the action finds
+ * nothing, or where it needs a permission only Amazon's own apps hold.
  */
-public final class FireTvSettingsPanel {
+public final class SystemSettingsPanel {
 
     static final String SETTINGS_PKG = "com.amazon.tv.settings.v2";
     private static final String A = "com.amazon.device.settings.action.";
@@ -61,7 +62,7 @@ public final class FireTvSettingsPanel {
                     "About this TV, software updates, Developer options and ADB debugging." },
     };
 
-    private FireTvSettingsPanel() { }
+    private SystemSettingsPanel() { }
 
     static Intent intentFor(String action) {
         Intent i = new Intent(action);
@@ -92,7 +93,7 @@ public final class FireTvSettingsPanel {
     // ---------------------------------------------------------------- the hub
 
     public static View build(final Context c, final SettingsPanel.Host host) {
-        final Panel p = new Panel(c, "Fire TV settings", null, Panel.SHEET);
+        final Panel p = new Panel(c, "System settings", null, Panel.SHEET);
         List<String> locked = new ArrayList<String>();
         List<String[]> open = available(c, locked);
 
@@ -103,7 +104,20 @@ public final class FireTvSettingsPanel {
                 public void run() { SetupPanel.start(c, intent); }
             }).opens().setHelp(open.get(i)[HELP]);
         }
-        final Panel.Row all = p.addRow("All Amazon settings",
+
+        p.addHeader("Homestead's own");
+        p.addRow("Screen & sound", "", new Runnable() {
+            public void run() { host.showPanel(DisplaySoundPanel.build(c, host)); }
+        }).opens().setHelp("HDMI-CEC, screen mirroring and the rest of what Amazon locks "
+                + "behind a permission only its own apps can hold - read and set directly, "
+                + "no root, no Amazon launcher needed.");
+
+        p.addRow("TV remote buttons", "", new Runnable() {
+            public void run() { host.showPanel(KeyBindings.build(c, host)); }
+        }).opens().setHelp("What the red, green, yellow and blue buttons of the TV's remote do "
+                + "when the TV passes them on over HDMI-CEC: Home, a page here, or an app.");
+
+        final Panel.Row all = p.addRow("Amazon Settings",
                 AppModel.amazonLauncherOn(c) ? "" : "needs the launcher", null).opens();
         all.cell.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) { openAll(c, host); }
@@ -111,9 +125,10 @@ public final class FireTvSettingsPanel {
         all.setHelp("Amazon's full settings menu"
                 + (locked.isEmpty() ? "." : ", including " + join(locked) + ".")
                 + (AppModel.amazonLauncherOn(c) ? ""
-                        : " With Amazon's launcher off it is switched on for a moment first."));
+                        : " With Amazon's launcher off it is switched on for a moment first - "
+                        + "on a TV where that is possible."));
 
-        p.addHeader("Quick settings in the top bar");
+        p.addHeader("In the top bar");
         final Panel.Row place = p.addRow("Quick settings",
                 onOff(Prefs.shortcutsPlace(c) != Prefs.SHORTCUTS_OFF), null).asSwitch();
         place.cell.setOnClickListener(new View.OnClickListener() {
@@ -126,7 +141,7 @@ public final class FireTvSettingsPanel {
             }
         });
         place.setHelp("Small buttons at the top right of the home screen for the screens you "
-                + "choose, then More settings and Settings. Not in Simple mode.");
+                + "choose, then System settings and Settings. Not in Simple mode.");
         p.addRow("Choose quick settings", "", new Runnable() {
             public void run() { host.showPanel(buildChoose(c, host)); }
         }).opens().setHelp("Which screens get a button. The bar shows the first three.");
@@ -134,11 +149,13 @@ public final class FireTvSettingsPanel {
         p.addHeader("Amazon's launcher");
         if (AppModel.amazonLauncherOn(c)) {
             p.addRow("Amazon's launcher", "on", null)
-                    .setHelp("Switch it off in Debloat to make Home open Homestead directly.");
+                    .setHelp("Switch it off in Debloat to make Home open Homestead directly, "
+                            + "and to free up the memory it uses in the background.");
         } else {
             p.addRow("Amazon's launcher", "off", null)
-                    .setHelp("Off: Home opens Homestead. \"All Amazon settings\" switches it on for "
-                            + "a moment, and the restore tile switches it off again.");
+                    .setHelp("Home opens Homestead directly. The screens Amazon answers "
+                            + "directly still work; \"Amazon Settings\" above switches the "
+                            + "launcher back on for a moment first, where that is possible.");
         }
         p.addRow("Back", "", new Runnable() {
             public void run() { host.closePanel(); }
@@ -174,11 +191,17 @@ public final class FireTvSettingsPanel {
         return p.root;
     }
 
-    // ---------------------------------------------------------------- all settings, via the launcher
+    // ---------------------------------------------------------------- Amazon Settings, via the launcher
 
-    /** The warning, then the button: what is about to happen and what it costs. */
+    /**
+     * The warning, then the button: what is about to happen and what it costs. Homestead
+     * runs on more than one TV, and not every one protects com.amazon.tv.launcher the way
+     * this one does - where the launcher can be switched on and off freely, this is the way
+     * back into Amazon's own settings without hunting for the launcher row below. Where it
+     * cannot, the attempt below simply fails and says so.
+     */
     private static View buildOpenRest(final Context c, final SettingsPanel.Host host) {
-        final Panel p = new Panel(c, "All Amazon settings", null, Panel.SHEET);
+        final Panel p = new Panel(c, "Amazon Settings", null, Panel.SHEET);
 
         p.addHeader("What will happen");
         p.addNote("1. Amazon's launcher is switched back on, over the ADB link.");
@@ -212,6 +235,8 @@ public final class FireTvSettingsPanel {
                 new AdbBridge.Callback() {
             public void onDone(boolean ok, String out) {
                 if (Debloat.stateOf(c, AppModel.AMAZON_LAUNCHER) != Debloat.ENABLED) {
+                    // Either no such TV (the package refused, protected) or the retries ran
+                    // out; either way there is nothing more to try here.
                     Toast.makeText(c, R.string.home_restore_failed, Toast.LENGTH_LONG).show();
                     return;
                 }
@@ -222,7 +247,7 @@ public final class FireTvSettingsPanel {
 
     /**
      * Amazon's full settings menu: straight away with the launcher on, behind the warning
-     * with it off. Also what the top bar's "More settings" pill does.
+     * with it off. Also what the top bar's "System settings" pill does with the launcher off.
      */
     static void openAll(Context c, SettingsPanel.Host host) {
         if (AppModel.amazonLauncherOn(c)) openAllSettings(c);
