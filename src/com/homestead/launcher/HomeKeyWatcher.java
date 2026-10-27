@@ -103,9 +103,10 @@ public class HomeKeyWatcher extends Service {
                 // -T 1 follows from the newest line, so there is no backlog to skip.
                 // Android 9 (Fire OS 7) logs activity starts as ActivityManager; Android 10
                 // and later (Fire OS 8) as ActivityTaskManager.
+                // A filter on the text, not on tags: Amazon's CEC tag has a colon in it, which
+                // logcat does not accept in a tag filter. Only these two kinds of line pass.
                 proc = new ProcessBuilder("logcat", "-b", "system", "-b", "main", "-v", "epoch",
-                        "-T", "1", "ActivityManager:I", "ActivityTaskManager:I",
-                        "OZ-DCSCEC:HdmiCecAgent:I", "*:S")
+                        "-T", "1", "-e", "START u0 .|Opcode: 0x44; Params")
                         .redirectErrorStream(true).start();
                 BufferedReader r = new BufferedReader(
                         new InputStreamReader(proc.getInputStream()));
