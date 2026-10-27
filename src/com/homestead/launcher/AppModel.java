@@ -231,7 +231,7 @@ public final class AppModel {
         if (amazonLauncherOn(c)) {
             Item amazon = new Item();
             amazon.type = TYPE_AMAZON_HOME;
-            amazon.label = "Amazon Home";
+            amazon.label = c.getString(R.string.home_amazon_home);
             d = fire ? fireOsIcon(c, AMAZON_LAUNCHER, "ic_home") : null;
             amazon.icon = toBitmap(c, d != null ? d : appIcon(c, AMAZON_LAUNCHER), ICON_PX, ICON_PX, false);
             ITEMS.add(amazon);
@@ -243,20 +243,20 @@ public final class AppModel {
         Item settings = new Item();
         settings.type = TYPE_SETTINGS;
         if (amazonLauncherOn(c)) {
-            settings.label = "Amazon Settings";
+            settings.label = c.getString(R.string.home_amazon_settings);
             d = fire ? fireOsIcon(c, AMAZON_LAUNCHER, "ic_settings_default_60dp") : null;
             settings.icon = d != null ? toBitmap(c, d, ICON_PX, ICON_PX, false) : gearIcon(ICON_PX);
         } else {
             // Two words: "Settings" alone has no space to break the tile's text at, so the
             // last letter is orphaned onto its own line.
-            settings.label = "My Settings";
+            settings.label = c.getString(R.string.home_my_settings);
             settings.icon = gearIcon(ICON_PX);
         }
         ITEMS.add(settings);
 
         Item health = new Item();
         health.type = TYPE_HEALTH;
-        health.label = "TV Health";
+        health.label = c.getString(R.string.home_tv_health);
         d = fire ? fireOsIcon(c, AMAZON_SETTINGS, "icon_device_margo") : null;
         health.icon = d != null ? toBitmap(c, d, ICON_PX, ICON_PX, false) : infoIcon(ICON_PX);
         ITEMS.add(health);

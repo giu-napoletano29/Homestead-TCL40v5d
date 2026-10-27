@@ -40,13 +40,15 @@ public final class SettingsPanel {
      * Simple mode and the system pages. Changes show on the grid behind it straight away.
      */
     public static View build(final Context c, final Host host) {
-        final Panel p = new Panel(c, "Settings",
+        final Panel p = new Panel(c, c.getString(R.string.settings_title),
                 "Homestead " + UpdateChecker.installedVersionName(c), Panel.SHEET);
 
-        final Panel.Row home = p.addRow("Home screen", homeSummary(c), null).opens();
+        final Panel.Row home = p.addRow(c.getString(R.string.settings_home_screen),
+                homeSummary(c), null).opens();
         home.setValueColor(0xFF8FA3B8);
         home.setHelp("Hidden tiles, sorting, grid columns, dock size, the clock and the sections.");
-        final Panel.Row look = p.addRow("Background", Backgrounds.label(c), null).opens();
+        final Panel.Row look = p.addRow(c.getString(R.string.settings_background),
+                Backgrounds.label(c), null).opens();
         look.setValueColor(0xFF8FA3B8);
         look.setHelp("The colour or photo behind the home screen.");
         // Summaries catch up when a sub-page changes something.
@@ -63,7 +65,8 @@ public final class SettingsPanel {
             public void onClick(View v) { host.showPanel(buildLook(c, host, summaries)); }
         });
 
-        final Panel.Row simple = p.addRow("Simple mode", onOff(Prefs.simpleMode(c)), null).asSwitch();
+        final Panel.Row simple = p.addRow(c.getString(R.string.settings_simple_mode),
+                onOff(Prefs.simpleMode(c)), null).asSwitch();
         simple.cell.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 boolean n = !Prefs.simpleMode(c);
@@ -77,10 +80,10 @@ public final class SettingsPanel {
                 + "long-press no longer hide tiles, and there are no update pop-ups; check for "
                 + "updates below. It does not change Debloat.");
 
-        p.addHeader("System");
+        p.addHeader(c.getString(R.string.settings_header_system));
 
         boolean ready = SetupPanel.serviceEnabled(c);
-        final Panel.Row setup = p.addRow("Setup", ready ? "done"
+        final Panel.Row setup = p.addRow(c.getString(R.string.settings_setup), ready ? "done"
                 : Prefs.homeOffByUser(c) ? "Home button off" : "not finished", null).opens();
         setup.setValueColor(ready ? 0xFFA7D28F : 0xFFE8C468);
         setup.setHelp("What this launcher needs, and how to switch it on.");
@@ -99,21 +102,21 @@ public final class SettingsPanel {
             p.addNote(SetupPanel.TURN_OFF_HELP);
         }
 
-        p.addHeader("Device");
+        p.addHeader(c.getString(R.string.settings_header_device));
 
-        p.addRow("System settings", "", new Runnable() {
+        p.addRow(c.getString(R.string.sys_title), "", new Runnable() {
             public void run() { host.showPanel(SystemSettingsPanel.build(c, host)); }
         }).opens().setHelp("Amazon's own settings screens (network, Bluetooth, applications, "
                 + "My Fire TV), each opened directly; Homestead's own pages for what Amazon "
                 + "locks behind a permission; the TV remote's buttons; and the quick settings "
                 + "in the top bar.");
 
-        p.addRow("TV Health", "check", new Runnable() {
+        p.addRow(c.getString(R.string.home_tv_health), "check", new Runnable() {
             public void run() { host.showPanel(HealthPanel.build(c, host)); }
         }).opens().setHelp("This TV's speed and privacy settings and Amazon's advertising "
                 + "packages, with a fix for each one it flags - Debloat is reached from here.");
 
-        final Panel.Row watch = p.addRow("Warn if the system undoes Debloat",
+        final Panel.Row watch = p.addRow(c.getString(R.string.settings_warn_debloat),
                 onOff(Prefs.restoreWatch(c)), null).asSwitch();
         watch.cell.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
@@ -127,14 +130,14 @@ public final class SettingsPanel {
         watch.setHelp("If an update switches back on something Debloat turned off, the home "
                 + "screen shows it for 10 seconds, and OK switches it off again.");
 
-        final Panel.Row updates = p.addRow("Check for updates",
+        final Panel.Row updates = p.addRow(c.getString(R.string.settings_check_updates),
                 "v" + UpdateChecker.installedVersionName(c), null);
         updates.setValueColor(0xFF8FA3B8);
         updates.cell.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) { UpdatePanel.checkNow(c, host, updates); }
         });
 
-        p.addRow("Close", "", new Runnable() {
+        p.addRow(c.getString(R.string.settings_close), "", new Runnable() {
             public void run() { host.closePanel(); }
         });
         return p.root;

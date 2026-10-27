@@ -64,6 +64,34 @@ public final class SystemSettingsPanel {
 
     private SystemSettingsPanel() { }
 
+    /**
+     * The title of a screen, in the TV's language. SCREENS keeps the English text as a
+     * stable internal key (matched in help text, never shown by itself); this is what is
+     * actually shown, in Homestead's own menu and on a pill.
+     */
+    static String title(Context c, String id) {
+        if ("network".equals(id)) return c.getString(R.string.sys_network);
+        if ("display".equals(id)) return c.getString(R.string.sys_display);
+        if ("controllers".equals(id)) return c.getString(R.string.sys_controllers);
+        if ("accessibility".equals(id)) return c.getString(R.string.sys_accessibility);
+        if ("applications".equals(id)) return c.getString(R.string.sys_applications);
+        if ("language".equals(id)) return c.getString(R.string.sys_language);
+        if ("preferences".equals(id)) return c.getString(R.string.sys_preferences);
+        if ("data".equals(id)) return c.getString(R.string.sys_data);
+        if ("account".equals(id)) return c.getString(R.string.sys_account);
+        if ("device".equals(id)) return c.getString(R.string.sys_device);
+        return id;
+    }
+
+    /** The four titles too long for a pill, shortened - also in the TV's language. */
+    static String shortTitle(Context c, String id) {
+        if ("controllers".equals(id)) return c.getString(R.string.sys_controllers_short);
+        if ("display".equals(id)) return c.getString(R.string.sys_display_short);
+        if ("account".equals(id)) return c.getString(R.string.sys_account_short);
+        if ("data".equals(id)) return c.getString(R.string.sys_data_short);
+        return title(c, id);
+    }
+
     static Intent intentFor(String action) {
         Intent i = new Intent(action);
         i.setPackage(SETTINGS_PKG);
@@ -93,31 +121,31 @@ public final class SystemSettingsPanel {
     // ---------------------------------------------------------------- the hub
 
     public static View build(final Context c, final SettingsPanel.Host host) {
-        final Panel p = new Panel(c, "System settings", null, Panel.SHEET);
+        final Panel p = new Panel(c, c.getString(R.string.sys_title), null, Panel.SHEET);
         List<String> locked = new ArrayList<String>();
         List<String[]> open = available(c, locked);
 
-        p.addHeader("Open from here");
+        p.addHeader(c.getString(R.string.sys_header_open));
         for (int i = 0; i < open.size(); i++) {
             final Intent intent = intentFor(open.get(i)[ACTION]);
-            p.addRow(open.get(i)[TITLE], "", new Runnable() {
+            p.addRow(title(c, open.get(i)[ID]), "", new Runnable() {
                 public void run() { SetupPanel.start(c, intent); }
             }).opens().setHelp(open.get(i)[HELP]);
         }
 
-        p.addHeader("Homestead's own");
-        p.addRow("Screen & sound", "", new Runnable() {
+        p.addHeader(c.getString(R.string.sys_header_own));
+        p.addRow(c.getString(R.string.sys_screen_sound), "", new Runnable() {
             public void run() { host.showPanel(DisplaySoundPanel.build(c, host)); }
         }).opens().setHelp("HDMI-CEC, screen mirroring and the rest of what Amazon locks "
                 + "behind a permission only its own apps can hold - read and set directly, "
                 + "no root, no Amazon launcher needed.");
 
-        p.addRow("TV remote buttons", "", new Runnable() {
+        p.addRow(c.getString(R.string.sys_tv_remote), "", new Runnable() {
             public void run() { host.showPanel(KeyBindings.build(c, host)); }
         }).opens().setHelp("What the red, green, yellow and blue buttons of the TV's remote do "
                 + "when the TV passes them on over HDMI-CEC: Home, a page here, or an app.");
 
-        final Panel.Row all = p.addRow("Amazon Settings",
+        final Panel.Row all = p.addRow(c.getString(R.string.home_amazon_settings),
                 AppModel.amazonLauncherOn(c) ? "" : "needs the launcher", null).opens();
         all.cell.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) { openAll(c, host); }
@@ -128,8 +156,8 @@ public final class SystemSettingsPanel {
                         : " With Amazon's launcher off it is switched on for a moment first - "
                         + "on a TV where that is possible."));
 
-        p.addHeader("In the top bar");
-        final Panel.Row place = p.addRow("Quick settings",
+        p.addHeader(c.getString(R.string.sys_header_topbar));
+        final Panel.Row place = p.addRow(c.getString(R.string.sys_quick_settings),
                 onOff(Prefs.shortcutsPlace(c) != Prefs.SHORTCUTS_OFF), null).asSwitch();
         place.cell.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
@@ -142,22 +170,22 @@ public final class SystemSettingsPanel {
         });
         place.setHelp("Small buttons at the top right of the home screen for the screens you "
                 + "choose, then System settings and Settings. Not in Simple mode.");
-        p.addRow("Choose quick settings", "", new Runnable() {
+        p.addRow(c.getString(R.string.sys_choose_quick), "", new Runnable() {
             public void run() { host.showPanel(buildChoose(c, host)); }
         }).opens().setHelp("Which screens get a button. The bar shows the first three.");
 
-        p.addHeader("Amazon's launcher");
+        p.addHeader(c.getString(R.string.sys_header_launcher));
         if (AppModel.amazonLauncherOn(c)) {
-            p.addRow("Amazon's launcher", "on", null)
+            p.addRow(c.getString(R.string.sys_header_launcher), "on", null)
                     .setHelp("Switch it off in Debloat to make Home open Homestead directly, "
                             + "and to free up the memory it uses in the background.");
         } else {
-            p.addRow("Amazon's launcher", "off", null)
+            p.addRow(c.getString(R.string.sys_header_launcher), "off", null)
                     .setHelp("Home opens Homestead directly. The screens Amazon answers "
                             + "directly still work; \"Amazon Settings\" above switches the "
                             + "launcher back on for a moment first, where that is possible.");
         }
-        p.addRow("Back", "", new Runnable() {
+        p.addRow(c.getString(R.string.home_back), "", new Runnable() {
             public void run() { host.closePanel(); }
         });
         return p.root;
@@ -185,7 +213,7 @@ public final class SystemSettingsPanel {
         if (Prefs.shortcutsPlace(c) == Prefs.SHORTCUTS_OFF) {
             p.addNote("Quick settings are off. Turn them on on the previous page.");
         }
-        p.addRow("Back", "", new Runnable() {
+        p.addRow(c.getString(R.string.home_back), "", new Runnable() {
             public void run() { host.closePanel(); }
         });
         return p.root;
@@ -201,7 +229,7 @@ public final class SystemSettingsPanel {
      * cannot, the attempt below simply fails and says so.
      */
     private static View buildOpenRest(final Context c, final SettingsPanel.Host host) {
-        final Panel p = new Panel(c, "Amazon Settings", null, Panel.SHEET);
+        final Panel p = new Panel(c, c.getString(R.string.home_amazon_settings), null, Panel.SHEET);
 
         p.addHeader("What will happen");
         p.addNote("1. Amazon's launcher is switched back on, over the ADB link.");

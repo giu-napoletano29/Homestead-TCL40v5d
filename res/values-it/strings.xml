@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="app_name">Homestead</string>
+
+  <!-- Home screen -->
+  <string name="home_amazon_home">Home di Amazon</string>
+  <string name="home_amazon_settings">Impostazioni Amazon</string>
+  <string name="home_my_settings">Le mie impostazioni</string>
+  <string name="home_tv_health">Diagnostica TV</string>
+  <string name="home_back">Indietro</string>
+  <string name="home_settings_pill">Impostazioni</string>
+  <string name="home_inputs_pill">Ingressi</string>
+
+  <!-- The ten screens Amazon answers directly, and their short form for a top-bar pill. -->
+  <string name="sys_network">Rete</string>
+  <string name="sys_display">Suoni e schermo</string>
+  <string name="sys_display_short">Schermo</string>
+  <string name="sys_controllers">Controller e Bluetooth</string>
+  <string name="sys_controllers_short">Controller</string>
+  <string name="sys_accessibility">Accessibilità</string>
+  <string name="sys_applications">Applicazioni</string>
+  <string name="sys_language">Lingua</string>
+  <string name="sys_preferences">Preferenze</string>
+  <string name="sys_data">Monitoraggio dati</string>
+  <string name="sys_data_short">Dati</string>
+  <string name="sys_account">Account Amazon</string>
+  <string name="sys_account_short">Account</string>
+  <string name="sys_device">La mia Fire TV</string>
+
+  <!-- SystemSettingsPanel -->
+  <string name="sys_title">Impostazioni di sistema</string>
+  <string name="sys_header_open">Si aprono da qui</string>
+  <string name="sys_header_own">Proprie di Homestead</string>
+  <string name="sys_screen_sound">Schermo e audio</string>
+  <string name="sys_tv_remote">Tasti del telecomando TV</string>
+  <string name="sys_header_topbar">Nella barra in alto</string>
+  <string name="sys_quick_settings">Impostazioni rapide</string>
+  <string name="sys_choose_quick">Scegli le impostazioni rapide</string>
+  <string name="sys_header_launcher">Launcher di Amazon</string>
+
+  <!-- SettingsPanel -->
+  <string name="settings_title">Impostazioni</string>
+  <string name="settings_home_screen">Schermata home</string>
+  <string name="settings_background">Sfondo</string>
+  <string name="settings_simple_mode">Modalità semplice</string>
+  <string name="settings_header_system">Sistema</string>
+  <string name="settings_setup">Configurazione</string>
+  <string name="settings_header_device">Dispositivo</string>
+  <string name="settings_warn_debloat">Avvisa se il sistema annulla il Debloat</string>
+  <string name="settings_check_updates">Controlla aggiornamenti</string>
+  <string name="settings_close">Chiudi</string>
+</resources>

@@ -30,4 +30,49 @@
   <string name="home_greeting_morning">Good morning</string>
   <string name="home_greeting_afternoon">Good afternoon</string>
   <string name="home_greeting_evening">Good evening</string>
+  <string name="home_amazon_home">Amazon Home</string>
+  <string name="home_amazon_settings">Amazon Settings</string>
+  <string name="home_my_settings">My Settings</string>
+  <string name="home_tv_health">TV Health</string>
+  <string name="home_back">Back</string>
+
+  <!-- The ten screens Amazon answers directly (SystemSettingsPanel.SCREENS), and their
+       short form for a pill in the top bar. Only four need shortening. -->
+  <string name="sys_network">Network</string>
+  <string name="sys_display">Display &amp; sounds</string>
+  <string name="sys_display_short">Display</string>
+  <string name="sys_controllers">Controllers &amp; Bluetooth</string>
+  <string name="sys_controllers_short">Controllers</string>
+  <string name="sys_accessibility">Accessibility</string>
+  <string name="sys_applications">Applications</string>
+  <string name="sys_language">Language</string>
+  <string name="sys_preferences">Preferences</string>
+  <string name="sys_data">Data monitoring</string>
+  <string name="sys_data_short">Data</string>
+  <string name="sys_account">Amazon account</string>
+  <string name="sys_account_short">Account</string>
+  <string name="sys_device">My Fire TV</string>
+
+  <!-- SystemSettingsPanel's own rows and headers. -->
+  <string name="sys_title">System settings</string>
+  <string name="sys_header_open">Open from here</string>
+  <string name="sys_header_own">Homestead\'s own</string>
+  <string name="sys_screen_sound">Screen &amp; sound</string>
+  <string name="sys_tv_remote">TV remote buttons</string>
+  <string name="sys_header_topbar">In the top bar</string>
+  <string name="sys_quick_settings">Quick settings</string>
+  <string name="sys_choose_quick">Choose quick settings</string>
+  <string name="sys_header_launcher">Amazon\'s launcher</string>
+
+  <!-- SettingsPanel's own rows and headers. -->
+  <string name="settings_title">Settings</string>
+  <string name="settings_home_screen">Home screen</string>
+  <string name="settings_background">Background</string>
+  <string name="settings_simple_mode">Simple mode</string>
+  <string name="settings_header_system">System</string>
+  <string name="settings_setup">Setup</string>
+  <string name="settings_header_device">Device</string>
+  <string name="settings_warn_debloat">Warn if the system undoes Debloat</string>
+  <string name="settings_check_updates">Check for updates</string>
+  <string name="settings_close">Close</string>
 </resources>

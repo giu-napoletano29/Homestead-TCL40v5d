@@ -429,7 +429,7 @@ public class HomeGrid implements SettingsPanel.Host {
         for (int i = 0; i < screens.size() && shown < BAR_SHORTCUTS; i++) {
             final String[] s = screens.get(i);
             if (!want.contains(s[SystemSettingsPanel.ID])) continue;
-            addShortcutPill(shortLabel(s[SystemSettingsPanel.TITLE]),
+            addShortcutPill(SystemSettingsPanel.shortTitle(ctx, s[SystemSettingsPanel.ID]),
                     ShortcutIcons.render(s[SystemSettingsPanel.ID], dp(ICON_SZ_DP)),
                     new Runnable() {
                         public void run() {
@@ -440,10 +440,11 @@ public class HomeGrid implements SettingsPanel.Host {
                     });
             shown++;
         }
-        addShortcutPill("System settings", ShortcutIcons.render("more", dp(ICON_SZ_DP)),
+        final String sysLabel = ctx.getString(R.string.sys_title);
+        addShortcutPill(sysLabel, ShortcutIcons.render("more", dp(ICON_SZ_DP)),
                 new Runnable() {
                     public void run() {
-                        logOpen("System settings");
+                        logOpen(sysLabel);
                         showPanel(SystemSettingsPanel.build(ctx, panelHost));
                     }
                 });
@@ -460,15 +461,6 @@ public class HomeGrid implements SettingsPanel.Host {
         shortcutRow.addView(pill, lp);
         shortcutLabels.add(label);
         shortcutPills.add(pill);
-    }
-
-    /** Pills are small: the long screen names lose their second half. */
-    private static String shortLabel(String title) {
-        if ("Controllers & Bluetooth".equals(title)) return "Controllers";
-        if ("Display & sounds".equals(title)) return "Display";
-        if ("Amazon account".equals(title)) return "Account";
-        if ("Data monitoring".equals(title)) return "Data";
-        return title;
     }
 
     /** The Settings item's own icon, already drawn once by AppModel; reused here at pill size. */
