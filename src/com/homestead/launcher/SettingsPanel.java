@@ -106,6 +106,11 @@ public final class SettingsPanel {
         }).opens().setHelp("Switch Amazon's packages off, and back on again. Nothing is "
                 + "ever uninstalled.");
 
+        p.addRow("TV remote buttons", "", new Runnable() {
+            public void run() { host.showPanel(KeyBindings.build(c, host)); }
+        }).opens().setHelp("What the red, green, yellow and blue buttons of the TV's remote do "
+                + "when the TV passes them on over HDMI-CEC: Home, a page here, or an app.");
+
         p.addRow("Fire TV settings", "", new Runnable() {
             public void run() { host.showPanel(FireTvSettingsPanel.build(c, host)); }
         }).opens().setHelp("Amazon's own settings screens (network, Bluetooth, applications, "

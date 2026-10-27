@@ -31,6 +31,9 @@ public class MainActivity extends Activity implements HomeGrid.Listener {
 
     private static final String TAG = "Homestead";
 
+    /** A page of this launcher to open at once, set by a TV remote button (KeyBindings). */
+    static final String EXTRA_OPEN = "open";
+
     private HomeGrid home;
     private boolean receiversOn = false;
 
@@ -55,6 +58,7 @@ public class MainActivity extends Activity implements HomeGrid.Listener {
         setContentView(home.root);
         home.takeStartFocus();
         AdbBridge.init(this);
+        openRequested(getIntent());
 
         // First run shows the wizard; later, if the accessibility service is off (e.g.
         // unbound by an app update) and the user did not turn it off, show Setup instead.
@@ -91,6 +95,15 @@ public class MainActivity extends Activity implements HomeGrid.Listener {
     protected void onNewIntent(Intent i) {
         super.onNewIntent(i);
         if (home != null) home.closePanels();
+        openRequested(i);
+    }
+
+    private void openRequested(Intent i) {
+        if (home == null || i == null) return;
+        String what = i.getStringExtra(EXTRA_OPEN);
+        if (what == null) return;
+        i.removeExtra(EXTRA_OPEN);
+        home.openPage(what);
     }
 
     /** Called by the service after it reloads the shared model. */

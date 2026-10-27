@@ -275,6 +275,15 @@ public final class Prefs {
     public static int idleMinutes(Context c) { return sp(c).getInt(K_IDLE, 5); }
     public static void setIdleMinutes(Context c, int v) { sp(c).edit().putInt(K_IDLE, v).apply(); }
 
+    /** What a coloured button of a TV remote does (KeyBindings); Red is Home until changed. */
+    public static String tvKey(Context c, int keyCode) {
+        String def = keyCode == android.view.KeyEvent.KEYCODE_PROG_RED ? "home" : "off";
+        return sp(c).getString("tvkey_" + keyCode, def);
+    }
+    public static void setTvKey(Context c, int keyCode, String action) {
+        sp(c).edit().putString("tvkey_" + keyCode, action).apply();
+    }
+
     public static boolean restoreWatch(Context c) { return sp(c).getBoolean(K_RESTORE_WATCH, false); }
     public static void setRestoreWatch(Context c, boolean v) {
         sp(c).edit().putBoolean(K_RESTORE_WATCH, v).apply();

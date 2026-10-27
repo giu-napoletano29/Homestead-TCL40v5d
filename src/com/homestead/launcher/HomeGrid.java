@@ -974,6 +974,15 @@ public class HomeGrid implements SettingsPanel.Host {
         rebuild();
     }
 
+    /** Open one of this launcher's own pages, as asked by a TV remote button. */
+    public void openPage(String what) {
+        if (KeyBindings.CHANNELS.equals(what)) {
+            showPanel(ChannelsPanel.build(ctx, panelHost));
+        } else if (KeyBindings.SETTINGS.equals(what)) {
+            showPanel(SettingsPanel.build(ctx, panelHost));
+        }
+    }
+
     public void showPanel(final View v) {
         // Stop the grid, and any panel underneath, from stealing D-pad focus.
         scroll.setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);
