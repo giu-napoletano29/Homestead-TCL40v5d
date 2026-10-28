@@ -99,7 +99,7 @@ public class HomeGrid implements SettingsPanel.Host {
     private static final int DOCK_COUNT = 4;
     // Dock tile height per Prefs.DOCK_SIZE_NAMES; tiles are 16:9, so Large and up scroll
     // sideways past the screen edge rather than shrinking to fit.
-    private static final int[] DOCK_H_DP = { 112, 136, 160, 184 };
+    private static final int[] DOCK_H_DP = AppModel.DOCK_H_DP;
     private static final int DOCK_PAD_DP = 6;
     private static final int DOCK_BOTTOM_DP = 6;
     private static final int ICON_SZ_DP = 26;
@@ -1338,6 +1338,21 @@ public class HomeGrid implements SettingsPanel.Host {
                 hideItem(target);
             }
         }).setHelp("The tile goes away; bring it back in Settings > Home screen > Hidden tiles.");
+        if (target.type == AppModel.TYPE_APP && target.pkg != null) {
+            p.addRow("App info", "", new Runnable() {
+                public void run() {
+                    closePanel();
+                    logOpen("App info " + target.label);
+                    Intent i = new Intent("android.settings.APPLICATION_DETAILS_SETTINGS",
+                            Uri.parse("package:" + target.pkg));
+                    if (!SetupPanel.start(ctx, i)) {
+                        Toast.makeText(ctx, "No info page for " + target.label,
+                                Toast.LENGTH_SHORT).show();
+                    }
+                }
+            }).setHelp("Opens the system page for " + target.label + ": clear its cache or "
+                    + "data, force it to stop, check its permissions.");
+        }
         if (removable(target)) {
             p.addRow("Uninstall", "", new Runnable() {
                 public void run() {
@@ -2417,6 +2432,15 @@ public class HomeGrid implements SettingsPanel.Host {
 
     private void paintChannelsTile(View cell) {
         int t = look == null ? 0xFF2A6FDB : look.tint();
+        if (look == Backgrounds.PHOTO_LOOK) {
+            // A photo or painting has no tint of its own (it would be black): take the hue of
+            // the wallpaper's dark tone, brought back up, or a plain blue before it has loaded.
+            int tone = Backgrounds.tone(ctx);
+            int r = Math.min(255, Color.red(tone) * 22 / 10);
+            int g = Math.min(255, Color.green(tone) * 22 / 10);
+            int b = Math.min(255, Color.blue(tone) * 22 / 10);
+            t = (r + g + b < 90) ? 0xFF2A6FDB : Color.rgb(r, g, b);
+        }
         int hi = Color.rgb(Math.min(255, Color.red(t) * 3 / 4 + 40),
                 Math.min(255, Color.green(t) * 3 / 4 + 40), Math.min(255, Color.blue(t) * 3 / 4 + 40));
         int lo = Color.rgb(Color.red(t) / 4, Color.green(t) / 4, Color.blue(t) / 4);

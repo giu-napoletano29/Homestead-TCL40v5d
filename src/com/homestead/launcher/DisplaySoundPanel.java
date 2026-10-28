@@ -51,6 +51,9 @@ final class DisplaySoundPanel {
                 "When the TV goes to standby, this Stick sleeps with it. Off blocks the "
                         + "TV's standby signal and keeps the Stick awake.");
 
+        p.addHeader("Power");
+        addAutoSleep(c, p);
+
         p.addHeader("Screen");
         addSwitch(c, p, "Screen mirroring (Miracast)",
                 new Setting(true, "wifi_display_on", false),
@@ -126,6 +129,69 @@ final class DisplaySoundPanel {
     }
 
     // ---------------------------------------------------------------- status-only rows
+
+    // ---------------------------------------------------------------- power and checks
+
+    private static final String SLEEP_ON = "900000";   // Amazon's 15 minutes
+    private static final String SCREEN_OFF_NEVER = "2147483647";
+
+    /** Milliseconds of idle before the Stick sleeps by itself; 0 or less is never. */
+    private static long sleepTimeout(Context c) {
+        try {
+            String v = Settings.Secure.getString(c.getContentResolver(), "sleep_timeout");
+            return v == null ? 0 : Long.parseLong(v.trim());
+        } catch (Throwable t) { return 0; }
+    }
+
+    /**
+     * Things on this page worth a look, one line each: what the Stick does that the user may
+     * not want. The System settings hub shows how many there are.
+     */
+    static java.util.List<String> issues(Context c) {
+        java.util.List<String> out = new java.util.ArrayList<String>();
+        long t = sleepTimeout(c);
+        if (t > 0) out.add("it sleeps by itself after " + (t / 60000) + " minutes");
+        if ("1".equals(getSecure(c, "block_cec_standby"))) {
+            out.add("it ignores the TV's standby, so it stays awake when the TV turns off");
+        }
+        if (!"1".equals(getGlobal(c, "hdmi_control_auto_device_off_enabled"))) {
+            out.add("it does not turn the TV off when it sleeps");
+        }
+        if ("1".equals(getGlobal(c, "overscan_enabled"))) {
+            out.add("overscan is on: black borders appear if the TV shows the picture 1:1");
+        }
+        return out;
+    }
+
+    private static String getSecure(Context c, String key) {
+        try { return Settings.Secure.getString(c.getContentResolver(), key); }
+        catch (Throwable t) { return null; }
+    }
+
+    /** A switch for the Stick's own 15-minute sleep; both settings it uses go out over ADB. */
+    private static void addAutoSleep(final Context c, Panel p) {
+        final Panel.Row row = p.addRow("Sleep after 15 minutes idle",
+                onOff(sleepTimeout(c) > 0), null).asSwitch();
+        row.setHelp("The Stick goes to sleep by itself after 15 minutes without a button press. "
+                + "Off, it sleeps only when the TV does (the switches above) or when you put it "
+                + "to sleep.");
+        row.cell.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                if (!AdbBridge.canRun(c)) { row.setValue("needs Setup"); return; }
+                final boolean turnOn = sleepTimeout(c) <= 0;
+                row.setValue("working...");
+                AdbBridge.run(new String[]{
+                        "settings put secure sleep_timeout " + (turnOn ? SLEEP_ON : "0"),
+                        "settings put system screen_off_timeout "
+                                + (turnOn ? SLEEP_ON : SCREEN_OFF_NEVER)
+                }, new AdbBridge.Callback() {
+                    public void onDone(boolean ok, String out) {
+                        row.setValue(onOff(sleepTimeout(c) > 0));
+                    }
+                });
+            }
+        });
+    }
 
     // ---------------------------------------------------------------- overscan
 

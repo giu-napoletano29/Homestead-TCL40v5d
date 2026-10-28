@@ -91,13 +91,20 @@ public final class AppModel {
     public static int columns(Context c) { return Prefs.columns(c); }
 
     /** Cell size depends on the column count, so a change must invalidate it. */
-    public static void invalidateMetrics() { cellW = 0; cellH = 0; }
+    public static void invalidateMetrics() { cellW = 0; cellH = 0; bannerW = 0; bannerH = 0; }
+
+    /** Dock tile height in dp per Prefs.dockSize(); the dock's tiles are 3:2 (see HomeGrid.addDock). */
+    static final int[] DOCK_H_DP = { 112, 136, 160, 184 };
     private static final int MARGIN_DP = 32;
     private static final int GAP_DP = 16;
     /** The side rail's closed width; the grid starts after it, with a gap. */
     public static final int RAIL_DP = 64;
     public static final int RAIL_GAP_DP = 16;
-    private static final int ICON_PX = 96;
+    /**
+     * Icons are drawn edge to edge in the grid's square tiles, about 155 px on a 1080p screen:
+     * decoded at about that size, so they are shown 1:1 instead of enlarged from 96.
+     */
+    private static final int ICON_PX = 160;
     private static final int CORNER_DP = 6;
 
     public static class Item {
@@ -138,6 +145,8 @@ public final class AppModel {
     private static boolean loaded = false;
     private static String lastSignature = "";
     private static int cellW = 0, cellH = 0;
+    /** What a banner is decoded to: the dock tile's own size, so it is not enlarged on show. */
+    private static int bannerW = 0, bannerH = 0;
 
     private AppModel() { }
 
@@ -193,6 +202,11 @@ public final class AppModel {
         cellW = (dm.widthPixels - left - margin - (cols - 1) * gap) / cols;
         if (cellW <= 0) cellW = dp(c, 136);
         cellH = cellW * 9 / 16;
+        // A dock tile is 3:2 and its banner is centre-cropped to it, so decode a little wider
+        // than the tile: the crop then starts from a picture that covers it.
+        int size = Math.max(0, Math.min(DOCK_H_DP.length - 1, Prefs.dockSize(c)));
+        bannerH = dp(c, DOCK_H_DP[size]);
+        bannerW = bannerH * 3 / 2 * 115 / 100;
     }
 
     static int dp(Context c, int v) {
@@ -294,7 +308,7 @@ public final class AppModel {
 
                 Drawable raw = null;
                 try { raw = ai.loadBanner(pm); } catch (Throwable t) { raw = null; }
-                a.banner = toBitmap(c, raw, cellW, cellH, true);
+                a.banner = toBitmap(c, raw, bannerW, bannerH, true);
                 raw = null;
                 a.tvApp = (ci == 0) || a.banner != null;
                 if (a.banner != null) a.accent = dominantColor(a.banner);
@@ -304,7 +318,7 @@ public final class AppModel {
                 Drawable ic = null;
                 try { ic = ri.loadIcon(pm); } catch (Throwable t) { ic = null; }
                 a.icon = toBitmap(c, ic, ICON_PX, ICON_PX, false);
-                if (a.banner == null && wide) a.banner = iconTile(c, ic, cellW, cellH);
+                if (a.banner == null && wide) a.banner = iconTile(c, ic, bannerW, bannerH);
                 ic = null;
                 ITEMS.add(a);
             }

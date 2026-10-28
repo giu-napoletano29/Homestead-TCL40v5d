@@ -134,11 +134,23 @@ public final class SystemSettingsPanel {
         }
 
         p.addHeader(c.getString(R.string.sys_header_own));
-        p.addRow(c.getString(R.string.sys_screen_sound), "", new Runnable() {
+        List<String> checks = DisplaySoundPanel.issues(c);
+        Panel.Row screenSound = p.addRow(c.getString(R.string.sys_screen_sound),
+                checks.isEmpty() ? "" : checks.size() + " to check", new Runnable() {
             public void run() { host.showPanel(DisplaySoundPanel.build(c, host)); }
-        }).opens().setHelp("HDMI-CEC, screen mirroring and the rest of what Amazon locks "
-                + "behind a permission only its own apps can hold - read and set directly, "
-                + "no root, no Amazon launcher needed.");
+        }).opens();
+        if (!checks.isEmpty()) screenSound.setValueColor(0xFFE8C468);
+        StringBuilder sb = new StringBuilder("HDMI-CEC, sleep, screen mirroring, overscan and "
+                + "the rest of what Amazon locks behind a permission only its own apps can hold "
+                + "- read and set directly, no root, no Amazon launcher needed.");
+        if (!checks.isEmpty()) {
+            sb.append("\n\nWorth a look: ");
+            for (int i = 0; i < checks.size(); i++) {
+                sb.append(i == 0 ? "" : "; ").append(checks.get(i));
+            }
+            sb.append('.');
+        }
+        screenSound.setHelp(sb.toString());
 
         p.addRow(c.getString(R.string.sys_tv_remote), "", new Runnable() {
             public void run() { host.showPanel(KeyBindings.build(c, host)); }
