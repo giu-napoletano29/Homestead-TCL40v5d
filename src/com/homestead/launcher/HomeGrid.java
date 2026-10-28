@@ -263,7 +263,12 @@ public class HomeGrid implements SettingsPanel.Host {
             }
             @Override public void onWindowFocusChanged(boolean has) {
                 super.onWindowFocusChanged(has);
-                if (has) armIdle(); else cancelIdle();
+                if (has) {
+                    armIdle();
+                    forceRepaint();   // back from standby or another app: see forceRepaint()
+                } else {
+                    cancelIdle();
+                }
             }
             @Override public boolean dispatchKeyEvent(android.view.KeyEvent e) {
                 // The press that wakes the idle clock does nothing else.
@@ -1202,8 +1207,23 @@ public class HomeGrid implements SettingsPanel.Host {
         if (idleView != null) {
             root.removeView(idleView);
             idleView = null;
+            forceRepaint();
         }
         armIdle();
+    }
+
+    /**
+     * Redraws the whole window, now and again once a window transition is over. After the idle
+     * clock or a wake from standby the Stick can leave part of an old frame on screen - half a
+     * wallpaper, the digits of the idle clock showing through - because the system redraws
+     * only what it thinks changed; the dock and clock repaint, the wallpaper behind them does
+     * not. Invalidating the root marks all of it changed.
+     */
+    public void forceRepaint() {
+        root.invalidate();
+        root.postDelayed(new Runnable() {
+            public void run() { root.invalidate(); }
+        }, 700L);
     }
 
     /** Focus for a fresh Home press: Live TV when it comes first, else as takeFocus(). */

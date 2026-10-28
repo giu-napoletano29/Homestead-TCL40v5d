@@ -153,6 +153,7 @@ public class MainActivity extends Activity implements HomeGrid.Listener {
             home.syncOrder();
             // Picks up a photo copied to the TV while this activity was in the background.
             home.applyBackground();
+            home.forceRepaint();
             boolean ok = (selKey != null) && home.selectKey(selKey);
             if (!ok) home.takeFocus();
             home.applyScroll(selScroll, selRows);

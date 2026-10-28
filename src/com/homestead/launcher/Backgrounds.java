@@ -168,6 +168,8 @@ final class Backgrounds {
     private static Bitmap photo;
     private static String photoKey;
     private static boolean loading;
+    /** Grids that asked for the photo while it was already decoding; main thread only. */
+    private static final java.util.List<Runnable> WAITING = new java.util.ArrayList<Runnable>();
 
     private Backgrounds() { }
 
@@ -337,7 +339,14 @@ final class Backgrounds {
      */
     static void load(Context c, final File f, final Runnable done) {
         final String key = keyOf(f);
-        if (key == null || key.equals(photoKey) || loading) return;
+        if (key == null || key.equals(photoKey)) return;
+        // The activity's grid and the overlay's both ask when the app starts. The second one
+        // must not be dropped: it waits for the decode already running and is told when it
+        // lands, or it stays on the plain backdrop (black) until something repaints it.
+        if (loading) {
+            if (done != null) WAITING.add(done);
+            return;
+        }
         loading = true;
         final Context app = c.getApplicationContext();
         final DisplayMetrics dm = c.getResources().getDisplayMetrics();
@@ -347,6 +356,8 @@ final class Backgrounds {
                 MAIN.post(new Runnable() {
                     public void run() {
                         loading = false;
+                        java.util.List<Runnable> also = new java.util.ArrayList<Runnable>(WAITING);
+                        WAITING.clear();
                         // The user moved on while it decoded: do not keep it.
                         if (!photoChosen(app)) return;
                         photo = b;
@@ -354,6 +365,7 @@ final class Backgrounds {
                         Log.i(TAG, "background photo " + (b == null ? "could not be read"
                                 : "loaded at " + b.getWidth() + "x" + b.getHeight()));
                         if (done != null) done.run();
+                        for (int i = 0; i < also.size(); i++) also.get(i).run();
                     }
                 });
             }

@@ -31,9 +31,9 @@ import java.util.List;
  * which it does not - so a Global write goes out over the ADB link instead (the one Setup
  * uses), the same way HealthPanel applies its checks when it is not held directly.
  *
- * Two values this page cannot offer a real control for are shown as status only, with a
- * note: overscan (the safe values depend on the TV) and colour depth (a bad value can make
- * the picture unstable). Both still show what the TV is set to.
+ * Colour depth cannot be offered as a control (a bad value can make the picture unstable), so
+ * it is shown as status only, with a note. Overscan has a switch and a stepped amount: a wrong
+ * amount only crops or shrinks the picture, and the switch undoes it.
  */
 final class DisplaySoundPanel {
 
@@ -58,10 +58,7 @@ final class DisplaySoundPanel {
                         + "page has behind it - no discovery screen of its own.");
 
         p.addHeader("Picture");
-        addStatus(c, p, "Overscan", "overscan_enabled", "overscan_values",
-                "Amazon's own page lets you nudge the picture in from the edges. The safe "
-                        + "amount depends on the TV, so Homestead only shows whether it is on "
-                        + "and can reset it - not adjust it.", host);
+        addOverscan(c, p);
         addColorDepth(c, p);
 
         p.addRow("Back", "", new Runnable() {
@@ -130,28 +127,70 @@ final class DisplaySoundPanel {
 
     // ---------------------------------------------------------------- status-only rows
 
-    private static void addStatus(final Context c, Panel p, String label, final String enabledKey,
-            final String valuesKey, String help, final SettingsPanel.Host host) {
-        boolean on = "1".equals(getGlobal(c, enabledKey));
-        final Panel.Row row = p.addRow(label, on ? "on" : "off", null);
-        row.setHelp(help);
-        if (!on) return;
-        row.cell.setOnClickListener(new View.OnClickListener() {
+    // ---------------------------------------------------------------- overscan
+
+    /** How far the picture is taken in from every edge, as a share of the screen. */
+    private static final float[] OVERSCAN_STEPS = { 0f, 0.01f, 0.02f, 0.03f, 0.04f, 0.05f };
+
+    /** The first of the four per-side values, or 0 when unset. */
+    private static float overscanNow(Context c) {
+        String v = getGlobal(c, "overscan_values");
+        if (v == null) return 0f;
+        try { return Float.parseFloat(v.trim().split("\\s+")[0]); }
+        catch (Throwable t) { return 0f; }
+    }
+
+    private static String percent(float f) {
+        return String.format(java.util.Locale.US, "%.1f%%", f * 100f);
+    }
+
+    /**
+     * Overscan: a switch for Amazon's correction (it shrinks the picture in from the edges, to
+     * make up for a TV that crops them), and a row that steps the amount, the same on all four
+     * sides. Both go out over the ADB link, since they are Settings.Global.
+     */
+    private static void addOverscan(final Context c, Panel p) {
+        final Panel.Row sw = p.addRow("Overscan",
+                onOff("1".equals(getGlobal(c, "overscan_enabled"))), null).asSwitch();
+        sw.setHelp("Takes the picture in from the edges, for a TV that crops them. Leave it off "
+                + "when the TV shows the picture 1:1 (for example in Film mode), or black "
+                + "borders appear.");
+        final Panel.Row amount = p.addRow("Overscan amount",
+                percent(overscanNow(c)), null);
+        amount.setHelp("How far in from each edge, the same on all four sides. Press OK for "
+                + "the next step; it wraps round to 0. Only has an effect while Overscan is on.");
+
+        sw.cell.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                if (!AdbBridge.canRun(c)) { row.setValue("needs Setup"); return; }
-                row.setValue("resetting...");
-                AdbBridge.run(new String[]{
-                        "settings put global " + enabledKey + " 0",
-                        "settings put global " + valuesKey + " \"0.0 0.0 0.0 0.0\""
-                }, new AdbBridge.Callback() {
-                    public void onDone(boolean ok, String out) {
-                        row.setValue("1".equals(getGlobal(c, enabledKey)) ? "on" : "off");
-                        row.cell.setOnClickListener(null);
-                    }
-                });
+                if (!AdbBridge.canRun(c)) { sw.setValue("needs Setup"); return; }
+                final boolean n = !"1".equals(getGlobal(c, "overscan_enabled"));
+                sw.setValue("working...");
+                AdbBridge.run(new String[]{ "settings put global overscan_enabled " + (n ? 1 : 0) },
+                        new AdbBridge.Callback() {
+                            public void onDone(boolean ok, String out) {
+                                sw.setValue(onOff("1".equals(getGlobal(c, "overscan_enabled"))));
+                            }
+                        });
             }
         });
-        row.setBadge("tap to reset");
+        amount.cell.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                if (!AdbBridge.canRun(c)) { amount.setValue("needs Setup"); return; }
+                float cur = overscanNow(c), next = OVERSCAN_STEPS[0];
+                for (int i = 0; i < OVERSCAN_STEPS.length; i++) {
+                    if (OVERSCAN_STEPS[i] > cur + 0.0005f) { next = OVERSCAN_STEPS[i]; break; }
+                }
+                String one = String.format(java.util.Locale.US, "%.6f", next);
+                amount.setValue("working...");
+                AdbBridge.run(new String[]{ "settings put global overscan_values \""
+                        + one + " " + one + " " + one + " " + one + "\"" },
+                        new AdbBridge.Callback() {
+                            public void onDone(boolean ok, String out) {
+                                amount.setValue(percent(overscanNow(c)));
+                            }
+                        });
+            }
+        });
     }
 
     private static void addColorDepth(final Context c, Panel p) {
