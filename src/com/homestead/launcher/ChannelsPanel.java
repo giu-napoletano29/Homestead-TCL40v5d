@@ -60,9 +60,15 @@ final class ChannelsPanel {
     private static final class Entry {
         final String group, id, name, pkg, uri;
         final int accent;
+        /** A channel of an app that has no link per channel: drawn as a wordmark, opens the app. */
+        final boolean wordmark;
         Entry(String group, String id, String name, String pkg, String uri, int accent) {
+            this(group, id, name, pkg, uri, accent, false);
+        }
+        Entry(String group, String id, String name, String pkg, String uri, int accent,
+                boolean wordmark) {
             this.group = group; this.id = id; this.name = name; this.pkg = pkg; this.uri = uri;
-            this.accent = accent;
+            this.accent = accent; this.wordmark = wordmark;
         }
     }
 
@@ -71,6 +77,7 @@ final class ChannelsPanel {
 
     private static final String G_RAI = "Rai";
     private static final String G_MEDIASET = "Mediaset";
+    private static final String G_MEDIASET_RADIO = "Radio Mediaset";
     private static final String G_OTHER = "Altre app con dirette";
 
     /**
@@ -80,20 +87,58 @@ final class ChannelsPanel {
      * box), so it opens on its own home, which has an "on air now" row.
      */
     private static final Entry[] CATALOGUE = {
-            rai("rai1", "Rai 1", 0xFF2D6BD9), rai("rai2", "Rai 2", 0xFF1E9BD1),
-            rai("rai3", "Rai 3", 0xFF2E9A5E), rai("rai4", "Rai 4", 0xFFD1433A),
-            rai("rai5", "Rai 5", 0xFF8A4FD1), rai("raimovie", "Rai Movie", 0xFFB8862A),
+            // Rai's own colours: 1 blue, 2 red, 3 green, 4 violet (the first four are the brand's
+            // known ones; the rest are close guesses at each channel's look).
+            rai("rai1", "Rai 1", 0xFF0057B8), rai("rai2", "Rai 2", 0xFFD7192E),
+            rai("rai3", "Rai 3", 0xFF1FA15A), rai("rai4", "Rai 4", 0xFF6B2FA0),
+            rai("rai5", "Rai 5", 0xFF2A8BB5), rai("raimovie", "Rai Movie", 0xFFE2711D),
             rai("raipremium", "Rai Premium", 0xFFC24C84), rai("raigulp", "Rai Gulp", 0xFF3BAF8C),
             rai("raiyoyo", "Rai YoYo", 0xFFE0842E), rai("raistoria", "Rai Storia", 0xFF7B6A4F),
             rai("raiscuola", "Rai Scuola", 0xFF4F7FB0),
             new Entry(G_RAI, "raiplay", "RaiPlay", RAIPLAY, null, 0xFF1E5BD6),
+            // Infinity opens a channel from https://mediasetinfinity.mediaset.it/diretta/<slug>
+            // (the slugs are the ones its own Dirette page links to). Checked on a Stick: Canale 5,
+            // Italia 1 and Rete 4 open and play; the others follow the same pattern. A link
+            // made up from the channel's name alone ends on its home, so the slug must be exact.
+            mediaset("canale5", "Canale 5", 0xFF1C5BC0, "canale5_cC5"),
+            mediaset("italia1", "Italia 1", 0xFFC98A00, "italia1_cI1"),
+            mediaset("rete4", "Rete 4", 0xFFE2571E, "rete4_cR4"),
+            mediaset("20", "20", 0xFF2A9D8F, "20mediaset_cLB"),
+            mediaset("la5", "La5", 0xFFD81B8C, "la5_cKA"),
+            mediaset("iris", "Iris", 0xFF8E2DE2, "iris_cKI"),
+            mediaset("italia2", "Italia 2", 0xFF6A4FB3, "italia2_cI2"),
+            mediaset("topcrime", "Top Crime", 0xFF8B1A1A, "topcrime_cLT"),
+            mediaset("cine34", "Cine34", 0xFFB26A00, "cine34_cB6"),
+            mediaset("focus", "Focus", 0xFF2E7D32, "focus_cFU"),
+            mediaset("mediasetextra", "Mediaset Extra", 0xFF455A64, "mediasetextra_cKQ"),
+            mediaset("tgcom24", "TGCOM24", 0xFF0D47A1, "video_cKF"),
+            mediaset("twentyseven", "TwentySeven", 0xFF00838F, "_cTS"),
+            mediaset("boing", "Boing", 0xFF00A0DC, "kids_cKB"),
+            mediaset("cartoonito", "Cartoonito", 0xFFF28C28, "kids_cLA"),
+            mediaset("mediasetitalia", "Mediaset Italia", 0xFF37474F, "mediaset-international_cMY"),
             new Entry(G_MEDIASET, "infinity", "Mediaset Infinity", INFINITY, null, 0xFF6A2BD6),
+            // The radios the same page lists, with their video feed.
+            radio("r101", "R101", 0xFFE53935, "r101_b7871969_cER"),
+            radio("radio105", "Radio 105", 0xFFE08A00, "105.net_cEC"),
+            radio("virgin", "Virgin Radio", 0xFFC62828, "virginradio.it_cEW"),
+            radio("rmc", "Radio Montecarlo", 0xFF1565C0, "radiomontecarlo.net_cBB"),
+            radio("norba", "Radio Norba", 0xFF2E7D32, "radio-norba-tv_cU4"),
             new Entry(G_OTHER, "plex", "Plex", "com.plexapp.android", null, 0xFFE5A00D),
             new Entry(G_OTHER, "pluto", "Pluto TV", "tv.pluto.android", null, 0xFF2B2B2B),
             new Entry(G_OTHER, "discovery", "discovery+", "com.discovery.discoplus", null, 0xFF1F4FD8),
             new Entry(G_OTHER, "now", "NOW", "com.nowtv.it", null, 0xFF0AA39A),
             new Entry(G_OTHER, "dazn", "DAZN", "com.dazn", null, 0xFF1A1A1A),
     };
+
+    private static Entry mediaset(String id, String name, int accent, String slug) {
+        return new Entry(G_MEDIASET, id, name, INFINITY,
+                "https://mediasetinfinity.mediaset.it/diretta/" + slug, accent, true);
+    }
+
+    private static Entry radio(String id, String name, int accent, String slug) {
+        return new Entry(G_MEDIASET_RADIO, id, name, INFINITY,
+                "https://mediasetinfinity.mediaset.it/diretta/" + slug, accent, true);
+    }
 
     private static Entry rai(String id, String name, int accent) {
         return new Entry(G_RAI, id, name, RAIPLAY, "https://www.raiplay.it/dirette/" + id, accent);
@@ -226,58 +271,161 @@ final class ChannelsPanel {
         page.addView(sv, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
 
+        // One tab per group (Rai, Mediaset, Radio Mediaset, other apps): Left and Right on the
+        // strip change tab, Down goes into that tab's cards and Up comes back to the strip.
         List<Entry> list = available(c);
-        String group = null;
-        LinearLayout row = null;
-        int inRow = 0;
+        List<String> groups = new ArrayList<String>();
         for (int i = 0; i < list.size(); i++) {
-            final Entry e = list.get(i);
-            if (!e.group.equals(group)) {
-                group = e.group;
-                TextView h = new TextView(c);
-                h.setText(group.toUpperCase());
-                h.setTextColor(0xFF8FB0D8);
-                h.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
-                h.setLetterSpacing(0.14f);
-                h.setTypeface(Fonts.get(c, Fonts.MEDIUM));
-                LinearLayout.LayoutParams hlp = new LinearLayout.LayoutParams(
-                        ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-                hlp.topMargin = AppModel.dp(c, column.getChildCount() == 0 ? 8 : 26);
-                hlp.bottomMargin = AppModel.dp(c, 12);
-                column.addView(h, hlp);
-                row = null;
-                inRow = 0;
-            }
-            if (row == null || inRow == COLUMNS) {
-                row = new LinearLayout(c);
-                row.setOrientation(LinearLayout.HORIZONTAL);
-                row.setClipChildren(false);
-                LinearLayout.LayoutParams rlp = new LinearLayout.LayoutParams(
-                        ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-                if (inRow == COLUMNS) rlp.topMargin = gap;
-                column.addView(row, rlp);
-                inRow = 0;
-            }
-            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(cardW, cardH);
-            if (inRow > 0) lp.leftMargin = gap;
-            row.addView(card(c, e, cardW, cardH), lp);
-            inRow++;
+            if (!groups.contains(list.get(i).group)) groups.add(list.get(i).group);
         }
-
-        TextView note = new TextView(c);
-        note.setText("Logo ufficiali: copia i PNG (rai1.png, raimovie.png...) in "
-                + "Android/data/com.homestead.launcher/files/logos/. Mediaset Infinity non "
-                + "apre un canale preciso: si apre sulla sua home, dove c'e' \"Ora in onda\".");
-        note.setTextColor(0xFF74889C);
-        note.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
-        LinearLayout.LayoutParams nlp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        nlp.topMargin = AppModel.dp(c, 30);
-        column.addView(note, nlp);
+        Pager pager = new Pager(c, list, groups, column, sv, cardW, cardH, gap);
+        LinearLayout tabs = new LinearLayout(c);
+        tabs.setOrientation(LinearLayout.HORIZONTAL);
+        tabs.setClipChildren(false);
+        for (int i = 0; i < groups.size(); i++) {
+            View chip = pager.makeChip(i);
+            LinearLayout.LayoutParams clp = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            if (i > 0) clp.leftMargin = AppModel.dp(c, 10);
+            tabs.addView(chip, clp);
+        }
+        if (!groups.isEmpty()) {
+            // Nothing beyond the ends of the strip to move to.
+            View first = pager.chips.get(0), last = pager.chips.get(groups.size() - 1);
+            first.setNextFocusLeftId(first.getId());
+            last.setNextFocusRightId(last.getId());
+        }
+        LinearLayout.LayoutParams tlp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        tlp.topMargin = AppModel.dp(c, 14);
+        tlp.bottomMargin = AppModel.dp(c, 4);
+        page.addView(tabs, page.indexOfChild(sv), tlp);
+        if (!groups.isEmpty()) pager.select(0);
 
         root.addView(page, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         return root;
+    }
+
+    /** What a tab strip entry says for a group. */
+    private static String tabName(String group) {
+        return G_OTHER.equals(group) ? "Altre app" : group;
+    }
+
+    /** The tab strip and the cards of the tab showing; switching rebuilds only the cards. */
+    private static final class Pager {
+        final Context c;
+        final List<Entry> list;
+        final List<String> groups;
+        final LinearLayout column;
+        final ScrollView sv;
+        final int cardW, cardH, gap;
+        final List<View> chips = new ArrayList<View>();
+        /** Logos drawn once: going back and forth between tabs must not redraw them. */
+        final java.util.Map<String, Bitmap> logos = new java.util.HashMap<String, Bitmap>();
+        int current = -1, focused = -1;
+
+        Pager(Context c, List<Entry> list, List<String> groups, LinearLayout column,
+                ScrollView sv, int cardW, int cardH, int gap) {
+            this.c = c; this.list = list; this.groups = groups; this.column = column;
+            this.sv = sv; this.cardW = cardW; this.cardH = cardH; this.gap = gap;
+        }
+
+        View makeChip(final int idx) {
+            final FrameLayout chip = new FrameLayout(c);
+            chip.setId(View.generateViewId());
+            chip.setFocusable(true);
+            chip.setFocusableInTouchMode(true);
+            TextView t = new TextView(c);
+            t.setText(tabName(groups.get(idx)));
+            t.setTextSize(TypedValue.COMPLEX_UNIT_SP, 17);
+            t.setTypeface(Fonts.get(c, Fonts.MEDIUM));
+            t.setPadding(AppModel.dp(c, 18), AppModel.dp(c, 8), AppModel.dp(c, 18), AppModel.dp(c, 8));
+            chip.addView(t);
+            chip.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+                public void onFocusChange(View v, boolean has) {
+                    if (has) {
+                        focused = idx;
+                        select(idx);
+                    } else if (focused == idx) {
+                        focused = -1;
+                    }
+                    paint(idx);
+                }
+            });
+            chip.setOnClickListener(new View.OnClickListener() {
+                public void onClick(View v) {
+                    // OK drops into the tab's first card.
+                    if (column.getChildCount() > 0 && column.getChildAt(0) instanceof ViewGroup) {
+                        ViewGroup row = (ViewGroup) column.getChildAt(0);
+                        if (row.getChildCount() > 0) row.getChildAt(0).requestFocus();
+                    }
+                }
+            });
+            chips.add(chip);
+            paint(idx);
+            return chip;
+        }
+
+        void paint(int i) {
+            FrameLayout chip = (FrameLayout) chips.get(i);
+            TextView t = (TextView) chip.getChildAt(0);
+            boolean sel = i == current, foc = i == focused;
+            GradientDrawable bg = new GradientDrawable();
+            bg.setCornerRadius(AppModel.dp(c, 6));
+            bg.setColor(foc ? 0x59FFFFFF : sel ? 0x2EFFFFFF : 0x00000000);
+            if (foc) bg.setStroke(AppModel.dp(c, 2), Color.WHITE);
+            chip.setBackground(bg);
+            t.setTextColor(sel || foc ? Color.WHITE : 0xB3FFFFFF);
+        }
+
+        void select(int idx) {
+            if (idx == current) return;
+            int old = current;
+            current = idx;
+            if (old >= 0) paint(old);
+            paint(idx);
+
+            column.removeAllViews();
+            String group = groups.get(idx);
+            View chip = chips.get(idx);
+            LinearLayout row = null;
+            int inRow = 0, rows = 0;
+            for (int i = 0; i < list.size(); i++) {
+                Entry e = list.get(i);
+                if (!e.group.equals(group)) continue;
+                if (row == null || inRow == COLUMNS) {
+                    row = new LinearLayout(c);
+                    row.setOrientation(LinearLayout.HORIZONTAL);
+                    row.setClipChildren(false);
+                    LinearLayout.LayoutParams rlp = new LinearLayout.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                    if (rows > 0) rlp.topMargin = gap;
+                    column.addView(row, rlp);
+                    inRow = 0;
+                    rows++;
+                }
+                View card = card(c, e, cardW, cardH, logos);
+                // Up from the first row goes back to this tab's chip.
+                if (rows == 1) card.setNextFocusUpId(chip.getId());
+                LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(cardW, cardH);
+                if (inRow > 0) lp.leftMargin = gap;
+                row.addView(card, lp);
+                inRow++;
+            }
+
+            TextView note = new TextView(c);
+            note.setText("Logo ufficiali: copia i PNG (rai1.png, raimovie.png...) in "
+                    + "Android/data/com.homestead.launcher/files/logos/. I canali Mediaset si "
+                    + "aprono direttamente in Mediaset Infinity.");
+            note.setTextColor(0xFF74889C);
+            note.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
+            LinearLayout.LayoutParams nlp = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            nlp.topMargin = AppModel.dp(c, 30);
+            column.addView(note, nlp);
+            sv.scrollTo(0, 0);
+        }
     }
 
     /** The look the home screen has now: its preset, or the photo when it is chosen and loaded. */
@@ -295,12 +443,13 @@ final class ChannelsPanel {
     }
 
     /** One focusable card with the channel's logo; it lifts and gets a white rim on focus. */
-    private static View card(final Context c, final Entry e, int w, int h) {
+    private static View card(final Context c, final Entry e, int w, int h,
+            java.util.Map<String, Bitmap> logos) {
         final FrameLayout cell = new FrameLayout(c);
         cell.setFocusable(true);
         cell.setFocusableInTouchMode(true);
         cell.setClipChildren(true);
-        final float radius = AppModel.dp(c, 10);
+        final float radius = AppModel.dp(c, 6);
 
         GradientDrawable base = new GradientDrawable();
         base.setCornerRadius(radius);
@@ -309,7 +458,12 @@ final class ChannelsPanel {
 
         ImageView logo = new ImageView(c);
         logo.setScaleType(ImageView.ScaleType.FIT_XY);
-        logo.setImageBitmap(logoBitmap(c, e, w, h));
+        Bitmap lb = logos.get(e.id);
+        if (lb == null) {
+            lb = logoBitmap(c, e, w, h);
+            logos.put(e.id, lb);
+        }
+        logo.setImageBitmap(lb);
         cell.addView(logo, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         // The image is square-cornered; the cell clips it to the card's rounded shape.
@@ -333,7 +487,7 @@ final class ChannelsPanel {
         cell.setOnFocusChangeListener(new View.OnFocusChangeListener() {
             public void onFocusChange(View v, boolean has) {
                 rimView.setVisibility(has ? View.VISIBLE : View.INVISIBLE);
-                v.animate().scaleX(has ? 1.07f : 1f).scaleY(has ? 1.07f : 1f)
+                v.animate().scaleX(has ? 1.04f : 1f).scaleY(has ? 1.04f : 1f)
                         .translationZ(has ? AppModel.dp(c, 10) : 0f).setDuration(140L).start();
             }
         });
@@ -350,9 +504,12 @@ final class ChannelsPanel {
         Bitmap out = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
         Canvas cv = new Canvas(out);
         Paint bg = new Paint(Paint.ANTI_ALIAS_FLAG);
-        int top = blend(e.accent, 0xFF0B1620, 0.55f);
-        int bottom = blend(e.accent, 0xFF050A10, 0.82f);
-        bg.setShader(new LinearGradient(0, 0, w, h, top, bottom, Shader.TileMode.CLAMP));
+        // The channel's own colour, a little deepened towards the bottom - not the dark veil it
+        // used to sit under, which turned every card a muddy navy.
+        int top = blend(e.accent, 0xFFFFFFFF, 0.06f);
+        int bottom = blend(e.accent, 0xFF050A10, 0.36f);
+        // Straight down, not corner to corner: a calmer, flatter look, as a TV's tiles have.
+        bg.setShader(new LinearGradient(0, 0, 0, h, top, bottom, Shader.TileMode.CLAMP));
         cv.drawRect(0, 0, w, h, bg);
 
         Bitmap own = userLogo(c, e, w, h);
@@ -363,7 +520,7 @@ final class ChannelsPanel {
                     (w + lw) / 2f, (h + lh) / 2f), new Paint(Paint.FILTER_BITMAP_FLAG));
             return out;
         }
-        if (e.uri == null) {
+        if (e.uri == null && !e.wordmark) {
             // An app with no channel of its own: its banner fills the card.
             Drawable banner = appBanner(c, e.pkg);
             if (banner != null) {
@@ -372,14 +529,7 @@ final class ChannelsPanel {
                 return out;
             }
         }
-        wordmark(cv, e, w, h);
-        Drawable icon = appIcon(c, e.pkg);
-        if (icon != null) {
-            int s = Math.round(h * 0.26f);
-            int m = Math.round(h * 0.07f);
-            icon.setBounds(w - s - m, h - s - m, w - m, h - m);
-            icon.draw(cv);
-        }
+        wordmark(c, cv, e, w, h);
         return out;
     }
 
@@ -402,52 +552,53 @@ final class ChannelsPanel {
         }
     }
 
-    /** "Rai" in white with the rest of the name in a rounded block of the channel's colour. */
-    private static void wordmark(Canvas cv, Entry e, int w, int h) {
+    /**
+     * The way a TV channel list draws a channel with no logo to hand: a small, spaced label
+     * over one big word or number, white on the card's colour and nothing else. "Rai 1" is RAI
+     * over 1, "Canale 5" is CANALE over 5, "Top Crime" is TOP over CRIME, "Iris" is IRIS alone.
+     */
+    private static void wordmark(Context c, Canvas cv, Entry e, int w, int h) {
         String name = e.name;
-        String lead = name;
-        String tail = null;
-        if (name.startsWith("Rai ") && name.length() > 4) {
-            lead = "Rai";
-            tail = name.substring(4);
+        String label = null, main = name;
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("^(.*?)\\s*(\\d+)$").matcher(name);
+        if (m.matches()) {
+            main = m.group(2);
+            if (m.group(1).length() > 0) label = m.group(1);
+        } else {
+            int sp = name.indexOf(' ');
+            if (sp > 0) {
+                label = name.substring(0, sp);
+                main = name.substring(sp + 1);
+            }
         }
-        Paint tp = new Paint(Paint.ANTI_ALIAS_FLAG);
-        tp.setTypeface(Typeface.create("sans-serif-black", Typeface.NORMAL));
-        tp.setColor(Color.WHITE);
-        float size = h * 0.34f;
-        tp.setTextSize(size);
-        Paint pp = new Paint(Paint.ANTI_ALIAS_FLAG);
-        pp.setTypeface(tp.getTypeface());
-        pp.setTextSize(size * 0.72f);
-        pp.setColor(Color.WHITE);
+        java.util.Locale it = java.util.Locale.ITALY;
+        boolean number = main.matches("\\d+");
+        String mainText = number ? main : main.toUpperCase(it);
 
-        float padX = size * 0.34f, padY = size * 0.16f, gapX = size * 0.22f;
-        float leadW = tp.measureText(lead);
-        float tailW = tail == null ? 0 : pp.measureText(tail) + 2 * padX;
-        float total = leadW + (tail == null ? 0 : gapX + tailW);
-        float max = w * 0.84f;
-        if (total > max) {
-            float k = max / total;
-            tp.setTextSize(size * k);
-            pp.setTextSize(size * 0.72f * k);
-            padX *= k; padY *= k; gapX *= k;
-            leadW = tp.measureText(lead);
-            tailW = tail == null ? 0 : pp.measureText(tail) + 2 * padX;
-            total = leadW + (tail == null ? 0 : gapX + tailW);
+        Paint big = new Paint(Paint.ANTI_ALIAS_FLAG);
+        big.setTypeface(Fonts.get(c, Fonts.BLACK));
+        big.setColor(Color.WHITE);
+        big.setTextAlign(Paint.Align.CENTER);
+        float bigSize = h * (number ? 0.52f : 0.30f);
+        big.setTextSize(bigSize);
+        if (!number) {
+            float tw = big.measureText(mainText), max = w * 0.80f;
+            if (tw > max) big.setTextSize(bigSize * max / tw);
         }
-        float x = (w - total) / 2f;
-        float base = h * 0.5f + tp.getTextSize() * 0.34f;
-        cv.drawText(lead, x, base, tp);
-        if (tail != null) {
-            float bx = x + leadW + gapX;
-            float bh = pp.getTextSize() + 2 * padY;
-            float by = base - tp.getTextSize() * 0.74f + (tp.getTextSize() * 0.74f - bh) / 2f
-                    + bh * 0.08f;
-            Paint blk = new Paint(Paint.ANTI_ALIAS_FLAG);
-            blk.setColor(e.accent);
-            cv.drawRoundRect(new RectF(bx, by, bx + tailW, by + bh), bh * 0.22f, bh * 0.22f, blk);
-            cv.drawText(tail, bx + padX, by + padY + pp.getTextSize() * 0.82f, pp);
+        Paint small = new Paint(Paint.ANTI_ALIAS_FLAG);
+        small.setTypeface(Fonts.get(c, Fonts.BOLD));
+        small.setColor(0xD9FFFFFF);
+        small.setTextAlign(Paint.Align.CENTER);
+        small.setLetterSpacing(0.26f);
+        small.setTextSize(h * 0.115f);
+
+        float capBig = big.getTextSize() * 0.72f;
+        float labelBlock = label == null ? 0 : small.getTextSize() * 2.1f;
+        float top = (h - (labelBlock + capBig)) / 2f;
+        if (label != null) {
+            cv.drawText(label.toUpperCase(it), w / 2f, top + small.getTextSize() * 0.9f, small);
         }
+        cv.drawText(mainText, w / 2f, top + labelBlock + capBig, big);
     }
 
     private static int blend(int a, int b, float t) {

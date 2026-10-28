@@ -439,13 +439,34 @@ final class Backgrounds {
      * do this over their own hero art rather than dimming the whole screen evenly.
      */
     static Drawable withScrim(Context c, Drawable base, int darkColor) {
-        int rgb = darkColor & 0x00FFFFFF;
-        // Five evenly spaced stops: clear for the top quarter, then fading into the dark
-        // colour as the dock starts (halfway down) and almost solid under it.
-        GradientDrawable scrim = new GradientDrawable(
-                GradientDrawable.Orientation.TOP_BOTTOM,
-                new int[]{ rgb, rgb, rgb | 0xD4000000, rgb | 0xF5000000, rgb | 0xFC000000 });
-        return new LayerDrawable(new Drawable[]{ base, scrim });
+        return new LayerDrawable(new Drawable[]{ base, new Scrim(darkColor & 0x00FFFFFF) });
+    }
+
+    /**
+     * The dark fade under the dock. Stops at fixed heights (a GradientDrawable only spaces
+     * them evenly before API 29): the picture is untouched down to just before halfway, then
+     * goes quickly to dark over the dock's own height and stays almost solid below it.
+     */
+    private static final class Scrim extends Drawable {
+        private static final float[] AT = { 0f, 0.48f, 0.60f, 0.78f, 1f };
+        private static final int[] ALPHA = { 0x00, 0x00, 0xC8, 0xF2, 0xFC };
+        private final int rgb;
+        private final Paint paint = new Paint();
+        Scrim(int rgb) { this.rgb = rgb; }
+
+        @Override protected void onBoundsChange(android.graphics.Rect r) {
+            if (r.isEmpty()) return;
+            int[] colors = new int[ALPHA.length];
+            for (int i = 0; i < colors.length; i++) colors[i] = rgb | (ALPHA[i] << 24);
+            paint.setShader(new android.graphics.LinearGradient(0, r.top, 0, r.bottom, colors, AT,
+                    android.graphics.Shader.TileMode.CLAMP));
+        }
+        @Override public void draw(Canvas canvas) {
+            if (paint.getShader() != null) canvas.drawRect(getBounds(), paint);
+        }
+        @Override public void setAlpha(int a) { paint.setAlpha(a); }
+        @Override public void setColorFilter(android.graphics.ColorFilter f) { paint.setColorFilter(f); }
+        @Override public int getOpacity() { return android.graphics.PixelFormat.TRANSLUCENT; }
     }
 
     /**

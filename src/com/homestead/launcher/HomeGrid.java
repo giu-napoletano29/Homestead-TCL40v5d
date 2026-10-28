@@ -611,7 +611,9 @@ public class HomeGrid implements SettingsPanel.Host {
 
     // ---------------------------------------------------------------- side rail
 
-    private static final int RAIL_REST = 0x66000000, RAIL_OPEN = 0xF0000000;
+    private static final int RAIL_REST = 0x8C000000, RAIL_OPEN = 0xF0000000;
+    /** How strong the white line and glow on the rail's right edge are, closed and open. */
+    private static final float EDGE_CLOSED = 0.18f, EDGE_OPEN = 0.03f;
     private RailGlass railBg;
 
     /**
@@ -628,7 +630,7 @@ public class HomeGrid implements SettingsPanel.Host {
         private int tint;
         private float open;
         /** How strong the edge glow and line are: full when closed, much fainter when open. */
-        private int edgeAlpha = 255;
+        private int edgeAlpha = Math.round(255f * EDGE_CLOSED);   // as closed, until it opens
         private android.graphics.LinearGradient sheen, rim, glow;
 
         RailGlass(float line, int fill) {
@@ -647,7 +649,7 @@ public class HomeGrid implements SettingsPanel.Host {
         void setFill(int c, float open) {
             fill = c;
             this.open = open;
-            edgeAlpha = Math.round(255f * (0.30f - 0.25f * open));
+            edgeAlpha = Math.round(255f * (EDGE_CLOSED - (EDGE_CLOSED - EDGE_OPEN) * open));
             invalidateSelf();
         }
 
@@ -2434,63 +2436,82 @@ public class HomeGrid implements SettingsPanel.Host {
     private final List<View> channelsTiles = new ArrayList<View>();
 
     /**
-     * The Canali TV tile: a gradient in the look's own colour, a drawn TV with a play button
-     * and an antenna on the left, and the name with what it holds beside it. It is the one tile
-     * that stands for watching TV, so it is not a plain grey card.
+     * The Canali TV tile, kept to two lines of type on a calm gradient in the look's own hue:
+     * a small spaced "LIVE" over the name, and one faint play mark at the right (see
+     * BroadcastWaves). It is the one tile that stands for watching TV, so it is coloured; the
+     * rest is left empty on purpose.
      */
     private View buildChannelsTile(AppModel.Item it) {
         FrameLayout cell = newCell(it);
         paintChannelsTile(cell);
         channelsTiles.add(cell);
 
-        LinearLayout row = new LinearLayout(ctx);
-        row.setOrientation(LinearLayout.HORIZONTAL);
-        row.setGravity(Gravity.CENTER_VERTICAL);
-        row.setPadding(dp(16), dp(8), dp(14), dp(8));
-
-        ImageView ic = new ImageView(ctx);
-        ic.setScaleType(ImageView.ScaleType.FIT_CENTER);
-        ic.setImageBitmap(ChannelsPanel.tileIcon(dp(72)));
-        LinearLayout.LayoutParams ilp = new LinearLayout.LayoutParams(dp(62), dp(62));
-        ilp.rightMargin = dp(14);
-        row.addView(ic, ilp);
-
         LinearLayout col = new LinearLayout(ctx);
         col.setOrientation(LinearLayout.VERTICAL);
         col.setGravity(Gravity.CENTER_VERTICAL);
+        col.setPadding(dp(22), dp(8), dp(16), dp(8));
+
+        TextView live = new TextView(ctx);
+        live.setText("●  LIVE");
+        live.setTextColor(0xCCFFFFFF);
+        live.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11);
+        live.setTypeface(Fonts.get(ctx, Fonts.BOLD));
+        live.setLetterSpacing(0.22f);
+        live.setSingleLine(true);
+        col.addView(live);
+
         TextView name = new TextView(ctx);
         name.setText(it.label);
         name.setTextColor(Color.WHITE);
-        name.setTextSize(TypedValue.COMPLEX_UNIT_SP, 22);
-        name.setTypeface(Fonts.get(ctx, Fonts.MEDIUM));
-        name.setSingleLine(true);
-        col.addView(name);
-        row.addView(col, new LinearLayout.LayoutParams(
-                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        name.setTextSize(TypedValue.COMPLEX_UNIT_SP, 26);
+        name.setTypeface(Fonts.get(ctx, Fonts.BOLD));
+        name.setMaxLines(2);
+        name.setEllipsize(TextUtils.TruncateAt.END);
+        LinearLayout.LayoutParams nlp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        nlp.topMargin = dp(4);
+        col.addView(name, nlp);
 
-        cell.addView(row, new FrameLayout.LayoutParams(
+        cell.addView(col, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         return cell;
     }
 
     private void paintChannelsTile(View cell) {
-        int t = look == null ? 0xFF2A6FDB : look.tint();
-        if (look == Backgrounds.PHOTO_LOOK) {
-            // A photo or painting has no tint of its own (it would be black): take the hue of
-            // the wallpaper's dark tone, brought back up, or a plain blue before it has loaded.
-            int tone = Backgrounds.tone(ctx);
-            int r = Math.min(255, Color.red(tone) * 22 / 10);
-            int g = Math.min(255, Color.green(tone) * 22 / 10);
-            int b = Math.min(255, Color.blue(tone) * 22 / 10);
-            t = (r + g + b < 90) ? 0xFF2A6FDB : Color.rgb(r, g, b);
-        }
-        int hi = Color.rgb(Math.min(255, Color.red(t) * 3 / 4 + 40),
-                Math.min(255, Color.green(t) * 3 / 4 + 40), Math.min(255, Color.blue(t) * 3 / 4 + 40));
-        int lo = Color.rgb(Color.red(t) / 4, Color.green(t) / 4, Color.blue(t) / 4);
+        // Near black, with a faint lift at the top-left: the most contrast against the white
+        // type, whatever the wallpaper is. (A tile in the wallpaper's hue was tried and dropped.)
         GradientDrawable g = new GradientDrawable(GradientDrawable.Orientation.TL_BR,
-                new int[]{ hi, lo });
+                new int[]{ 0xFF24272D, 0xFF020203 });
         g.setCornerRadius(dp(CORNER_DP));
-        cell.setBackground(g);
+        cell.setBackground(new android.graphics.drawable.LayerDrawable(
+                new Drawable[]{ g, new BroadcastWaves(ctx) }));
+    }
+
+    /**
+     * The standard Material antenna glyph (res/drawable/ic_antenna.xml) at the right of the
+     * Canali TV tile, faint: the tile's only decoration. Drawn only where the tile is wide
+     * (the dock), not in a square cell where there is no room beside the text.
+     */
+    private static final class BroadcastWaves extends Drawable {
+        private final Drawable icon;
+
+        BroadcastWaves(Context c) {
+            Drawable d = c.getDrawable(R.drawable.ic_antenna);
+            icon = d == null ? null : d.mutate();
+            if (icon != null) icon.setAlpha(0x50);
+        }
+
+        @Override public void draw(android.graphics.Canvas cv) {
+            android.graphics.Rect b = getBounds();
+            if (icon == null || b.isEmpty() || b.width() < b.height() * 1.5f) return;
+            int s = Math.round(b.height() * 0.46f);
+            int cx = b.right - Math.round(b.height() * 0.50f), cy = b.centerY();
+            icon.setBounds(cx - s / 2, cy - s / 2, cx + s / 2, cy + s / 2);
+            icon.draw(cv);
+        }
+        @Override public void setAlpha(int a) { }
+        @Override public void setColorFilter(android.graphics.ColorFilter f) { }
+        @Override public int getOpacity() { return android.graphics.PixelFormat.TRANSLUCENT; }
     }
 
     /**
