@@ -1148,11 +1148,9 @@ public class HomeGrid implements SettingsPanel.Host {
         Bitmap shot = Backgrounds.photoChosen(ctx) ? Backgrounds.lastPhoto() : null;
         Bitmap soft = shot != null ? Backgrounds.blurred(shot) : null;
         if (soft != null) {
-            android.graphics.drawable.BitmapDrawable bd =
-                    new android.graphics.drawable.BitmapDrawable(ctx.getResources(), soft);
-            bd.setFilterBitmap(true);
             v.setBackground(new android.graphics.drawable.LayerDrawable(
-                    new Drawable[]{ bd, new android.graphics.drawable.ColorDrawable(0xC2000000) }));
+                    new Drawable[]{ Backgrounds.fill(soft),
+                            new android.graphics.drawable.ColorDrawable(0xC2000000) }));
         }
 
         idleBox = new LinearLayout(ctx);
@@ -1220,10 +1218,55 @@ public class HomeGrid implements SettingsPanel.Host {
      * not. Invalidating the root marks all of it changed.
      */
     public void forceRepaint() {
+        refreshBackground();
         root.invalidate();
         root.postDelayed(new Runnable() {
-            public void run() { root.invalidate(); }
+            public void run() {
+                refreshBackground();
+                root.invalidate();
+                // Bounds are only given at the next draw, so look a little later.
+                root.postDelayed(new Runnable() {
+                    public void run() { logBackground("after draw"); }
+                }, 1500L);
+            }
         }, 700L);
+    }
+
+    /** "Class[bounds]{layers}" of a drawable, for the log. */
+    private static String describe(Drawable d) {
+        if (d == null) return "none";
+        StringBuilder sb = new StringBuilder(d.getClass().getSimpleName())
+                .append(d.getBounds().toShortString());
+        if (d instanceof android.graphics.drawable.LayerDrawable) {
+            android.graphics.drawable.LayerDrawable l = (android.graphics.drawable.LayerDrawable) d;
+            sb.append('{');
+            for (int i = 0; i < l.getNumberOfLayers(); i++) {
+                sb.append(i == 0 ? "" : " ").append(describe(l.getDrawable(i)));
+            }
+            sb.append('}');
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Builds the wallpaper drawable again and hands it to the root, as choosing the wallpaper
+     * anew does - which is what has put right a wallpaper left black or half-drawn after a
+     * start or a wake. A fresh drawable gets its own bounds and its own draw ops.
+     */
+    private void refreshBackground() {
+        painted = null;
+        applyBackground();
+    }
+
+    /** What the root and its wallpaper look like now, for a log taken after a glitch. */
+    private void logBackground(String when) {
+        Drawable bg = root.getBackground();
+        Bitmap shot = Backgrounds.lastPhoto();
+        android.util.Log.i("Homestead", "wallpaper " + when + ": root " + root.getWidth() + "x"
+                + root.getHeight() + " dir " + root.getLayoutDirection() + ", drawable "
+                + describe(bg) + ", photo "
+                + (shot == null ? "none" : shot.getWidth() + "x" + shot.getHeight()
+                        + (shot.isRecycled() ? " RECYCLED" : "")));
     }
 
     /** Focus for a fresh Home press: Live TV when it comes first, else as takeFocus(). */

@@ -400,9 +400,33 @@ final class Backgrounds {
         }
     }
 
+    /**
+     * A picture that always fills the bounds it is given. A BitmapDrawable inside a
+     * LayerDrawable is instead placed at its own size, aligned to the start edge, unless told
+     * otherwise - so any mismatch (the bitmap's density, the layout direction, the bounds the
+     * layer is given) leaves it shifted and short of the screen. This has no size of its own,
+     * so the layer fills the area and the picture is stretched to it.
+     */
+    static Drawable fill(Bitmap b) {
+        return new FillDrawable(b);
+    }
+
+    private static final class FillDrawable extends Drawable {
+        private final Bitmap bmp;
+        private final Paint paint = new Paint(Paint.FILTER_BITMAP_FLAG);
+        FillDrawable(Bitmap b) { bmp = b; }
+        @Override public void draw(Canvas canvas) {
+            if (bmp == null || bmp.isRecycled()) return;
+            canvas.drawBitmap(bmp, null, getBounds(), paint);
+        }
+        @Override public void setAlpha(int a) { paint.setAlpha(a); }
+        @Override public void setColorFilter(android.graphics.ColorFilter f) { paint.setColorFilter(f); }
+        @Override public int getOpacity() { return android.graphics.PixelFormat.OPAQUE; }
+    }
+
     /** The photo under a black layer at the chosen dim. */
     static Drawable photoDrawable(Context c, Bitmap b) {
-        Drawable img = new BitmapDrawable(c.getResources(), b);
+        Drawable img = fill(b);
         int a = dimAlpha(c);
         if (a == 0) return img;
         return new LayerDrawable(new Drawable[]{ img, new ColorDrawable(a << 24) });
