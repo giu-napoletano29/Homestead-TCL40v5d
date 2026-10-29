@@ -35,6 +35,8 @@
   <string name="home_tv_health">Diagnostica TV</string>
   <string name="home_back">Indietro</string>
   <string name="rail_apps">App</string>
+  <string name="rail_inputs">Ingressi</string>
+  <string name="inputs_native_failed">Impossibile aprire il menu ingressi del TV: apro l\'elenco di Homestead</string>
   <string name="home_settings_pill">Impostazioni</string>
   <string name="home_inputs_pill">Ingressi</string>
 

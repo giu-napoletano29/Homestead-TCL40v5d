@@ -36,6 +36,8 @@
   <string name="home_tv_health">TV Health</string>
   <string name="home_back">Back</string>
   <string name="rail_apps">Apps</string>
+  <string name="rail_inputs">Inputs</string>
+  <string name="inputs_native_failed">The TV\'s own input menu could not be opened - showing Homestead\'s list</string>
 
   <!-- The ten screens Amazon answers directly (SystemSettingsPanel.SCREENS), and their
        short form for a pill in the top bar. Only four need shortening. -->

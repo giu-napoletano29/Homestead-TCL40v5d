@@ -551,6 +551,7 @@ public class HomeGrid implements SettingsPanel.Host {
                 key.append(',').append(screens.get(i)[SystemSettingsPanel.ID]);
             }
         }
+        if (hasInputs()) key.append(",inputs");
         // Same entries as before: leave the rail, so one with focus keeps it through a reload.
         if (key.toString().equals(pillsKey)) return;
         pillsKey = key.toString();
@@ -729,6 +730,14 @@ public class HomeGrid implements SettingsPanel.Host {
                         }
                     });
         }
+        // On a TV with inputs (HDMI, composite): the way to switch source, after the quick
+        // settings and before the Appstore.
+        if (hasInputs()) {
+            addRailItem(inputsIcon(dp(RAIL_ICON_DP)), ctx.getString(R.string.rail_inputs),
+                    new Runnable() {
+                        public void run() { openInputs(); }
+                    });
+        }
         addRailItem(ShortcutIcons.render("applications", dp(RAIL_ICON_DP)),
                 ctx.getString(R.string.rail_apps), new Runnable() {
                     public void run() {
@@ -874,6 +883,86 @@ public class HomeGrid implements SettingsPanel.Host {
     private void focusRail() {
         if (railItems.isEmpty()) return;
         railItems.get(Math.min(railLast, railItems.size() - 1)).requestFocus();
+    }
+
+    // ---------------------------------------------------------------- inputs
+
+    /** Key code of the remote's INPUT button (KeyEvent.KEYCODE_TV_INPUT). */
+    private static final int KEYCODE_TV_INPUT = 178;
+    /** Fire TV's own quick-settings app, which draws the TV's input list when INPUT is pressed. */
+    private static final String QUICK_SETTINGS_PKG = "com.amazon.tv.quicksettings.ui";
+
+    /** Whether this TV has inputs to switch between: HDMI, composite, a tuner. */
+    private boolean hasInputs() {
+        List<AppModel.Item> all = AppModel.allItems();
+        for (int i = 0; i < all.size(); i++) {
+            if (all.get(i).type == AppModel.TYPE_INPUT) return true;
+        }
+        return false;
+    }
+
+    /** Whether the TV itself has an input menu the INPUT button opens. */
+    private boolean tvHasInputMenu() {
+        try {
+            ctx.getPackageManager().getPackageInfo(QUICK_SETTINGS_PKG, 0);
+            return true;
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    /**
+     * The Inputs entry: the TV's own input list where there is one, as the INPUT button opens
+     * it. There is no link for it (it answers only the key), so the key is sent over the same
+     * on-device ADB link the Screen & sound page uses; with no link, or on a TV without that
+     * menu, Homestead's own list opens instead.
+     */
+    private void openInputs() {
+        logOpen("Inputs (rail)");
+        if (tvHasInputMenu() && AdbBridge.canRun(ctx)) {
+            // The link may have gone idle and shut down: the first command after that often
+            // finds it still starting, so it is tried again (a few times) before giving up.
+            AdbBridge.runRetry(new String[]{ "input keyevent " + KEYCODE_TV_INPUT },
+                    new AdbBridge.Callback() {
+                        public void onDone(boolean ok, String output) {
+                            if (ok) return;
+                            android.util.Log.w("Homestead", "TV input menu not opened: " + output);
+                            Toast.makeText(ctx, R.string.inputs_native_failed,
+                                    Toast.LENGTH_LONG).show();
+                            showPanel(buildInputsPanel());
+                        }
+                    });
+            return;
+        }
+        if (tvHasInputMenu()) {
+            // The TV has its own menu but there is no link to press the key through.
+            Toast.makeText(ctx, R.string.inputs_native_failed, Toast.LENGTH_LONG).show();
+        }
+        showPanel(buildInputsPanel());
+    }
+
+    /** Homestead's own input list: one row per input, a connected one marked. */
+    private View buildInputsPanel() {
+        final Panel p = new Panel(ctx, ctx.getString(R.string.rail_inputs), null, Panel.SHEET);
+        List<AppModel.Item> all = AppModel.allItems();
+        for (int i = 0; i < all.size(); i++) {
+            final AppModel.Item it = all.get(i);
+            if (it.type != AppModel.TYPE_INPUT && !AppModel.isLive(it.type)) continue;
+            if (it.type == AppModel.TYPE_CHANNELS) continue;   // not a source of the TV
+            Panel.Row r = p.addRow(it.label, it.connected ? ctx.getString(R.string.home_connected) : "",
+                    new Runnable() {
+                        public void run() {
+                            closePanel();
+                            if (listener != null) listener.onPick(it);
+                            act(it);
+                        }
+                    });
+            if (it.connected) r.setValueColor(0xFFA7D28F);
+        }
+        p.addRow(ctx.getString(R.string.home_back), "", new Runnable() {
+            public void run() { closePanel(); }
+        });
+        return p.root;
     }
 
     /** The Amazon Appstore - where new apps come from; managing installed ones is in System settings. */
