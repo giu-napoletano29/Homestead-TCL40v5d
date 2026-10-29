@@ -236,7 +236,7 @@ final class DisplaySoundPanel {
         final Panel.Row row = p.addRow("Screensaver", screensaverState(c), null);
         row.setHelp("What the TV shows after a few idle minutes. Off: nothing, and the TV "
                 + "sleeps on its own timer. Colours: Android's changing colours. Amazon's: "
-                + "the TV's own one, which carries ads. Homestead's idle clock is separate and "
+                + "the TV's own one, which carries ads. Salotto's idle clock is separate and "
                 + "only runs on its own home screen. Press OK for the next choice.");
         row.cell.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {

@@ -36,7 +36,7 @@ public final class UpdatePanel {
                              final UpdateChecker.Update u) {
         String installed = UpdateChecker.installedVersionName(c);
         final Panel p = new Panel(c, "Update available",
-                "Homestead " + installed + "  →  " + u.versionName);
+                "Salotto " + installed + "  →  " + u.versionName);
 
         String notes = u.notes != null ? u.notes.trim() : "";
         if (notes.length() == 0) notes = "See the release page for details.";
@@ -97,10 +97,10 @@ public final class UpdatePanel {
                         running[0] = false;
                         status.setValue("needs permission");
                         status.setValueColor(AMBER);
-                        show(message, "Fire OS has to allow Homestead to install apps first. "
+                        show(message, "Fire OS has to allow Salotto to install apps first. "
                                 + "In the TV's own Settings, open Device & Software (My Fire TV "
                                 + "on some models), then Developer options, then Install "
-                                + "unknown apps, and switch Homestead on. Come back here and "
+                                + "unknown apps, and switch Salotto on. Come back here and "
                                 + "select Install now again. With the on-device tunnel set up, "
                                 + "updates install without this.");
                     }
@@ -127,7 +127,7 @@ public final class UpdatePanel {
         });
 
         p.addSectionHelp("Updates install through the on-device tunnel with no prompts when "
-                + "it is set up. Without it, the system installer opens to confirm. Homestead "
+                + "it is set up. Without it, the system installer opens to confirm. Salotto "
                 + "only installs an update signed with the same key as the copy you have now.");
 
         p.addHeader("What's new");

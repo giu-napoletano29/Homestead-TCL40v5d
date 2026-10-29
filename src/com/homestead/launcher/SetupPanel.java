@@ -48,11 +48,11 @@ public final class SetupPanel {
         p.addHeader("Status");
 
         final Panel.Row svcRow = p.addRow("Home-button redirect", "", null);
-        svcRow.setHelp("Fire OS does not list Homestead under Settings, Accessibility, so the "
+        svcRow.setHelp("Fire OS does not list Salotto under Settings, Accessibility, so the "
                 + "redirect is switched on over the TV's debugging connection: from this TV "
                 + "with \"Finish setup automatically\" below, or from a computer with "
                 + "\"Commands for a computer\".\n\n"
-                + "Without it, Homestead still works as an app you open yourself; only the "
+                + "Without it, Salotto still works as an app you open yourself; only the "
                 + "Home button needs it.\n\n"
                 + "If the Home button ever goes back to Amazon's home screen, for example "
                 + "after an update, run \"Finish setup automatically\" again.");

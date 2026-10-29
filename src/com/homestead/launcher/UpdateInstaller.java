@@ -187,7 +187,7 @@ public final class UpdateInstaller {
                     // Reaching here means the replace has not stopped us yet, or it failed.
                     boolean success = ok && output != null && output.contains("Success");
                     if (success) {
-                        done(p, true, "Installed. Homestead will restart on the new version.");
+                        done(p, true, "Installed. Salotto will restart on the new version.");
                     } else {
                         Log.w(TAG, "tunnel install did not report success: " + output);
                         installViaIntent(c, apk, p, output);

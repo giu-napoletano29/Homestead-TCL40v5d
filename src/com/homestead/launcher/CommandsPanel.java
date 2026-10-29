@@ -79,7 +79,7 @@ public final class CommandsPanel {
         if (!logs) {
             p.addNote("Without this, Amazon's home screen shows for a moment on each Home press, "
                     + "and Home does nothing while Amazon's home screen is already showing. "
-                    + "Homestead uses it only to spot the Home press in the system log:\n\n"
+                    + "Salotto uses it only to spot the Home press in the system log:\n\n"
                     + "adb shell pm grant " + pkg + " android.permission.READ_LOGS");
         }
 

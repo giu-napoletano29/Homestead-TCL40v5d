@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-  <string name="app_name">Homestead</string>
+  <string name="app_name">Salotto</string>
 
-  <string name="service_desc">Reindirizza il tasto Home a Homestead invece che al launcher di Amazon.</string>
+  <string name="service_desc">Reindirizza il tasto Home a Salotto invece che al launcher di Amazon.</string>
 
   <!-- Home screen -->
   <string name="home_livetv">TV in diretta</string>
@@ -36,7 +36,7 @@
   <string name="home_back">Indietro</string>
   <string name="rail_apps">App</string>
   <string name="rail_inputs">Ingressi</string>
-  <string name="inputs_native_failed">Impossibile aprire il menu ingressi del TV: apro l\'elenco di Homestead</string>
+  <string name="inputs_native_failed">Impossibile aprire il menu ingressi del TV: apro l\'elenco di Salotto</string>
   <string name="home_settings_pill">Impostazioni</string>
   <string name="home_inputs_pill">Ingressi</string>
 
@@ -59,7 +59,7 @@
   <!-- SystemSettingsPanel -->
   <string name="sys_title">Impostazioni di sistema</string>
   <string name="sys_header_open">Si aprono da qui</string>
-  <string name="sys_header_own">Proprie di Homestead</string>
+  <string name="sys_header_own">Proprie di Salotto</string>
   <string name="sys_screen_sound">Schermo e audio</string>
   <string name="sys_tv_remote">Tasti del telecomando TV</string>
   <string name="sys_header_topbar">Nella barra laterale</string>

@@ -195,7 +195,7 @@ public final class OnboardingPanel {
         brand.setOrientation(LinearLayout.HORIZONTAL);
         brand.setGravity(Gravity.CENTER_VERTICAL);
         brand.addView(glyph("⌂", dp(58)));
-        TextView mark = text("Homestead", 40, WHITE, Typeface.BOLD);
+        TextView mark = text("Salotto", 40, WHITE, Typeface.BOLD);
         LinearLayout.LayoutParams mlp = wrap();
         mlp.leftMargin = dp(20);
         brand.addView(mark, mlp);
@@ -205,6 +205,7 @@ public final class OnboardingPanel {
         content.addView(body("No ad banners, no auto-playing trailers, no sponsored rows - just your "
                 + "apps and inputs. And, if you want, a one-tap way to switch off Amazon's "
                 + "advertising and telemetry."));
+        content.addView(margin(note("A fork of Homestead by Sarg338, gone its own way."), dp(10), 0));
 
         View start = button("Get started", true, new Runnable() { public void run() { next(); } });
         actions.addView(start);
@@ -235,7 +236,7 @@ public final class OnboardingPanel {
     private void buildHome() {
         content.addView(tag("Step " + stepNo() + " of " + stepTotal()));
         content.addView(margin(title("Turn on the home screen"), dp(6), dp(6)));
-        content.addView(body("Fire OS doesn't list Homestead in its Accessibility menu, so the "
+        content.addView(body("Fire OS doesn't list Salotto in its Accessibility menu, so the "
                 + "app switches it on itself, through the TV's own debugging service. No "
                 + "computer needed."));
 
@@ -247,10 +248,10 @@ public final class OnboardingPanel {
         chip = pill();
         content.addView(wrapMargin(chip, dp(14), dp(4)));
         content.addView(note("Android's VPN notice says the app could monitor network traffic; "
-                + "Homestead's only carries the TV's own debugging connection, and nothing "
+                + "Salotto's only carries the TV's own debugging connection, and nothing "
                 + "leaves the TV. In each prompt, press Down to reach OK. No Developer options? "
                 + "Open My Fire TV, then About, and press Select on the device name seven "
-                + "times. To do this later, press Continue; you can still open Homestead "
+                + "times. To do this later, press Continue; you can still open Salotto "
                 + "from Amazon's app row."));
         updateChip();
 
@@ -312,7 +313,7 @@ public final class OnboardingPanel {
         chip = pill();
         content.addView(wrapMargin(chip, dp(14), dp(4)));
         content.addView(note("Android's VPN notice says the app could monitor network traffic; "
-                + "Homestead's only carries the TV's own debugging connection. It only runs "
+                + "Salotto's only carries the TV's own debugging connection. It only runs "
                 + "while cleaning up, then switches itself off."));
         updateChip();
 

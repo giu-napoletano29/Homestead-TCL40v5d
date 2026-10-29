@@ -92,5 +92,5 @@ jobs:
         run: |
           gh release create "v${{ steps.ver.outputs.name }}" homestead.apk \
             --target "$GITHUB_SHA" \
-            --title "Homestead ${{ steps.ver.outputs.name }}" \
+            --title "Salotto ${{ steps.ver.outputs.name }}" \
             --notes-file notes.md

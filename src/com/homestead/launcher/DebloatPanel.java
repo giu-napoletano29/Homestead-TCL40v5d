@@ -202,11 +202,11 @@ public final class DebloatPanel {
             String why = e.group == Debloat.GROUP_VOICE ? ALEXA
                     : e.risky ? "Marked risky: it is never switched off by the one-press buttons "
                             + "and it is offered only on a TV that would then "
-                            + "send Home straight to Homestead (not Fire OS 7, where Amazon's Home "
+                            + "send Home straight to Salotto (not Fire OS 7, where Amazon's Home "
                             + "Starter takes Home). Switching it off takes two presses. To switch "
                             + "it back on, use this row, \"Undo everything this app switched "
                             + "off\", or from a computer: adb shell pm enable --user 0 " + e.pkg
-                            + "\n\nSwitch it back on before you uninstall Homestead, or the TV is "
+                            + "\n\nSwitch it back on before you uninstall Salotto, or the TV is "
                             + "left with no home screen until a computer switches it on."
                     : e.caution ? "Marked caution: switching it off changes how the TV behaves."
                     : null;

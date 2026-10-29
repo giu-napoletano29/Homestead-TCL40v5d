@@ -66,11 +66,11 @@ public final class MakeArt {
 
         g.setColor(Color.WHITE);
         g.setFont(pick(Font.BOLD, h * 0.17f));
-        g.drawString("Homestead", w * 0.40f, h * 0.55f);
+        g.drawString("Salotto", w * 0.40f, h * 0.55f);
 
         g.setColor(new Color(255, 255, 255, 170));
         g.setFont(pick(Font.PLAIN, h * 0.082f));
-        g.drawString("your Fire TV, reclaimed", w * 0.40f, h * 0.77f);
+        g.drawString("a Homestead fork", w * 0.40f, h * 0.77f);
         g.dispose();
         return img;
     }

@@ -62,7 +62,7 @@ public final class HealthPanel {
                          : "Detected state - read-only until Setup is finished");
 
         // ---------------------------------------------------------- launcher itself
-        p.addHeader("Homestead");
+        p.addHeader("Salotto");
 
         boolean svc = SetupPanel.serviceEnabled(c);
         Panel.Row r1 = p.addRow("Home-button redirect", svc ? "active" : "NOT ACTIVE", null);

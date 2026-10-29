@@ -1,6 +1,6 @@
 ---
 name: Device report
-about: Tell me Homestead works (or not) on a device that is not in the README table
+about: Tell me Salotto works (or not) on a device that is not in the README table
 labels: device
 ---
 
@@ -11,7 +11,7 @@ labels: device
 
 **What you tried** (only what you actually did):
 - [ ] Launcher shows and works
-- [ ] Home button comes to Homestead (and the red button, if you set it)
+- [ ] Home button comes to Salotto (and the red button, if you set it)
 - [ ] Setup from the TV, or from a computer
 - [ ] Screen & sound (HDMI-CEC, overscan, sleep)
 - [ ] Canali TV, and a channel opens

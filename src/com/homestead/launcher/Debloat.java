@@ -265,7 +265,7 @@ final class Debloat {
             new Entry(GROUP_EXTRAS, "com.amazon.tv.livetv",
                     "Live tab and guide",
                     "The Live tab, the channel guide and the Live TV player. Switching it off "
-                            + "removes all three, and Homestead's Live TV tile with them.", CAUTION),
+                            + "removes all three, and Salotto's Live TV tile with them.", CAUTION),
             new Entry(GROUP_EXTRAS, "com.amazon.tv.mattercohost",
                     "Matter smart-home hub",
                     "Lets the TV act as a Matter smart-home controller.", CAUTION),
@@ -280,7 +280,7 @@ final class Debloat {
                     "Casts content from an Echo or Fire tablet to this TV.", CAUTION),
             new Entry(GROUP_HOME, AppModel.AMAZON_LAUNCHER,
                     "Amazon's launcher",
-                    "Home opens Homestead directly, with no overlay and no flash of Amazon's "
+                    "Home opens Salotto directly, with no overlay and no flash of Amazon's "
                             + "screen. Anything that lived only on Amazon's home screen, such as "
                             + "its Inputs screen, stops working until you switch this back on. "
                             + "A firmware update can switch it back on by itself.",

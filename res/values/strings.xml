@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-  <string name="app_name">Homestead</string>
-  <string name="service_desc">Redirects the Home button to Homestead instead of Amazon\'s launcher.</string>
+  <string name="app_name">Salotto</string>
+  <string name="service_desc">Redirects the Home button to Salotto instead of Amazon\'s launcher.</string>
   <!-- Home screen. Translations live in values-<lang>; Android picks the TV's language. -->
   <string name="home_livetv">Live TV</string>
   <string name="home_livetv_hint">Press OK to watch</string>
@@ -37,7 +37,7 @@
   <string name="home_back">Back</string>
   <string name="rail_apps">Apps</string>
   <string name="rail_inputs">Inputs</string>
-  <string name="inputs_native_failed">The TV\'s own input menu could not be opened - showing Homestead\'s list</string>
+  <string name="inputs_native_failed">The TV\'s own input menu could not be opened - showing Salotto\'s list</string>
 
   <!-- The ten screens Amazon answers directly (SystemSettingsPanel.SCREENS), and their
        short form for a pill in the top bar. Only four need shortening. -->
@@ -59,7 +59,7 @@
   <!-- SystemSettingsPanel's own rows and headers. -->
   <string name="sys_title">System settings</string>
   <string name="sys_header_open">Open from here</string>
-  <string name="sys_header_own">Homestead\'s own</string>
+  <string name="sys_header_own">Salotto\'s own</string>
   <string name="sys_screen_sound">Screen &amp; sound</string>
   <string name="sys_tv_remote">TV remote buttons</string>
   <string name="sys_header_topbar">In the side bar</string>

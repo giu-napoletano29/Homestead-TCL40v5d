@@ -51,7 +51,7 @@ public final class PhotoPanel {
         final Panel p = new Panel(c, "Choose a photo on this TV",
                 "Pictures in the TV's Download folder");
         p.addNote("Save a picture on the TV first: the Downloader app and the Silk browser "
-                + "both put files in Download. Homestead looks there through its on-device "
+                + "both put files in Download. Salotto looks there through its on-device "
                 + "tunnel, so it needs no storage permission.");
         final Panel.Row status = p.addStatus("Status");
         status.cell.setFocusable(false);
@@ -156,7 +156,7 @@ public final class PhotoPanel {
                 row.setValue("in use");
                 row.setValueColor(OK);
             } else {
-                status.setValue("not a picture Homestead can use");
+                status.setValue("not a picture Salotto can use");
                 status.setValueColor(BAD);
                 row.setValue("not used");
                 row.setValueColor(BAD);

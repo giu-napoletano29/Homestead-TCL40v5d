@@ -6,7 +6,7 @@ repository's latest release once a day and offers it (see the README).
 ## The signing key comes first
 
 Android only installs an update over an app signed with the **same key**. Lose the key and
-nobody can update from the next release: they would have to uninstall Homestead, and its
+nobody can update from the next release: they would have to uninstall Salotto, and its
 settings and the granted permissions go with it. So:
 
 1. Keep the keystore (`~/.homestead-keys/homestead-release.keystore`, or whatever
@@ -73,7 +73,7 @@ name ends in `.apk`. The workflow does.
 
 On each reference device, after installing the signed build over the previous one:
 
-- Home and the red button return to Homestead (Setup shows the redirect **on**; an install
+- Home and the red button return to Salotto (Setup shows the redirect **on**; an install
   does not switch it off, but a force-stop of the app does).
 - The wallpaper is whole, at the start and after a wake from standby.
 - The rail opens and closes, and Back from it returns to Canali TV.

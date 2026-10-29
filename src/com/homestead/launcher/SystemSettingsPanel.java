@@ -192,11 +192,11 @@ public final class SystemSettingsPanel {
         p.addHeader(c.getString(R.string.sys_header_launcher));
         if (AppModel.amazonLauncherOn(c)) {
             p.addRow(c.getString(R.string.sys_header_launcher), "on", null)
-                    .setHelp("Switch it off in Debloat to make Home open Homestead directly, "
+                    .setHelp("Switch it off in Debloat to make Home open Salotto directly, "
                             + "and to free up the memory it uses in the background.");
         } else {
             p.addRow(c.getString(R.string.sys_header_launcher), "off", null)
-                    .setHelp("Home opens Homestead directly. The screens Amazon answers "
+                    .setHelp("Home opens Salotto directly. The screens Amazon answers "
                             + "directly still work; \"Amazon Settings\" above switches the "
                             + "launcher back on for a moment first, where that is possible.");
         }
@@ -249,7 +249,7 @@ public final class SystemSettingsPanel {
         p.addHeader("What will happen");
         p.addNote("1. Amazon's launcher is switched back on, over the ADB link.");
         p.addNote("2. Amazon's settings menu opens. Change what you need.");
-        p.addNote("3. Press Home when you are done. Homestead covers Amazon's home again, with "
+        p.addNote("3. Press Home when you are done. Salotto covers Amazon's home again, with "
                 + "a tile on top saying the launcher was switched back on. Press OK on it to "
                 + "switch the launcher off again.");
         p.addHeader("What it costs if you leave it on");

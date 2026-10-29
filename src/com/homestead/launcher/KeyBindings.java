@@ -78,7 +78,7 @@ final class KeyBindings {
         if (action == null || OFF.equals(action)) return "Off";
         if (HOME.equals(action)) return "Home";
         if (CHANNELS.equals(action)) return "Canali TV";
-        if (SETTINGS.equals(action)) return "Homestead settings";
+        if (SETTINGS.equals(action)) return "Salotto settings";
         if (action.startsWith(APP)) {
             String pkg = action.substring(APP.length());
             try {
@@ -144,7 +144,7 @@ final class KeyBindings {
         addChoice(c, host, p, key, cur, OFF, "Off");
         addChoice(c, host, p, key, cur, HOME, "Home");
         addChoice(c, host, p, key, cur, CHANNELS, "Canali TV");
-        addChoice(c, host, p, key, cur, SETTINGS, "Homestead settings");
+        addChoice(c, host, p, key, cur, SETTINGS, "Salotto settings");
         p.addRow("An app...", cur.startsWith(APP) ? label(c, cur) : "", new Runnable() {
             public void run() { host.showPanel(buildApps(c, host, key)); }
         }).opens();

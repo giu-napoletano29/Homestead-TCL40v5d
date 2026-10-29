@@ -3,6 +3,16 @@
 This fork keeps the original's version numbers and adds a fourth digit or a new minor. The
 original's history (up to 1.6.14) is in the git log below the fork's first commit.
 
+## 1.7.2
+
+The app is now called **Salotto**, "a Homestead fork".
+
+- The name shows on the launcher tile and banner, in Settings ("Salotto 1.7.2 · a Homestead
+  fork"), in the first-run setup and in every message. The package name
+  (`com.homestead.launcher`), the log tag and the licence headers stay, so this installs over
+  1.7.1 and keeps its settings.
+- The README opens on what Salotto is and where it comes from, and is written for it.
+
 ## 1.7.1
 
 Simple mode goes, Settings gets reorganised, and the TCL gets the controls it was missing.

@@ -103,7 +103,7 @@ public class TunnelVpnService extends VpnService {
         }
         try {
             Builder b = new Builder();
-            b.setSession("Homestead");
+            b.setSession("Salotto");
             b.addAddress(TUN_ADDR, PREFIX);
             b.addRoute(SUBNET, PREFIX);   // ONLY this subnet is diverted; real traffic is untouched
             b.setMtu(MTU);

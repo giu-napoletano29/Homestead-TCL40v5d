@@ -41,7 +41,8 @@ public final class SettingsPanel {
      */
     public static View build(final Context c, final Host host) {
         final Panel p = new Panel(c, c.getString(R.string.settings_title),
-                "Homestead " + UpdateChecker.installedVersionName(c), Panel.SHEET);
+                "Salotto " + UpdateChecker.installedVersionName(c) + "  ·  a Homestead fork",
+                Panel.SHEET);
 
         final Panel.Row look = p.addRow(c.getString(R.string.settings_appearance),
                 appearanceSummary(c), null).opens();
@@ -100,7 +101,7 @@ public final class SettingsPanel {
         p.addRow(c.getString(R.string.sys_title), "", new Runnable() {
             public void run() { host.showPanel(SystemSettingsPanel.build(c, host)); }
         }).opens().setHelp("Amazon's own settings screens (network, Bluetooth, applications, "
-                + "My Fire TV), each opened directly; Homestead's own pages for what Amazon "
+                + "My Fire TV), each opened directly; Salotto's own pages for what Amazon "
                 + "locks behind a permission; the TV remote's buttons; and the quick settings "
                 + "in the top bar.");
 

@@ -1,159 +1,140 @@
-# Homestead
+# Salotto
 
-A replacement home screen for Fire TV: no advertising rows, no auto-playing trailers, no
-sponsored placements. Your inputs and your apps, and nothing else.
+A fork of [Homestead](https://github.com/Sarg338/Homestead): a home screen for Fire TV with no
+ads. It also takes over the Home button, which Fire OS normally doesn't let any app do.
 
-It also replaces the Home **button**, which is the hard part — Fire OS pins Amazon's
-launcher as the system home activity and will not let anything else take it.
+Salotto started from Homestead and now goes its own way. It has its own look, its own
+settings and a Canali TV page for Italian live TV.
 
-<img src="screenshots/before_after.png" alt="Before: Amazon's home screen with a sponsored banner, rows of promoted shows and the apps in one strip. After: Homestead with HDMI inputs up front, all apps in one grid, and an Amazon Home tile.">
+<img src="screenshots/fork_home.jpg" alt="Salotto on a Fire TV Stick: the side rail on the left, the clock and a network icon at the top right, the Canali TV tile and three apps in the dock, and a grid of square icons below, over Van Gogh's Starry Night.">
 
-Both pictures are from the same TV, a few minutes apart.
-
-## About this fork
-
-This is a fork of [Sarg338/Homestead](https://github.com/Sarg338/Homestead). It keeps
-everything described here and the original's GPL licence, and adds its own look and a page of
-Italian live TV. It is developed and tested on a **Fire TV Stick (`AFTSS`, Fire OS 7.7)** and
-a **TCL 40V5D (Fire OS 14)**.
-
-<img src="screenshots/fork_home.jpg" alt="This fork's home screen on a Fire TV Stick: the side rail on the left, the clock and a network icon at the top right, the Canali TV tile and three apps in the dock, and a grid of square icons below, over Van Gogh's Starry Night.">
-
-What is different, in short (the full list is in the [changelog](CHANGELOG.md)):
-
-- a side rail, Manrope, a dock with no band over a grid of square icons, and wallpapers with
-  a fade that leaves the top half clear - including four bundled public-domain paintings;
-- a **Canali TV** page with tabs for Rai and Mediaset: Rai in its own colours, and every
-  Mediaset channel and radio opening Mediaset Infinity on that channel;
-- Settings split in two (Homestead's own, and the TV's), a **Screen & sound** page with the
-  HDMI-CEC, overscan and sleep controls that need no root (on a TV with its own
-  panel, only sleep and screen mirroring), and **App info** on a tile;
-- an Italian translation of the main screens.
-
-The app checks this repository's [releases](https://github.com/giu-napoletano29/Homestead-TCL40v5d/releases/latest)
-for updates. Its builds are signed with a different key than the original's, so to move from
-the original to this one, uninstall the original first. How a release is made, and how to
-keep the signing key safe, is in [docs/RELEASING.md](docs/RELEASING.md).
-
-**Not for Vega OS.** Amazon's newest sticks (the Fire TV Stick 4K Select and the 2026 Fire TV
-Stick 4K, with no "Plus" or "Max") run Vega OS, which is not Android and installs no APK.
-Homestead cannot run on them. The Plus and Max run Fire OS.
+**Not for Vega OS.** The newest Amazon sticks (Fire TV Stick 4K Select and the 2026 Fire TV
+Stick 4K, the ones without "Plus" or "Max") run Vega OS. It isn't Android and takes no APK, so
+Salotto can't run on them. The Plus and Max run Fire OS.
 
 ## What it does
 
-- **A home screen without the ads.** Your inputs, your TV apps and everything else, in
-  three sections. No sponsored rows, no auto-playing trailers, no promoted tiles.
-- **The Home button comes here.** Pressing Home opens Homestead in about 170 ms instead of
-  Amazon's home screen.
-- **HDMI and Composite inputs as tiles**, so switching source is one press from home.
-- **A Live TV tile** on TVs with a built-in tuner, while Amazon's Live TV app is switched
-  on. It opens Live TV on the last channel you watched. **Live TV first** (Settings → Content
-  & order) makes it a large tile at the top, and the Home button always lands on it.
-- **Apps in the order you use them**, counted on the TV itself.
-- **Hide anything** you do not want to see: press MENU on a tile, or hold Select.
-- **Pick a background** in Settings: the blue gradient, a few darker ones, plain black for
-  OLED screens and night viewing, or [your own photo](#your-own-background-photo).
-- **Optional extras** under Settings → Appearance, all off until you switch them on: a
-  greeting and the date at the top, non-TV apps as wide tiles, and Fire TV's own icons for
-  Amazon Home, Settings and TV Health.
-- **Settings opens over the home screen**, so changes to the background, columns, clock and
-  sections show behind it as you make them. Larger pages explain the selected row beside
-  the list.
-- **TV Health** shows the state of the TV (animation speed, ad-tracking settings, the
-  screensaver, which Amazon telemetry packages are running, free memory and storage). Each
-  setting it flags can be fixed with one press.
-- **Debloat** switches off dozens of vetted Amazon packages, each with a plain-English
-  description of what it does. Nothing is uninstalled and no data is deleted, and any
-  package can be switched back on from the same page. A few packages are protected by
-  Fire OS and cannot be switched off by any app. On TVs where Home would then come
-  straight to Homestead (not Fire OS 7), Amazon's launcher itself can be switched off too;
-  it is marked risky, takes two presses and is never part of the one-press buttons.
-- **No computer needed.** The on-device tunnel lets the app switch on the Home button,
-  grant itself the permissions it needs and run Debloat, all from the remote. It is off
-  until you turn it on and shuts down when the work is done. A few commands from a
-  computer do the same job if you would rather not use it.
-- **Updates itself.** It checks this repository's releases once a day and installs a new
-  version only when you press Install, and only if it is signed with the same key.
+- Puts your inputs, TV apps and everything else on one screen. No sponsored rows, no
+  autoplaying trailers, no promoted tiles.
+- Opens when you press Home, in about 170 ms, instead of Amazon's home screen.
+- Shows HDMI and Composite inputs as tiles. On a TV with its own input menu (the TCL), an
+  **Inputs** entry in the side rail opens that menu.
+- Has a **Live TV** tile on TVs with a tuner. It opens the last channel you watched. **Live TV
+  first** (Settings, Content & order) makes it the large first tile, and Home always lands
+  on it.
+- Has a **Canali TV** page with tabs for Rai and Mediaset. Every Mediaset channel and radio
+  opens Mediaset Infinity on that channel.
+- Sorts apps by how often you use them, counted on the TV. Press MENU on a tile, or hold
+  Select, to hide it.
+- Offers a few backgrounds: gradients, plain black for OLED screens and night, four
+  public-domain paintings (Starry Night, The Great Wave, The Kiss, Water Lilies), or
+  [your own photo](#your-own-background-photo).
+- Keeps its settings in three pages: **Appearance** (background, columns, dock, clock, date,
+  greeting), **Content & order** (sort, hidden tiles, sections) and **Behaviour** (idle
+  clock). Settings opens over the home screen, so you see changes as you make them.
+- Has a **Screen & sound** page for what Amazon locks behind a permission: HDMI-CEC, overscan,
+  sleep, screen mirroring, the screensaver, interface sounds. On a TV with its own panel it
+  shows only what makes sense there. None of it needs root.
+- **TV Health** shows the state of the TV: animation speed, ad-tracking settings, the
+  screensaver, the Amazon telemetry packages running, free memory and storage. Each setting
+  it flags can be fixed with one press.
+- **Debloat** switches off dozens of Amazon packages, each with a short description. Nothing
+  is uninstalled and no data is deleted, and any package can be switched back on from the
+  same page. Fire OS protects a few packages from any app. On TVs where Home would then go
+  straight to Salotto (not Fire OS 7), Amazon's launcher itself can be switched off. That one
+  is marked risky, takes two presses and is never part of the one-press buttons.
+- Needs no computer. A tunnel on the TV lets the app switch on the Home button, grant itself
+  the permissions it needs and run Debloat, all from the remote. It is off until you turn it
+  on and shuts down when the work is done. A few commands from a computer do the same.
+- Updates itself. It checks this repository's releases once a day and installs a new version
+  only when you press Install, and only if it is signed with the same key.
 
-## Verified on
+## Where it comes from
 
-Real hardware, not emulators:
+Salotto is a fork of [Sarg338/Homestead](https://github.com/Sarg338/Homestead). It used to be
+published here as Homestead-TCL40v5d. It does what the original does, under the same GPL
+licence, and adds the things in the [changelog](CHANGELOG.md).
 
-| Device | Model | Fire OS | Verified |
+The package name is still `com.homestead.launcher`, and so is the log tag. A new build
+installs over an older one and keeps your settings. Builds from this repository are signed
+with a different key than the original's, so to come from the original you have to uninstall
+it first. How a release is made, and how to keep the signing key safe, is in
+[docs/RELEASING.md](docs/RELEASING.md).
+
+## Tested on
+
+Real hardware, not emulators. Both run Android 9 or later, and I test on both.
+
+| Device | Model | Fire OS | What works |
 |---|---|---|---|
-| Insignia F30-Series Fire TV Edition | `AFTDCT31` | 7.7.1.5 | **Everything**: launcher, Home button, HDMI/Composite tiles, Settings, TV Health, Debloat, and setup without a computer |
-| Amazon Fire TV Stick (this fork's reference) | `AFTSS` | 7.7.1.7 (`PS7717.5741N`) | **Everything in this fork's 1.7.0**: the launcher and side rail, the Home button, setup, Screen & sound (HDMI-CEC, overscan, sleep), the Canali TV page and its Mediaset links (Canale 5, Italia 1, Rete 4), the wallpapers and the idle clock; measured about 70-75 MB and no janky frames. Behind a Samsung TV over HDMI-CEC. |
-| Amazon Fire TV Stick | `AFTSSS` | 7.7.1.6 | **Setup without a computer**: key approval, permissions, automatic shutdown of the tunnel |
-| Amazon Fire TV Stick 4K (2nd gen) | `AFTKM` | 8.1.8.5 | **Reported by a user, not tested here**: Home button, Debloat (28 packages switched off; Fire OS 8 protects a few more than Fire OS 7), several reboots, and a background photo sent from a computer (1.2.9). Set up from a computer. |
-| Hisense 65U65SFC Pro (Fire TV Edition) | `AFTCIBFBD1` | 8.1.8.0 | **Reported by a user, not tested here**: Home button, Debloat, a full reboot, and the fix for repeated package events (1.2.3 and later). Set up from a computer. |
-| TCL 40V5D (Fire TV Edition) | `AFTTIFB900` | 14 (build SL14SHIP1021.86N) | **Reported by a user, not tested here**: Home button, Debloat, TV Health, a full reboot, HDMI/Composite tiles, and setup from a computer. Amazon's launcher switched off and back on, with Home going straight to Homestead after a reboot (1.6.11). |
+| Amazon Fire TV Stick | `AFTSS` | 7.7.1.7 | The launcher and side rail, Home button, setup from the TV, Screen & sound, Canali TV and its Mediaset links (Canale 5, Italia 1, Rete 4), wallpapers, idle clock. About 70-75 MB, no janky frames. Behind a Samsung TV over HDMI-CEC. |
+| TCL 40V5D (Fire TV Edition) | `AFTTIFB900` | 14 | The launcher and side rail, Home button, Inputs entry, Live TV tile, Screen & sound, settings pages. Amazon's launcher is switched off. |
 
-The first two run Android 9 and were tested by the maintainer. The last three are user
-reports: two on Fire OS 8 (Android 11), one on Fire OS 14. Other devices are *expected* to
-work but are unverified.
+The original's README lists a few more devices where Homestead worked (an Insignia and a
+Hisense TV, and the Fire TV Stick 4K). Salotto has not been tried on them, but it should
+behave the same. If you try it, please [say so](#reporting-a-device).
 
-Debloat's list of packages was checked by hand on the Insignia TV above. Other models
-and Fire OS versions may use different package names. Anything on the list that your TV
-does not have is shown as "not present" and skipped, and packages the list does not know
-about are only reachable through **Browse every system app**, which locks anything the
-system is using but cannot tell you what is safe to switch off. If
-your TV's packages differ, please open an issue with your model and the output of
-`adb shell pm list packages -s` (system packages only, so it does not list the apps you
-installed).
+Debloat's package list was checked by hand on an Insignia TV. Another model or Fire OS
+version may use different package names. A package the list has but your TV doesn't is shown
+as "not present" and skipped. Packages the list doesn't know are only reachable through
+**Browse every system app**, which locks what the system is using but can't tell you what is
+safe to switch off.
 
 ## Install
 
-Download `homestead.apk` from the [latest release](https://github.com/giu-napoletano29/Homestead-TCL40v5d/releases/latest)
-and sideload it: `adb install homestead.apk` from a computer, or the Downloader app on the
-TV. When its home screen comes up, the app checks that release page (at most once a day)
-and shows a new version once,
-with **Install now**, **Later** and **Skip this version**.
-Settings → **Check for updates** checks straight away. It never installs one until you press
-**Install now**.
+Download `homestead.apk` from the
+[latest release](https://github.com/giu-napoletano29/Homestead-TCL40v5d/releases/latest) and
+sideload it: `adb install homestead.apk` from a computer, or the Downloader app on the TV.
+(The file keeps the old name.)
 
-Without the on-device tunnel, an update goes through Fire OS's installer, which first needs
-Homestead allowed to install apps: in the TV's Settings, **Device & Software** (**My Fire TV**
-on some models) → **Developer options** → **Install unknown apps** → **Homestead**. The
-update page tells you when this is needed.
+Once it is installed, the app checks that page when it opens, at most once a day, and shows a
+new version once with **Install now**, **Later** and **Skip this version**. Settings, **Check
+for updates** checks straight away. Nothing is installed until you press **Install now**.
+
+Without the tunnel, an update goes through Fire OS's installer, which first needs Salotto
+allowed to install apps: Settings, **Device & Software** (**My Fire TV** on some models),
+**Developer options**, **Install unknown apps**, **Salotto**. The update page tells you when
+that is needed.
 
 ## Setup
 
-Fire OS does not list Homestead under Settings → Accessibility, so the Home button has to
-be switched on over ADB, the TV's debugging connection. You can do that from the TV itself
-or from a computer. Without it Homestead still works as an app you open from Amazon's app
-row; only the Home button needs it.
+Fire OS doesn't list Salotto under Settings, Accessibility, so the Home button has to be
+switched on over ADB, the TV's debugging connection. You can do that from the TV itself or
+from a computer. Without it Salotto still works as an app you open from Amazon's app row. Only
+the Home button needs it.
 
-The accessibility service is how the app learns that Home was pressed. It sees only which
-app came to the front: it cannot read what is on screen and does not receive key presses.
+The accessibility service is how the app learns that Home was pressed. It sees only which app
+came to the front. It can't read what is on screen and gets no key presses.
 
 ### From the TV, no computer
 
-1. Turn on **ADB debugging** under Settings → My Fire TV → Developer options. If Developer
-   options is not there, open My Fire TV → About and press Select on the device name seven
+1. Turn on **ADB debugging** under Settings, My Fire TV, Developer options. If Developer
+   options isn't there, open My Fire TV, About, and press Select on the device name seven
    times.
-2. Open **Homestead** from Amazon's app row. The first-run setup walks you through the
-   rest. Later, the same steps are under the **Settings** tile → **Setup**.
-3. Select **Set it up** (or **On-device tunnel (advanced)** in Setup) and accept Android's
-   VPN prompt. In both prompts, press Down to reach OK.
-4. The TV asks whether to allow the app's ADB key. Check that the fingerprint matches the
-   one Homestead shows, tick **Always allow from this computer**, then select OK. Without
-   the tick, the TV asks again every time the app connects.
-5. The first-run setup then switches the Home button on by itself. In Setup, select
-   **Finish setup automatically**, which also grants the permissions TV Health, Debloat
-   and the Home button need.
+2. Open **Salotto** from Amazon's app row. The first-run setup walks you through the rest.
+   The same steps are later under the **Settings** tile, **Setup**.
+3. Select **Set it up** (or **On-device tunnel (advanced)** in Setup) and accept Android's VPN
+   prompt. In both prompts, press Down to reach OK.
+4. The TV asks whether to allow the app's ADB key. Check that the fingerprint matches the one
+   Salotto shows, tick **Always allow from this computer**, then select OK. Without the tick
+   the TV asks every time the app connects.
+5. The first-run setup then switches the Home button on by itself. From Setup, **Finish setup
+   automatically** does the same and also grants what TV Health, Debloat and the Home button
+   need.
 6. Press Home.
 
 The tunnel runs only while the app is making changes and shuts itself off afterwards.
-[SECURITY.md](SECURITY.md) explains what the app can access and what goes over the network.
-Some Amazon packages switch themselves back on after a restart; with **Re-apply after
-reboot** on (the default), Homestead switches them off again about a minute after the TV
-starts, which needs ADB debugging left on. Firmware updates can also switch packages back
-on; with **Warn if the system undoes Debloat** on (off by default), the home screen shows a
-tile for ten seconds offering to switch them off again.
+[SECURITY.md](SECURITY.md) says what the app can access and what goes over the network.
 
-If the Home button ever goes back to Amazon's home screen, for example after an update,
-select **Finish setup automatically** again. If you set Homestead up before version 1.2, run
-it once more so Home also works while Amazon's home screen is showing.
+Some Amazon packages switch themselves back on after a restart. With **Re-apply after reboot**
+on (the default), Salotto switches them off again about a minute after the TV starts, which
+needs ADB debugging left on. Firmware updates can switch packages back on too. With **Warn if
+the system undoes Debloat** on (off by default), the home screen shows a tile for ten seconds
+that offers to switch them off again.
+
+If the Home button ever goes back to Amazon's home screen, for example after a Fire OS update,
+select **Finish setup automatically** again. The *Finish setup* page shows up by itself when
+that happens.
 
 ### From a computer
 
@@ -165,133 +146,122 @@ adb shell pm grant com.homestead.launcher android.permission.WRITE_SECURE_SETTIN
 adb shell pm grant com.homestead.launcher android.permission.READ_LOGS
 ```
 
-The first two commands switch the Home button on; the first replaces any other
-accessibility service you have switched on. The first grant lets TV Health change settings
-from the remote. The second lets Homestead catch the Home press early, so Amazon's home
-screen does not flash first, and makes Home work while Amazon's home screen is showing.
-To switch packages off, open **Commands for a computer** in the app: it lists exactly the
-commands still needed on your TV.
+The first two commands switch the Home button on, and the first replaces any other
+accessibility service you have on. The first grant lets TV Health change settings from the
+remote. The second lets Salotto catch the Home press early, so Amazon's home screen doesn't
+flash first, and makes Home work while Amazon's home screen is showing. To switch packages
+off, open **Commands for a computer** in the app. It lists exactly the commands your TV
+still needs.
 
 ## Your own background photo
 
-### From the TV, no computer
+### From the TV
 
-Save a JPEG or PNG to the TV's Download folder; the Downloader app and the Silk browser both
-save there. Then open Settings → Background → **Choose a photo on this TV**, pick the picture, and it
-becomes the background. Homestead looks in Download and hands the picture over through its
-on-device tunnel, so this needs the tunnel set up (see [Setup](#setup)) but no storage
-permission. Pictures whose names contain characters other than letters, numbers, spaces,
-dots, dashes, brackets or `+` are not listed, and the page says how many were left out:
-the name goes into a shell command, so anything unusual is skipped rather than escaped.
+Save a JPEG or PNG to the TV's Download folder. The Downloader app and the Silk browser both
+save there. Then open Settings, Background, **Choose a photo on this TV** and pick it. Salotto
+looks in Download and hands the picture over through the tunnel, so this needs the tunnel set
+up (see [Setup](#setup)) but no storage permission. Pictures whose names have anything other
+than letters, numbers, spaces, dots, dashes, brackets or `+` aren't listed, and the page says
+how many were left out. The name goes into a shell command, so anything unusual is skipped
+rather than escaped.
 
 ### From a computer
 
-Send a JPEG or PNG to the TV from a computer, in two steps. The first copies it to the TV's
-Download folder; the second hands it to Homestead, which keeps its own copy in private
-storage. No storage permission is needed, and this works on Fire OS 7 and 8:
+Send a JPEG or PNG in two steps. The first copies it to the TV's Download folder. The second
+hands it to Salotto, which keeps its own copy in private storage. No storage permission is
+needed, and it works on Fire OS 7 and 8:
 
 ```sh
 adb push background.jpg /sdcard/Download/
 adb shell "content write --uri content://com.homestead.launcher.background/photo < /sdcard/Download/background.jpg"
 ```
 
-Then open Settings → **Background** and select **Photo** in the list. Any size or shape
-works: the picture
-is scaled and cropped to fill the screen, and only that screen-sized copy is kept in
-memory. **Photo dimming** darkens it (Off, Light or Dark) so the labels stay readable;
-Light is the default.
+Then open Settings, **Background**, and select **Photo**. Any size or shape works. The picture
+is scaled and cropped to fill the screen, and only that screen-sized copy is kept in memory.
+**Photo dimming** darkens it (Off, Light or Dark) so the labels stay readable. Light is the
+default.
 
-- **To change the picture**, run both commands again with the new file. It shows on the
-  next Home press. Homestead only replaces the old picture once the new one has arrived
-  whole and reads as an image; anything else is discarded, and the log says why.
-- **To remove it:** `adb shell content delete --uri content://com.homestead.launcher.background/photo`.
+- To change the picture, run both commands again with the new file. It shows on the next Home
+  press. The old picture is replaced only once the new one has arrived whole and reads as an
+  image. Anything else is discarded, and the log says why.
+- To remove it: `adb shell content delete --uri content://com.homestead.launcher.background/photo`.
   The background is then black, and the Settings row says there is no file.
-- Run the second command on the TV, as shown, rather than piping the file from your
-  computer (`adb shell "content write …" < background.jpg`): piped from a Windows computer,
-  the file arrived damaged in testing.
-- On Fire OS 7 only, copying the file straight into Homestead's folder also works:
+- Run the second command on the TV, as shown. Piping the file from a Windows computer
+  (`adb shell "content write …" < background.jpg`) gave a damaged file in testing.
+- On Fire OS 7 only, copying the file straight into Salotto's folder also works:
   `adb push background.jpg /sdcard/Android/data/com.homestead.launcher/files/`. Fire OS 8
   refuses that folder to adb. A picture sent with the commands above takes precedence.
 
-The picture is removed when Homestead is uninstalled.
+The picture is removed when Salotto is uninstalled.
 
-## Leaving the TV with someone else
+## Removing Salotto
 
-Things to know before you hand the TV over:
+1. Open **Debloat** and select **Undo everything this app switched off**. This switches back
+   on exactly the packages Salotto turned off. Uninstalling the app doesn't do it for you. If
+   you switched off Amazon's launcher, this step matters most: without it the TV has no home
+   screen until a computer switches the launcher back on.
+2. If you used the tunnel, select **Forget our key** in Setup, then revoke the TV's copy under
+   Settings, My Fire TV, Developer options, and turn ADB debugging off.
+3. Uninstall Salotto under Settings, Applications, Manage Installed Applications.
 
-- If Fire OS ever switches Homestead's Home button off (it can after a Fire OS update),
-  the *Finish setup* page appears on its own. That page is the sign the TV needs you.
-- Some Android versions forget an "Always allow" debugging key that has not been used for
-  some days. If that happens and **Re-apply after reboot** later needs to switch something
-  off again, the TV's key prompt could appear on screen. This has not been seen on the test
-  TV (Fire OS 7) and has not been tested on Fire OS 8.
+Uninstalling also removes the accessibility service, so Home goes back to Amazon's home screen
+straight away.
 
-## Removing Homestead
-
-1. Open **Debloat** and select **Undo everything this app switched off**. This switches
-   back on exactly the packages Homestead turned off. Uninstalling the app does *not* do
-   this for you. If you switched off Amazon's launcher, this step matters most: without
-   it the TV is left with no home screen until a computer switches the launcher back on.
-2. If you used the on-device tunnel, select **Forget our key** in Setup, then revoke the
-   TV's copy under Settings → My Fire TV → Developer options, and turn ADB debugging off.
-3. Uninstall Homestead under Settings → Applications → Manage Installed Applications.
-
-Uninstalling also removes the accessibility service, so the Home button goes back to
-Amazon's home screen straight away.
-
-**To keep Homestead but give the Home button back to Amazon,** select **Turn off the Home
-button** in Settings or Setup (press it twice to confirm). Homestead stays installed as an
-ordinary app. **Re-apply after reboot** stops while the Home button is off. To turn it back
-on, select **Finish setup automatically** in Setup, which needs ADB debugging still on. This
-switch needs Fire OS 6 or later. To visit Amazon's home screen for a moment without turning
-anything off, use the **Amazon Home** tile.
+To keep Salotto but give the Home button back to Amazon, select **Turn off the Home button**
+in Settings or Setup (press it twice to confirm). Salotto stays installed as an ordinary app,
+and Re-apply after reboot stops. To turn it back on, select **Finish setup automatically** in
+Setup, which needs ADB debugging still on. This switch needs Fire OS 6 or later. To visit
+Amazon's home screen for a moment without turning anything off, use the **Amazon Home** tile.
 
 ## How the Home button works
 
-Fire OS does not let any app replace Amazon's launcher as the system home screen, so
-Homestead uses an accessibility service to notice when Amazon's launcher comes to the
-front, and covers it straight away.
+Fire OS doesn't let any app replace Amazon's launcher as the system home screen. Salotto uses
+an accessibility service to notice when Amazon's launcher comes to the front, and covers it
+straight away.
 
-Fire OS holds back app launches for several seconds after a Home press, so Homestead shows
-its home screen as an overlay window, which is not held back. Its normal screen takes over
-once Fire OS allows it, keeping the selected tile, the scroll position and any page you
-opened, such as Settings.
+Fire OS holds back app launches for several seconds after a Home press, so Salotto first
+shows its home screen as an overlay window, which isn't held back. Its normal screen takes
+over once Fire OS allows it, with the same tile selected, the same scroll position and any
+page you had open, such as Settings. The overlay is an accessibility overlay and needs no
+extra permission.
 
-The overlay is an accessibility overlay, which needs no extra permission.
-
-The accessibility service only hears about Amazon's launcher once its screen is being
-drawn, which is a few hundred milliseconds too late to hide it. The system log records the
-Home press earlier, as the system starts Amazon's launcher, so a small separate process
-watches the log for that one line and the overlay goes up first. It is also the only way to
-notice a Home press made while Amazon's home screen is already in front, since that changes
-no window. That needs `READ_LOGS`, which setup grants over ADB; [SECURITY.md](SECURITY.md)
-says exactly what is read.
+The accessibility service only hears about Amazon's launcher once its screen is being drawn,
+a few hundred milliseconds too late to hide it. The system log records the Home press earlier,
+as the system starts Amazon's launcher. So a small separate process watches the log for that
+one line, and the overlay goes up first. It is also the only way to notice a Home press made
+while Amazon's home screen is already in front, since that changes no window. This needs
+`READ_LOGS`, which setup grants over ADB. [SECURITY.md](SECURITY.md) says exactly what is
+read.
 
 ## Known limitations
 
-- **Without `READ_LOGS`, Amazon's home screen shows for a moment** on each Home press, and
-  Home does nothing while Amazon's home screen is already showing (open any app, then press
-  Home). Setup grants it.
-- **With it, the screen can still go black for a moment** between the app you leave and
-  Homestead: usually under a quarter of a second, longer on the first press after an
-  update. Pressing Home while Homestead itself is in front can still show Amazon's home
-  briefly, because Amazon's screen comes back quickly from there.
-- **The Amazon Home tile pauses Homestead for 30 seconds.** After that, Homestead may take
-  over again while you are still browsing Amazon's home screen. Pressing Home brings
-  Homestead back at any time.
-- **The Fire TV Sticks that run Vega OS are not supported** (see [About this fork](#about-this-fork)).
-- **A Mediaset channel opens on its own link only on the apps and links tested.** Canale 5,
-  Italia 1 and Rete 4 are checked; the other Mediaset channels use the same pattern but were
-  not tried one by one, and Mediaset can change the app's links at any time.
-- **On Fire OS 7, Back from a Settings page can land on Homestead.** Amazon's main Settings
-  screen there is a tab of its home screen, so going back to it from a page such as Network
-  looks the same as going home. Open Settings again to carry on.
+- Without `READ_LOGS`, Amazon's home screen shows for a moment on each Home press, and Home
+  does nothing while Amazon's home screen is already showing (open any app, then press Home).
+  Setup grants it.
+- With it, the screen can still go black for a moment between the app you leave and Salotto.
+  That is usually under a quarter of a second, longer on the first press after an update.
+  Pressing Home while Salotto itself is in front can still show Amazon's home briefly.
+- The Amazon Home tile pauses Salotto for 30 seconds. After that, Salotto may take over again
+  while you are still browsing Amazon's home screen. Pressing Home brings it back at any
+  time.
+- Some Android versions forget an "Always allow" debugging key that hasn't been used for some
+  days. If that happens and Re-apply after reboot needs to switch something off, the TV's key
+  prompt could appear on screen. This hasn't been seen on the Stick or the TCL.
+- A Mediaset channel opens on its own link only on the apps and links tested. Canale 5, Italia
+  1 and Rete 4 are checked. The others use the same pattern but weren't tried one by one, and
+  Mediaset can change the app's links at any time.
+- On Fire OS 7, Back from a Settings page can land on Salotto. Amazon's main Settings screen
+  there is a tab of its home screen, so going back to it from a page such as Network looks
+  like going home. Open Settings again to carry on.
+- The TCL's input menu is opened by pressing the TV's INPUT key through the tunnel. The first
+  press after a long idle can take a few seconds while the tunnel reconnects. The Inputs
+  entry starts that when it gets focus. If it can't, Salotto shows its own list of inputs.
 
 ## Building
 
-Only needed if you want to build the app from source; to use Homestead, install the signed
-`homestead.apk` from the [releases](https://github.com/giu-napoletano29/Homestead-TCL40v5d/releases/latest).
-No Gradle, no dependencies, under ten seconds:
+You only need this to build from source. To use Salotto, install the signed `homestead.apk`
+from the [releases](https://github.com/giu-napoletano29/Homestead-TCL40v5d/releases/latest).
+There's no Gradle and no dependencies, and a build takes under ten seconds:
 
 ```sh
 ./build.sh            # build + sign
@@ -306,45 +276,41 @@ powershell -ExecutionPolicy Bypass -File build.ps1 install    # and adb install 
 ```
 
 The two scripts must make the same APK, byte for byte. After changing either one, run
-`tools/test-builds.sh` from Git Bash: it builds with each script, under Windows PowerShell
-and PowerShell 7, in a few different setups, and compares the results.
+`tools/test-builds.sh` from Git Bash. It builds with each script, under Windows PowerShell and
+PowerShell 7, in a few setups, and compares the results.
 
-Needs the Android SDK (`build-tools/36.1.0`, `platforms/android-34`) and a JDK. The signing
-key is **not** in this repository; `build.sh` looks for `~/.homestead-keys/` or the
-`HOMESTEAD_KEYSTORE` / `HOMESTEAD_KEYPASS` environment variables (to make your own key,
-see [Building and signing your own copy](#building-and-signing-your-own-copy)). Set
-`ADB_TARGET` to your TV's `ip:port` for `./build.sh install`.
+You need the Android SDK (`build-tools/36.1.0`, `platforms/android-34`) and a JDK. The signing
+key isn't in this repository. `build.sh` looks in `~/.homestead-keys/`, or at the
+`HOMESTEAD_KEYSTORE` and `HOMESTEAD_KEYPASS` environment variables (to make your own key see
+[Signing your own copy](#signing-your-own-copy)). Set `ADB_TARGET` to your TV's `ip:port` for
+`./build.sh install`.
 
 The ADB client is written from the AOSP sources (`system/core/adb`,
-`libcrypto_utils/android_pubkey.c`); no code is copied.
+`libcrypto_utils/android_pubkey.c`). No code is copied.
 
-## AI assistants
+## For developers
 
-Notes for coding agents, and for anyone else picking this repository up cold.
-
-### Where things are
-
-There is no Gradle; everything is in `src/com/homestead/launcher/`. Each class starts with a
-comment explaining why it exists. Read it before changing the class.
+Everything is in `src/com/homestead/launcher/`. Each class starts with a comment that says why
+it exists. Read it before changing the class.
 
 | Area | Classes |
 |---|---|
-| Home screen | `MainActivity`, `HomeGrid` (the UI, shared by the activity and the overlay), `AppModel` (tiles, artwork, order), `Backgrounds` (presets and the photo), `BackgroundProvider` (receives the photo over adb), `UsageTracker`, `HdmiActivity`, `BootReceiver` |
+| Home screen | `MainActivity`, `HomeGrid` (the UI, shared by the activity and the overlay), `AppModel` (tiles, artwork, order), `Backgrounds` (presets, paintings and the photo), `BackgroundProvider` (receives the photo over adb), `UsageTracker`, `HdmiActivity`, `BootReceiver` |
 | Home button | `HomeRedirectService` (accessibility service and overlay; its timings are deliberate), `HomeKeyWatcher` (Home presses, from the system log) |
-| Pages | `Panel` (the settings page: a sheet over the home screen, or a full page with an explanation pane), `OnboardingPanel` (first-run setup), `SetupPanel`, `SettingsPanel`, `HealthPanel` (TV Health), `DebloatPanel`, `CommandsPanel`, `UpdatePanel`, `PhotoPanel` (choose a photo on the TV) |
-| ADB | `AdbBridge` (one worker thread, link state, command batches), `AdbConnection` (the client), `AdbCrypto` (the key), `TunnelVpnService` and `VpnSetupActivity` (the on-device tunnel) |
+| Pages | `Panel` (a settings page: a sheet over the home screen, or a full page with an explanation pane), `OnboardingPanel` (first-run setup), `SetupPanel`, `SettingsPanel`, `SystemSettingsPanel`, `DisplaySoundPanel` (Screen & sound), `ChannelsPanel` (Canali TV), `HealthPanel` (TV Health), `DebloatPanel`, `CommandsPanel`, `UpdatePanel`, `PhotoPanel` |
+| ADB | `AdbBridge` (one worker thread, link state, command batches), `AdbConnection` (the client), `AdbCrypto` (the key), `TunnelVpnService` and `VpnSetupActivity` (the tunnel on the TV) |
 | Debloat list | `Debloat` (the package catalogue, the never-touch lists, live locks) |
-| Updates | `UpdateChecker` (the GitHub repo is `UpdateChecker.REPO`), `UpdateInstaller`, `UpdateFileProvider` |
+| Updates | `UpdateChecker` (the GitHub repository is `UpdateChecker.REPO`), `UpdateInstaller`, `UpdateFileProvider` |
 | Preferences | `Prefs` |
 
-### Building and signing your own copy
+### Signing your own copy
 
-`./build.sh` needs a JDK (11 or newer), Android build-tools 36.1.0 and platform android-34.
-It has been run on Windows (Git Bash) only; it picks the right tool names for Linux and
-macOS, but those are untested. `minSdk` is 22 and `targetSdk` is 28. Do not raise
-`targetSdk`: newer levels tighten the background-start rules the Home button relies on.
+`./build.sh` needs a JDK (11 or newer), Android build-tools 36.1.0 and platform android-34. It
+has been run on Windows (Git Bash) only. It picks the right tool names for Linux and macOS, but
+those are untested. `minSdk` is 22 and `targetSdk` is 28. Don't raise `targetSdk`: newer
+levels tighten the background-start rules the Home button relies on.
 
-The release signing key is not in the repository. To build your own, make a key once:
+Make a key once:
 
 ```sh
 mkdir -p ~/.homestead-keys
@@ -354,101 +320,99 @@ export HOMESTEAD_KEYPASS='<the password you chose>'
 ./build.sh
 ```
 
-A build signed with your own key cannot install over an official one (or the other way
-round), so uninstall first. Uninstalling loses Homestead's record of what it switched off,
-so run **Undo everything this app switched off** in Debloat before you do.
+A build signed with your own key can't install over an official one, or the other way round,
+so uninstall first. Uninstalling loses Salotto's record of what it switched off, so run
+**Undo everything this app switched off** in Debloat before you do.
 
 ### Debugging on a TV
 
-Test on real Fire TV hardware. The behaviour this app works around (Amazon's pinned home
-screen, the delay on app starts after Home, protected packages, the missing Accessibility
-entry) does not exist on an emulator or stock Android.
+Test on real Fire TV hardware. What the app works around (Amazon's pinned home screen, the
+delay on app starts after Home, protected packages, the missing Accessibility entry) doesn't
+exist on an emulator or stock Android.
 
 ```sh
 adb connect <tv-ip>:5555
 adb logcat -s Homestead                                        # every log line uses this tag
 adb shell settings get secure enabled_accessibility_services   # is the Home button switched on?
-adb shell dumpsys accessibility                                # ...and running? look for label=Homestead
+adb shell dumpsys accessibility                                # ...and running? look for label=Salotto
 adb shell dumpsys activity activities | grep mResumedActivity  # what is on screen
 adb shell pm list packages -d                                  # what is switched off
 adb exec-out screencap -p > screen.png
 ```
 
-Log lines worth knowing: `HomeRedirectService connected` (the service started),
-`Home pressed` then `overlay shown in … ms` (one Home press, caught by `HomeKeyWatcher`),
-`dispatchLag=…` (Amazon's launcher reached the front), `handing off to activity`,
-`foreground is now …, removing overlay`, `tunnel up`, `adb connected`, `adb idle, closing`,
-`package change […], grid unchanged` or `…, reloading model once` (package and HDMI input
-events, gathered for 1.5 seconds; inputs are listed as `input:…`), `opening Settings (key … from device …, source …)` (device -1 is an
-injected key rather than the remote, and `(HDMI-CEC)` marks one sent over HDMI),
-`update check: …` (the result of each check for a new release).
+Log lines worth knowing: `HomeRedirectService connected` (the service started), `Home
+pressed` then `overlay shown in … ms` (one Home press, caught by `HomeKeyWatcher`),
+`dispatchLag=…` (Amazon's launcher reached the front), `handing off to activity`, `foreground
+is now …, removing overlay`, `tunnel up`, `adb connected`, `adb idle, closing`, `package change
+[…], grid unchanged` or `…, reloading model once` (package and HDMI input events, gathered
+for 1.5 seconds), `opening Settings (key … from device …, source …)` (device -1 is an injected
+key and not the remote, and `(HDMI-CEC)` marks one sent over HDMI), and `update check: …` (the
+result of each check for a new release).
 
 Things that look like bugs but are Fire OS:
 
-- Fire OS's Accessibility menu does not list third-party services. The service has to be
+- Fire OS's Accessibility menu doesn't list third-party services. The service has to be
   switched on over ADB.
-- The system's Home broadcast is restricted to Amazon-signed apps, and the accessibility
-  event for Amazon's launcher arrives as its screen is drawn (and not at all if it is
-  already in front). The earliest trace an app can read is the
-  `START ... cat=[android.intent.category.HOME] ... from uid 1000` line in the system log
-  (tagged ActivityManager on Fire OS 7 and ActivityTaskManager on Fire OS 8, where some
-  TVs log it `from uid 0`), which is what `HomeKeyWatcher` looks for. `READ_LOGS` takes effect only in a process
-  started after the grant, which is why the watcher runs in its own process (`:homekey`).
-- Some Amazon apps, such as Luna, handle Home themselves (`CustomHomeButtonHandler:
-  Bypassing HOME key` in the log) and then start the home screen under their own uid, so a
-  HOME start from the app in front counts as a press too. That hook needs an Amazon-only
-  permission, so Homestead cannot use it for its own screens.
+- The system's Home broadcast is restricted to Amazon-signed apps. The accessibility event for
+  Amazon's launcher arrives as its screen is drawn, and not at all if it is already in front.
+  The earliest trace an app can read is the `START ... cat=[android.intent.category.HOME] ...
+  from uid 1000` line in the system log (tagged ActivityManager on Fire OS 7 and
+  ActivityTaskManager on Fire OS 8, where some TVs log it `from uid 0`). That is what
+  `HomeKeyWatcher` looks for. `READ_LOGS` takes effect only in a process started after the
+  grant, which is why the watcher runs in its own process (`:homekey`).
+- Some Amazon apps, such as Luna, handle Home themselves (`CustomHomeButtonHandler: Bypassing
+  HOME key` in the log) and then start the home screen under their own uid, so a HOME start
+  from the app in front counts as a press too. That hook needs an Amazon-only permission, so
+  Salotto can't use it for its own screens.
 - Amazon's Settings opens by starting the home screen under its own uid
-  (`com.amazon.tv.settings.v2`), then its settings page. That HOME start is not a press, and
-  for a few seconds after it Amazon's home windows do not bring Homestead back.
-- Fire OS refuses an ADB connection that starts on the TV itself; that is why the tunnel
-  exists. The connection over Wi-Fi from a computer also drops often, so reconnect before
-  each command when scripting.
-- `pm disable-user` on some Amazon packages fails with "Cannot disable a protected
-  package". Batches carry on past it, and TV Health counts those as protected.
+  (`com.amazon.tv.settings.v2`), then its settings page. That HOME start isn't a press, and
+  for a few seconds after it Amazon's home windows don't bring Salotto back.
+- Fire OS refuses an ADB connection that starts on the TV itself, which is why the tunnel
+  exists. The connection over Wi-Fi from a computer also drops often, so reconnect before each
+  command when scripting.
+- `pm disable-user` on some Amazon packages fails with "Cannot disable a protected package".
+  Batches carry on past it, and TV Health counts those as protected.
 - In the system VPN and USB-debugging prompts, no button has focus at first. Press Down to
   reach OK.
-- `uiautomator dump` cannot read Homestead's windows. Use screenshots.
+- `uiautomator dump` can't read Salotto's windows. Use screenshots.
 
-Homestead pauses the Home redirect while the user is on a setup screen (settings, VPN
-prompt, key prompt), and lifts the pause when they come back. If Home "does nothing" during
-testing, check whether a pause is active before suspecting the service.
+Salotto pauses the Home redirect while you are on a setup screen (settings, VPN prompt, key
+prompt) and lifts the pause when you come back. If Home does nothing during testing, check
+whether a pause is active before suspecting the service.
 
 ### Rules for changes
 
-- **Debloat list:** add a package only after switching it off, restarting the TV and
-  switching it back on, on a real device, with nothing broken. Say which device in the
-  pull request. `SAFE` entries are included in the one-press switch-off; anything with a
-  visible side effect is `CAUTION`. Never add anything on the never-touch lists.
+- Debloat list: add a package only after switching it off, restarting the TV and switching it
+  back on, on a real device, with nothing broken. Say which device in the pull request. `SAFE`
+  entries are part of the one-press switch-off. Anything with a visible side effect is
+  `CAUTION`. Never add anything on the never-touch lists.
 - Everything the app changes must be reversible from the app.
-- Keep the accessibility service as narrow as it is (`canRetrieveWindowContent="false"`,
-  no key filtering, no package filter). [SECURITY.md](SECURITY.md) promises this.
-- **Release notes** appear as raw text in the app's Update available page, so write them
-  as plain text: no Markdown links, code spans or headings. Bump `versionCode` and
-  `versionName` in `AndroidManifest.xml`; the app compares the release tag (`v1.2`) with
-  `versionName`.
-- Describe only what you have tested. "Should work on X" belongs in a pull request
-  description, not in the README.
+- Keep the accessibility service as narrow as it is (`canRetrieveWindowContent="false"`, no
+  key filtering, no package filter). [SECURITY.md](SECURITY.md) promises this.
+- Release notes show as raw text in the app's Update available page, so keep them plain: no
+  Markdown links, code spans or headings. Raise `versionCode` and `versionName` in
+  `AndroidManifest.xml`. The app compares the release tag (`v1.2`) with `versionName`.
+- Write down only what you tested. "Should work on X" belongs in a pull request, not here.
 
-### Verified Homestead on a device not in the table?
+## Reporting a device
 
-Open a pull request that adds a row to **Verified on** above:
+If you try Salotto on a device that isn't in the table above, open an issue with the **Device
+report** template and say:
 
 - the device's name;
 - the model, from `adb shell getprop ro.product.model`;
 - the Fire OS version, from `adb shell getprop ro.build.version.name`;
 - what you checked: the launcher, the Home button, setup from the TV, TV Health, Debloat.
 
-Only list what you actually tried. If Debloat shows rows as "not present", or the TV has
-Amazon packages the list does not know about, attach the output of
-`adb shell pm list packages -s` (system packages only, so it does not list the apps you
-installed).
+List only what you actually tried. If Debloat shows rows as "not present", or your TV has
+Amazon packages the list doesn't know, attach the output of `adb shell pm list packages -s`
+(system packages only, so it doesn't list your own apps).
 
 ## Licence
 
 GPL-3.0-or-later. See [LICENSE](LICENSE).
 
 This app can change system settings and package states on your television. Keeping it
-copyleft means anyone shipping a modified build has to publish what they changed, and you
-can read exactly what it does before you let it near your TV. That matters more here than
-it would for an ordinary app.
+copyleft means anyone shipping a modified build has to publish what they changed, and you can
+read exactly what it does before you let it near your TV. That matters more here than it would
+for an ordinary app.
