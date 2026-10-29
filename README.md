@@ -18,6 +18,8 @@ goes its own way on two things: how it looks and what it does for Italian live T
 reference devices are a **Fire TV Stick (`AFTSS`, Fire OS 7.7)** and a **TCL 40V5D (Fire OS
 14)**.
 
+<img src="screenshots/fork_home.jpg" alt="This fork's home screen on a Fire TV Stick: the side rail on the left, the clock and a network icon at the top right, the Canali TV tile and three apps in the dock, and a grid of square icons below, over Van Gogh's Starry Night.">
+
 What is different, in short (the full list is in the [changelog](CHANGELOG.md)):
 
 - a side rail, Manrope, a dock with no band over a grid of square icons, and wallpapers with
