@@ -2,7 +2,33 @@
 <resources>
   <string name="app_name">Homestead</string>
 
+  <string name="service_desc">Reindirizza il tasto Home a Homestead invece che al launcher di Amazon.</string>
+
   <!-- Home screen -->
+  <string name="home_livetv">TV in diretta</string>
+  <string name="home_livetv_hint">Premi OK per guardare</string>
+  <string name="home_livetv_failed">La TV in diretta non è disponibile</string>
+  <string name="home_restore">Alcune modifiche sono state annullate</string>
+  <string name="home_restore_hint_one">%1$s è stato riattivato. Premi OK per spegnerlo di nuovo</string>
+  <string name="home_restore_hint_many">%1$s sono stati riattivati. Premi OK per spegnerli di nuovo</string>
+  <string name="home_restore_failed">Impossibile raggiungere il TV. Apri la configurazione per collegarti</string>
+  <string name="home_restore_refused">Fire OS ha lasciato attivo %1$s</string>
+  <string name="home_connecting">Connessione al TV in corso...</string>
+  <string name="home_sec_inputs">Ingressi e sistema</string>
+  <string name="home_sec_nontv">App non TV</string>
+  <string name="home_sec_tv">App TV</string>
+  <string name="home_connected">collegato</string>
+  <string name="home_greet_morning">Buongiorno</string>
+  <string name="home_greet_afternoon">Buon pomeriggio</string>
+  <string name="home_greet_evening">Buonasera</string>
+  <string name="home_greeting_night">Buonanotte</string>
+  <string name="home_greeting_morning">Buongiorno</string>
+  <string name="home_greeting_afternoon">Buon pomeriggio</string>
+  <string name="home_greeting_evening">Buonasera</string>
+  <string name="home_airplay_hint">Apri Suoni e schermo, poi Apple AirPlay e HomeKit</string>
+  <string name="home_profile_hint">Apri Impostazioni account e profilo, poi Profili</string>
+  <string name="home_kids_hint">Apri Impostazioni account e profilo, poi Impostazioni Kids</string>
+  <string name="home_wsiw_hint">Chiedi ad Alexa: “cosa guardo?”</string>
   <string name="home_amazon_home">Home di Amazon</string>
   <string name="home_amazon_settings">Impostazioni Amazon</string>
   <string name="home_my_settings">Le mie impostazioni</string>

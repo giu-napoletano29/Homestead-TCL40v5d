@@ -424,6 +424,45 @@ final class Backgrounds {
         @Override public int getOpacity() { return android.graphics.PixelFormat.OPAQUE; }
     }
 
+    // The wallpaper, drawn once into one opaque screen-sized bitmap. A preset or a photo with
+    // its dim and its fade is two to six full-screen layers, redrawn on every frame the
+    // screen moves; on a TV with a modest GPU (the TCL: about 15 ms of GPU a frame) that is
+    // most of the budget. One opaque picture costs one pass. One slot, shared by the
+    // activity's grid and the overlay's: main thread only.
+    private static Bitmap bakedBmp;
+    private static String bakedKey;
+
+    private static String bakedKeyFor(Context c, String key) {
+        DisplayMetrics dm = c.getResources().getDisplayMetrics();
+        return key + "|" + dm.widthPixels + "x" + dm.heightPixels;
+    }
+
+    /** The baked wallpaper for this key if it is the one held now, else null. */
+    static Drawable bakedOrNull(Context c, String key) {
+        if (bakedBmp == null || bakedBmp.isRecycled()
+                || !bakedKeyFor(c, key).equals(bakedKey)) return null;
+        return new FillDrawable(bakedBmp);
+    }
+
+    /** Draws src into the baked bitmap under this key and returns a drawable showing it. */
+    static Drawable bake(Context c, String key, Drawable src) {
+        DisplayMetrics dm = c.getResources().getDisplayMetrics();
+        try {
+            Bitmap b = Bitmap.createBitmap(dm.widthPixels, dm.heightPixels, Bitmap.Config.ARGB_8888);
+            Canvas cv = new Canvas(b);
+            cv.drawColor(0xFF000000);
+            src.setBounds(0, 0, b.getWidth(), b.getHeight());
+            src.draw(cv);
+            b.setHasAlpha(false);
+            bakedBmp = b;
+            bakedKey = bakedKeyFor(c, key);
+            return new FillDrawable(b);
+        } catch (Throwable t) {
+            Log.w(TAG, "wallpaper could not be baked: " + t);
+            return src;
+        }
+    }
+
     /** The photo under a black layer at the chosen dim. */
     static Drawable photoDrawable(Context c, Bitmap b) {
         Drawable img = fill(b);

@@ -997,10 +997,16 @@ public class HomeGrid implements SettingsPanel.Host {
         if (state.equals(painted)) return;
         painted = state;
         look = p;
-        root.setBackground(photo != null
-                ? Backgrounds.withScrim(ctx, Backgrounds.photoDrawable(ctx, photo),
-                        Backgrounds.scrimColorFor(photo))
-                : Backgrounds.withScrim(ctx, Backgrounds.drawable(p), p.from));
+        // Drawn once and kept as a single opaque picture (see Backgrounds.bake): the same one
+        // is reused whenever the state is unchanged, as on every resume.
+        Drawable wall = Backgrounds.bakedOrNull(ctx, state);
+        if (wall == null) {
+            wall = Backgrounds.bake(ctx, state, photo != null
+                    ? Backgrounds.withScrim(ctx, Backgrounds.photoDrawable(ctx, photo),
+                            Backgrounds.scrimColorFor(photo))
+                    : Backgrounds.withScrim(ctx, Backgrounds.drawable(p), p.from));
+        }
+        root.setBackground(wall);
         // The rail takes a little of the background's colour: a photo's own dark tone, or a
         // preset's main colour taken down to a dark shade of it.
         int railTone;
@@ -1024,7 +1030,6 @@ public class HomeGrid implements SettingsPanel.Host {
         // The ring and the outline are per look, so every cell is repainted (not animated:
         // this is a palette swap, not a focus change).
         for (View cell : cellsByKey.values()) style(cell, cell == focusedCell, false);
-        for (int i = 0; i < channelsTiles.size(); i++) paintChannelsTile(channelsTiles.get(i));
         for (Map.Entry<View, Boolean> e : cardCells.entrySet()) {
             Drawable bg = e.getKey().getBackground();
             if (bg instanceof GradientDrawable) ((GradientDrawable) bg).setColor(cardColor(e.getValue()));
@@ -1696,7 +1701,6 @@ public class HomeGrid implements SettingsPanel.Host {
         column.removeAllViews();
         cellsByKey.clear();
         cardCells.clear();
-        channelsTiles.clear();
         rows.clear();
         dockKeys.clear();
         dockTitleView = null;
@@ -1720,7 +1724,6 @@ public class HomeGrid implements SettingsPanel.Host {
         column.removeAllViews();
         cellsByKey.clear();
         cardCells.clear();
-        channelsTiles.clear();
         rows.clear();
         dockKeys.clear();
         dockTitleView = null;
@@ -2432,88 +2435,6 @@ public class HomeGrid implements SettingsPanel.Host {
         return n >= 20 && sum / n > 180;
     }
 
-    /** The Canali TV tiles built, so a change of background can repaint their gradient. */
-    private final List<View> channelsTiles = new ArrayList<View>();
-
-    /**
-     * The Canali TV tile, kept to two lines of type on a calm gradient in the look's own hue:
-     * a small spaced "LIVE" over the name, and one faint play mark at the right (see
-     * BroadcastWaves). It is the one tile that stands for watching TV, so it is coloured; the
-     * rest is left empty on purpose.
-     */
-    private View buildChannelsTile(AppModel.Item it) {
-        FrameLayout cell = newCell(it);
-        paintChannelsTile(cell);
-        channelsTiles.add(cell);
-
-        LinearLayout col = new LinearLayout(ctx);
-        col.setOrientation(LinearLayout.VERTICAL);
-        col.setGravity(Gravity.CENTER_VERTICAL);
-        col.setPadding(dp(22), dp(8), dp(16), dp(8));
-
-        TextView live = new TextView(ctx);
-        live.setText("●  LIVE");
-        live.setTextColor(0xCCFFFFFF);
-        live.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11);
-        live.setTypeface(Fonts.get(ctx, Fonts.BOLD));
-        live.setLetterSpacing(0.22f);
-        live.setSingleLine(true);
-        col.addView(live);
-
-        TextView name = new TextView(ctx);
-        name.setText(it.label);
-        name.setTextColor(Color.WHITE);
-        name.setTextSize(TypedValue.COMPLEX_UNIT_SP, 26);
-        name.setTypeface(Fonts.get(ctx, Fonts.BOLD));
-        name.setMaxLines(2);
-        name.setEllipsize(TextUtils.TruncateAt.END);
-        LinearLayout.LayoutParams nlp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        nlp.topMargin = dp(4);
-        col.addView(name, nlp);
-
-        cell.addView(col, new FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-        return cell;
-    }
-
-    private void paintChannelsTile(View cell) {
-        // Near black, with a faint lift at the top-left: the most contrast against the white
-        // type, whatever the wallpaper is. (A tile in the wallpaper's hue was tried and dropped.)
-        GradientDrawable g = new GradientDrawable(GradientDrawable.Orientation.TL_BR,
-                new int[]{ 0xFF24272D, 0xFF020203 });
-        g.setCornerRadius(dp(CORNER_DP));
-        cell.setBackground(new android.graphics.drawable.LayerDrawable(
-                new Drawable[]{ g, new BroadcastWaves(ctx) }));
-    }
-
-    /**
-     * The standard Material antenna glyph (res/drawable/ic_antenna.xml) at the right of the
-     * Canali TV tile, faint: the tile's only decoration. Drawn only where the tile is wide
-     * (the dock), not in a square cell where there is no room beside the text.
-     */
-    private static final class BroadcastWaves extends Drawable {
-        private final Drawable icon;
-
-        BroadcastWaves(Context c) {
-            Drawable d = c.getDrawable(R.drawable.ic_antenna);
-            icon = d == null ? null : d.mutate();
-            if (icon != null) icon.setAlpha(0x50);
-        }
-
-        @Override public void draw(android.graphics.Canvas cv) {
-            android.graphics.Rect b = getBounds();
-            if (icon == null || b.isEmpty() || b.width() < b.height() * 1.5f) return;
-            int s = Math.round(b.height() * 0.46f);
-            int cx = b.right - Math.round(b.height() * 0.50f), cy = b.centerY();
-            icon.setBounds(cx - s / 2, cy - s / 2, cx + s / 2, cy + s / 2);
-            icon.draw(cv);
-        }
-        @Override public void setAlpha(int a) { }
-        @Override public void setColorFilter(android.graphics.ColorFilter f) { }
-        @Override public int getOpacity() { return android.graphics.PixelFormat.TRANSLUCENT; }
-    }
-
     /**
      * A square cell for the grid below the dock: just the app's icon, large, centered, no
      * label - a banner would stretch badly into a square shape, and a big icon alone is
@@ -2524,9 +2445,11 @@ public class HomeGrid implements SettingsPanel.Host {
      * normal flat card instead.
      */
     private View buildSquareCard(AppModel.Item it) {
-        if (it.type == AppModel.TYPE_CHANNELS) return buildChannelsTile(it);
         boolean textTile = it.type == AppModel.TYPE_INPUT || AppModel.isLive(it.type);
         if (textTile || it.icon == null) return buildCard(it);
+        // Settings, TV Health, AirPlay...: a small glyph over a label, not an icon filling the
+        // tile edge to edge (that is for an app's own icon).
+        if (it.type != AppModel.TYPE_APP) return buildGlyphSquare(it);
         FrameLayout cell = newCell(it);
         GradientDrawable card = new GradientDrawable();
         card.setCornerRadius(dp(CORNER_DP));
@@ -2558,6 +2481,38 @@ public class HomeGrid implements SettingsPanel.Host {
         cell.addView(ic, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         dimIfBright(cell, ic, shown);
+        return cell;
+    }
+
+    /** A square cell for a tile that is not an app: a glyph with its name under it. */
+    private View buildGlyphSquare(AppModel.Item it) {
+        FrameLayout cell = newCell(it);
+        GradientDrawable card = new GradientDrawable();
+        card.setCornerRadius(dp(CORNER_DP));
+        card.setColor(cardColor(false));
+        cell.setBackground(card);
+        cardCells.put(cell, Boolean.FALSE);
+
+        LinearLayout col = new LinearLayout(ctx);
+        col.setOrientation(LinearLayout.VERTICAL);
+        col.setGravity(Gravity.CENTER);
+        col.setPadding(dp(6), dp(6), dp(6), dp(6));
+        ImageView ic = new ImageView(ctx);
+        ic.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        ic.setImageBitmap(it.icon);
+        LinearLayout.LayoutParams ilp = new LinearLayout.LayoutParams(dp(40), dp(40));
+        ilp.bottomMargin = dp(6);
+        col.addView(ic, ilp);
+        TextView tv = new TextView(ctx);
+        tv.setText(it.label);
+        tv.setTextColor(0xFFD6D8DE);
+        tv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
+        tv.setGravity(Gravity.CENTER);
+        tv.setMaxLines(2);
+        tv.setEllipsize(TextUtils.TruncateAt.END);
+        col.addView(tv);
+        cell.addView(col, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         return cell;
     }
 
@@ -2610,7 +2565,6 @@ public class HomeGrid implements SettingsPanel.Host {
 
     /** An input, Live TV, Settings, TV Health, Amazon Home, or a non-TV app: one flat card. */
     private View buildCard(AppModel.Item it) {
-        if (it.type == AppModel.TYPE_CHANNELS) return buildChannelsTile(it);
         FrameLayout cell = newCell(it);
         GradientDrawable card = new GradientDrawable();
         card.setCornerRadius(dp(CORNER_DP));
@@ -2623,9 +2577,13 @@ public class HomeGrid implements SettingsPanel.Host {
             LinearLayout col = new LinearLayout(ctx);
             col.setOrientation(LinearLayout.VERTICAL);
             col.setGravity(Gravity.CENTER);
-            if (it.glyph != 0) {
+            // Live TV and Canali TV share this tile: a small antenna over the name. The tuner's
+            // Live TV brings its own glyph; Canali TV takes the standard antenna.
+            int glyph = it.glyph != 0 ? it.glyph
+                    : it.type == AppModel.TYPE_CHANNELS ? R.drawable.ic_antenna : 0;
+            if (glyph != 0) {
                 ImageView ic = new ImageView(ctx);
-                ic.setImageResource(it.glyph);
+                ic.setImageResource(glyph);
                 ic.setColorFilter(0xFFBFE9EE,
                         android.graphics.PorterDuff.Mode.SRC_IN);
                 LinearLayout.LayoutParams ilp = new LinearLayout.LayoutParams(dp(28), dp(28));
