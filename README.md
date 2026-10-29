@@ -12,11 +12,10 @@ Both pictures are from the same TV, a few minutes apart.
 
 ## About this fork
 
-This is a maintained fork of [Sarg338/Homestead](https://github.com/Sarg338/Homestead), which
-is no longer being developed. It keeps everything above and the original's GPL licence, and
-goes its own way on two things: how it looks and what it does for Italian live TV. Its
-reference devices are a **Fire TV Stick (`AFTSS`, Fire OS 7.7)** and a **TCL 40V5D (Fire OS
-14)**.
+This is a fork of [Sarg338/Homestead](https://github.com/Sarg338/Homestead). It keeps
+everything described here and the original's GPL licence, and adds its own look and a page of
+Italian live TV. It is developed and tested on a **Fire TV Stick (`AFTSS`, Fire OS 7.7)** and
+a **TCL 40V5D (Fire OS 14)**.
 
 <img src="screenshots/fork_home.jpg" alt="This fork's home screen on a Fire TV Stick: the side rail on the left, the clock and a network icon at the top right, the Canali TV tile and three apps in the dock, and a grid of square icons below, over Van Gogh's Starry Night.">
 
@@ -30,10 +29,10 @@ What is different, in short (the full list is in the [changelog](CHANGELOG.md)):
   HDMI-CEC, overscan and sleep controls that need no root, and **App info** on a tile;
 - an Italian translation of the main screens.
 
-Updates come from this repository's [releases](https://github.com/giu-napoletano29/Homestead-TCL40v5d/releases/latest),
-not the original's, and the app and the original are signed with different keys: install this
-one over a stock Homestead only after uninstalling it. How a release is made, and how to keep
-the signing key safe, is in [docs/RELEASING.md](docs/RELEASING.md).
+The app checks this repository's [releases](https://github.com/giu-napoletano29/Homestead-TCL40v5d/releases/latest)
+for updates. Its builds are signed with a different key than the original's, so to move from
+the original to this one, uninstall the original first. How a release is made, and how to
+keep the signing key safe, is in [docs/RELEASING.md](docs/RELEASING.md).
 
 **Not for Vega OS.** Amazon's newest sticks (the Fire TV Stick 4K Select and the 2026 Fire TV
 Stick 4K, with no "Plus" or "Max") run Vega OS, which is not Android and installs no APK.
