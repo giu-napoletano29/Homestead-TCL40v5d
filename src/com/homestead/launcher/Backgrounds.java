@@ -202,14 +202,20 @@ final class Backgrounds {
     static final class Art {
         final String id, name;
         final int res;
-        Art(String id, String name, int res) { this.id = id; this.name = name; this.res = res; }
+        /** Where the 16:9 crop of a squarer picture sits: 0 shows its top, 1 its bottom. */
+        final float focusY;
+        Art(String id, String name, int res) { this(id, name, res, 0.5f); }
+        Art(String id, String name, int res, float focusY) {
+            this.id = id; this.name = name; this.res = res; this.focusY = focusY;
+        }
     }
 
     /** Shown as photos: the home screen decodes, dims and scrims them the same way. */
     static final Art[] ARTS = {
             new Art("art_starry",  "The Starry Night, Van Gogh",   R.raw.art_starry),
             new Art("art_wave",    "The Great Wave, Hokusai",      R.raw.art_wave),
-            new Art("art_kiss",    "The Kiss, Klimt",              R.raw.art_kiss),
+            // The couple fills the upper two thirds; a centred crop cuts their heads off.
+            new Art("art_kiss",    "The Kiss, Klimt",              R.raw.art_kiss, 0f),
             new Art("art_lilies",  "Water Lilies, Monet",          R.raw.art_lilies),
     };
 
@@ -350,9 +356,11 @@ final class Backgrounds {
         loading = true;
         final Context app = c.getApplicationContext();
         final DisplayMetrics dm = c.getResources().getDisplayMetrics();
+        final Art art = artFor(currentId(app));
+        final float focusY = art == null ? 0.5f : art.focusY;
         new Thread(new Runnable() {
             public void run() {
-                final Bitmap b = decode(f, dm.widthPixels, dm.heightPixels);
+                final Bitmap b = decode(f, dm.widthPixels, dm.heightPixels, focusY);
                 MAIN.post(new Runnable() {
                     public void run() {
                         loading = false;
@@ -372,8 +380,11 @@ final class Backgrounds {
         }, "homestead-photo").start();
     }
 
-    /** Scaled and centre-cropped to the screen, so nothing larger stays in memory. */
-    private static Bitmap decode(File f, int dw, int dh) {
+    /**
+     * Scaled and cropped to the screen, so nothing larger stays in memory. focusY places the
+     * crop on the picture's overflow: 0.5 centres it.
+     */
+    private static Bitmap decode(File f, int dw, int dh, float focusY) {
         try {
             if (f.length() > MAX_FILE) return null;
             BitmapFactory.Options o = new BitmapFactory.Options();
@@ -389,7 +400,7 @@ final class Backgrounds {
             float s = Math.max((float) dw / src.getWidth(), (float) dh / src.getHeight());
             Matrix m = new Matrix();
             m.setScale(s, s);
-            m.postTranslate((dw - src.getWidth() * s) / 2f, (dh - src.getHeight() * s) / 2f);
+            m.postTranslate((dw - src.getWidth() * s) / 2f, (dh - src.getHeight() * s) * focusY);
             Bitmap out = Bitmap.createBitmap(dw, dh, Bitmap.Config.ARGB_8888);
             new Canvas(out).drawBitmap(src, m, new Paint(Paint.FILTER_BITMAP_FLAG));
             src.recycle();

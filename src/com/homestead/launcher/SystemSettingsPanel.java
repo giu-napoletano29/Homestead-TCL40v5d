@@ -140,9 +140,12 @@ public final class SystemSettingsPanel {
             public void run() { host.showPanel(DisplaySoundPanel.build(c, host)); }
         }).opens();
         if (!checks.isEmpty()) screenSound.setValueColor(0xFFE8C468);
-        StringBuilder sb = new StringBuilder("HDMI-CEC, sleep, screen mirroring, overscan and "
-                + "the rest of what Amazon locks behind a permission only its own apps can hold "
-                + "- read and set directly, no root, no Amazon launcher needed.");
+        StringBuilder sb = new StringBuilder(DisplaySoundPanel.builtInTv(c)
+                ? "Sleep, power LED, screensaver, screen mirroring, interface sounds and Live TV "
+                        + "audio language"
+                : "HDMI-CEC, sleep, screensaver, screen mirroring, overscan and the rest");
+        sb.append(": things Amazon keeps behind a permission only its own apps can hold, "
+                + "read and set directly - no root, no Amazon launcher needed.");
         if (!checks.isEmpty()) {
             sb.append("\n\nWorth a look: ");
             for (int i = 0; i < checks.size(); i++) {

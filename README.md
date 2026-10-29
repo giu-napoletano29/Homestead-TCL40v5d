@@ -26,7 +26,8 @@ What is different, in short (the full list is in the [changelog](CHANGELOG.md)):
 - a **Canali TV** page with tabs for Rai and Mediaset: Rai in its own colours, and every
   Mediaset channel and radio opening Mediaset Infinity on that channel;
 - Settings split in two (Homestead's own, and the TV's), a **Screen & sound** page with the
-  HDMI-CEC, overscan and sleep controls that need no root, and **App info** on a tile;
+  HDMI-CEC, overscan and sleep controls that need no root (on a TV with its own
+  panel, only sleep and screen mirroring), and **App info** on a tile;
 - an Italian translation of the main screens.
 
 The app checks this repository's [releases](https://github.com/giu-napoletano29/Homestead-TCL40v5d/releases/latest)

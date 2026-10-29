@@ -331,7 +331,8 @@ public final class HealthPanel {
             // Any screensaver the user picked is fine but Amazon's, which shows ads. None
             // picked (empty) leaves the TV's default, so it still counts as not fine.
             if ("screensaver_components".equals(key)) {
-                return !cur.isEmpty() && !cur.contains("com.amazon.ftv.screensaver");
+                return !cur.isEmpty() && !cur.contains("com.amazon.ftv.screensaver")
+                        && !cur.contains("com.amazon.screensaver");
             }
             // Animation scales come back as "0.0" against a wanted "0".
             try { return Float.parseFloat(cur) == Float.parseFloat(want); }

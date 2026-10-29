@@ -39,30 +39,76 @@ final class DisplaySoundPanel {
 
     private DisplaySoundPanel() { }
 
+    /**
+     * True on a TV that is itself the screen (the TCL), false on a stick that plugs into one.
+     * HDMI-CEC with "the TV", overscan and the HDMI colour depth belong to the stick's HDMI
+     * output; a TV has none of them (their settings are not even defined there), so they are
+     * left out. Found from the HDMI device type the build declares (0 is a TV), or a tuner
+     * in the hardware, which only a TV has.
+     */
+    static boolean builtInTv(Context c) {
+        try {
+            Class<?> sp = Class.forName("android.os.SystemProperties");
+            String type = (String) sp.getMethod("get", String.class, String.class)
+                    .invoke(null, "ro.hdmi.device_type", "");
+            if (type != null && type.trim().length() > 0) return type.trim().startsWith("0");
+        } catch (Throwable ignored) { }
+        try {
+            android.media.tv.TvInputManager tim = (android.media.tv.TvInputManager)
+                    c.getSystemService(Context.TV_INPUT_SERVICE);
+            List<android.media.tv.TvInputInfo> list = tim == null ? null : tim.getTvInputList();
+            if (list != null) {
+                for (int i = 0; i < list.size(); i++) {
+                    if (AppModel.isHardwareTuner(list.get(i))) return true;
+                }
+            }
+        } catch (Throwable ignored) { }
+        return false;
+    }
+
     static View build(final Context c, final SettingsPanel.Host host) {
         final Panel p = new Panel(c, "Screen & sound", null, Panel.SHEET);
+        boolean tv = builtInTv(c);
 
-        p.addHeader("HDMI-CEC");
-        addSwitch(c, p, "Turn the TV off too",
-                new Setting(true, "hdmi_control_auto_device_off_enabled", false),
-                "When this Stick goes to sleep, it also tells the TV to turn off.");
-        addSwitch(c, p, "Sleep when the TV does",
-                new Setting(false, "block_cec_standby", true),
-                "When the TV goes to standby, this Stick sleeps with it. Off blocks the "
-                        + "TV's standby signal and keeps the Stick awake.");
+        if (!tv) {
+            p.addHeader("HDMI-CEC");
+            addSwitch(c, p, "Turn the TV off too",
+                    new Setting(true, "hdmi_control_auto_device_off_enabled", false),
+                    "When this Stick goes to sleep, it also tells the TV to turn off.");
+            addSwitch(c, p, "Sleep when the TV does",
+                    new Setting(false, "block_cec_standby", true),
+                    "When the TV goes to standby, this Stick sleeps with it. Off blocks the "
+                            + "TV's standby signal and keeps the Stick awake.");
+        }
 
         p.addHeader("Power");
         addAutoSleep(c, p);
+        // Only a TV has a light to switch off; a Stick Lite has none.
+        if (tv && get(c, Setting.SECURE, "power_led_enabled") != null) {
+            addSwitch(c, p, "Power LED",
+                    new Setting(Setting.SECURE, "power_led_enabled", false),
+                    "The small light on the TV. Off keeps it dark, for a room where it would "
+                            + "be seen.");
+        }
 
         p.addHeader("Screen");
         addSwitch(c, p, "Screen mirroring (Miracast)",
                 new Setting(true, "wifi_display_on", false),
                 "Lets a phone or tablet show its screen here. Just the switch Amazon's own "
                         + "page has behind it - no discovery screen of its own.");
+        addScreensaver(c, p);
 
-        p.addHeader("Picture");
-        addOverscan(c, p);
-        addColorDepth(c, p);
+        p.addHeader("Sound");
+        addSwitch(c, p, "Interface sounds",
+                new Setting(Setting.SYSTEM, "sound_effects_enabled", false),
+                "The clicks when you move around the menus, here and in Amazon's own.");
+        if (get(c, Setting.SECURE, LIVETV_AUDIO) != null) addLiveTvLanguage(c, p);
+
+        if (!tv) {
+            p.addHeader("Picture");
+            addOverscan(c, p);
+            addColorDepth(c, p);
+        }
 
         p.addRow("Back", "", new Runnable() {
             public void run() { host.closePanel(); }
@@ -74,33 +120,77 @@ final class DisplaySoundPanel {
 
     /** One Settings.Global or Settings.Secure boolean, "0"/"1", optionally read the other way round. */
     private static final class Setting {
-        final boolean global;
+        static final int GLOBAL = 0, SECURE = 1, SYSTEM = 2;
+        final int ns;
         final String key;
         final boolean invert;
-        Setting(boolean g, String k, boolean inv) { global = g; key = k; invert = inv; }
+        Setting(boolean global, String k, boolean inv) {
+            this(global ? GLOBAL : SECURE, k, inv);
+        }
+        Setting(int ns, String k, boolean inv) { this.ns = ns; key = k; invert = inv; }
+
+        /** Secure is written in-process (WRITE_SECURE_SETTINGS); the others go over ADB. */
+        boolean direct() { return ns == SECURE; }
 
         boolean read(Context c) {
-            String v;
-            try {
-                v = global ? Settings.Global.getString(c.getContentResolver(), key)
-                        : Settings.Secure.getString(c.getContentResolver(), key);
-            } catch (Throwable t) { v = null; }
-            boolean on = "1".equals(v);
-            return invert != on;
+            return invert != "1".equals(get(c, ns, key));
         }
 
         String command(boolean on) {
-            String v = (invert != on) ? "1" : "0";
-            return "settings put " + (global ? "global " : "secure ") + key + " " + v;
+            return put(ns, key, (invert != on) ? "1" : "0");
         }
 
         void writeDirect(Context c, boolean on) {
-            String v = (invert != on) ? "1" : "0";
-            try {
-                if (global) Settings.Global.putString(c.getContentResolver(), key, v);
-                else Settings.Secure.putString(c.getContentResolver(), key, v);
-            } catch (Throwable t) { /* falls back to the ADB link */ }
+            putDirect(c, ns, key, (invert != on) ? "1" : "0");
         }
+    }
+
+    private static String nsName(int ns) {
+        return ns == Setting.GLOBAL ? "global" : ns == Setting.SECURE ? "secure" : "system";
+    }
+
+    private static String get(Context c, int ns, String key) {
+        try {
+            android.content.ContentResolver r = c.getContentResolver();
+            return ns == Setting.GLOBAL ? Settings.Global.getString(r, key)
+                    : ns == Setting.SECURE ? Settings.Secure.getString(r, key)
+                    : Settings.System.getString(r, key);
+        } catch (Throwable t) { return null; }
+    }
+
+    private static String put(int ns, String key, String value) {
+        return "settings put " + nsName(ns) + " " + key + " " + value;
+    }
+
+    private static void putDirect(Context c, int ns, String key, String value) {
+        try {
+            android.content.ContentResolver r = c.getContentResolver();
+            if (ns == Setting.GLOBAL) Settings.Global.putString(r, key, value);
+            else if (ns == Setting.SECURE) Settings.Secure.putString(r, key, value);
+            else Settings.System.putString(r, key, value);
+        } catch (Throwable t) { /* falls back to the ADB link */ }
+    }
+
+    /**
+     * Writes values and calls back on the main thread with whether they all took: in-process
+     * for Secure, over the ADB link otherwise (and for Secure if the direct write did not stick).
+     */
+    private static void write(final Context c, final int ns, final String[] keys,
+                              final String[] values, final Runnable after) {
+        if (ns == Setting.SECURE) {
+            boolean stuck = true;
+            for (int i = 0; i < keys.length; i++) {
+                putDirect(c, ns, keys[i], values[i]);
+                if (!values[i].equals(get(c, ns, keys[i]))) stuck = false;
+            }
+            if (stuck) { after.run(); return; }
+        }
+        if (!AdbBridge.canRun(c)) { after.run(); return; }
+        String[] cmds = new String[keys.length];
+        for (int i = 0; i < keys.length; i++) cmds[i] = put(ns, keys[i], values[i]);
+        AdbBridge.run(cmds, new AdbBridge.Callback() {
+            public void onDone(boolean ok, String out) { after.run(); }
+        });
     }
 
     private static void addSwitch(final Context c, Panel p, String label, final Setting s,
@@ -110,7 +200,7 @@ final class DisplaySoundPanel {
         row.cell.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 final boolean n = !s.read(c);
-                if (!s.global) {
+                if (s.direct()) {
                     // WRITE_SECURE_SETTINGS is already held: applies at once, no ADB needed.
                     s.writeDirect(c, n);
                     row.setValue(onOff(n));
@@ -124,6 +214,87 @@ final class DisplaySoundPanel {
                 AdbBridge.run(new String[]{ s.command(n) }, new AdbBridge.Callback() {
                     public void onDone(boolean ok, String out) { row.setValue(onOff(s.read(c))); }
                 });
+            }
+        });
+    }
+
+    // ---------------------------------------------------------------- screensaver
+
+    private static final String DREAM_COLORS = "com.android.dreams.basic/.Colors";
+
+    /** What the TV shows when idle: nothing, Android's colours, or the Amazon one (with ads). */
+    private static String screensaverState(Context c) {
+        if ("0".equals(get(c, Setting.SECURE, "screensaver_enabled"))) return "Off";
+        String comp = get(c, Setting.SECURE, "screensaver_components");
+        if (comp == null || comp.length() == 0) return "TV default";
+        if (comp.contains("com.amazon.")) return "Amazon's";
+        if (comp.contains(".Colors")) return "Colours";
+        return "Other";
+    }
+
+    private static void addScreensaver(final Context c, Panel p) {
+        final Panel.Row row = p.addRow("Screensaver", screensaverState(c), null);
+        row.setHelp("What the TV shows after a few idle minutes. Off: nothing, and the TV "
+                + "sleeps on its own timer. Colours: Android's changing colours. Amazon's: "
+                + "the TV's own one, which carries ads. Homestead's idle clock is separate and "
+                + "only runs on its own home screen. Press OK for the next choice.");
+        row.cell.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                String now = screensaverState(c);
+                String amazon = get(c, Setting.SECURE, "screensaver_default_component");
+                String[] keys, vals;
+                // Colours -> Off -> Amazon's -> Colours: the ad one is never one press from Off.
+                if ("Colours".equals(now)) {
+                    keys = new String[]{ "screensaver_enabled" };
+                    vals = new String[]{ "0" };
+                } else if ("Off".equals(now) && amazon != null && amazon.length() > 0) {
+                    keys = new String[]{ "screensaver_enabled", "screensaver_components" };
+                    vals = new String[]{ "1", amazon };
+                } else {
+                    keys = new String[]{ "screensaver_enabled", "screensaver_components" };
+                    vals = new String[]{ "1", DREAM_COLORS };
+                }
+                row.setValue("working...");
+                write(c, Setting.SECURE, keys, vals, new Runnable() {
+                    public void run() { row.setValue(screensaverState(c)); }
+                });
+            }
+        });
+    }
+
+    // ---------------------------------------------------------------- Live TV language
+
+    private static final String LIVETV_AUDIO = "com.amazon.tv.livetv.primary_audio_language";
+    /** Live TV's name for the language, and the code the system keeps beside it. */
+    private static final String[][] LANGUAGES = {
+            { "ITALIAN", "it" }, { "ENGLISH", "en" }, { "GERMAN", "de" },
+            { "FRENCH", "fr" }, { "SPANISH", "es" },
+    };
+
+    private static String languageName(String v) {
+        if (v == null || v.length() == 0) return "TV default";
+        return v.charAt(0) + v.substring(1).toLowerCase(java.util.Locale.US);
+    }
+
+    private static void addLiveTvLanguage(final Context c, Panel p) {
+        final Panel.Row row = p.addRow("Live TV audio language",
+                languageName(get(c, Setting.SECURE, LIVETV_AUDIO)), null);
+        row.setHelp("The language Live TV picks when a channel has several soundtracks, from "
+                + "the next channel change on. Press OK for the next language.");
+        row.cell.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                String cur = get(c, Setting.SECURE, LIVETV_AUDIO);
+                int next = 0;
+                for (int i = 0; i < LANGUAGES.length; i++) {
+                    if (LANGUAGES[i][0].equalsIgnoreCase(cur)) { next = (i + 1) % LANGUAGES.length; break; }
+                }
+                row.setValue("working...");
+                write(c, Setting.SECURE, new String[]{ LIVETV_AUDIO, "primary_audio_language" },
+                        new String[]{ LANGUAGES[next][0], LANGUAGES[next][1] }, new Runnable() {
+                            public void run() {
+                                row.setValue(languageName(get(c, Setting.SECURE, LIVETV_AUDIO)));
+                            }
+                        });
             }
         });
     }
@@ -149,6 +320,7 @@ final class DisplaySoundPanel {
      */
     static java.util.List<String> issues(Context c) {
         java.util.List<String> out = new java.util.ArrayList<String>();
+        if (builtInTv(c)) return out;   // these are all about a stick behind a TV
         long t = sleepTimeout(c);
         if (t > 0) out.add("it sleeps by itself after " + (t / 60000) + " minutes");
         if ("1".equals(getSecure(c, "block_cec_standby"))) {
@@ -170,11 +342,15 @@ final class DisplaySoundPanel {
 
     /** A switch for the Stick's own 15-minute sleep; both settings it uses go out over ADB. */
     private static void addAutoSleep(final Context c, Panel p) {
+        final boolean tv = builtInTv(c);
         final Panel.Row row = p.addRow("Sleep after 15 minutes idle",
                 onOff(sleepTimeout(c) > 0), null).asSwitch();
-        row.setHelp("The Stick goes to sleep by itself after 15 minutes without a button press. "
-                + "Off, it sleeps only when the TV does (the switches above) or when you put it "
-                + "to sleep.");
+        row.setHelp(tv
+                ? "The TV goes to sleep by itself after 15 minutes without a button press. Off, "
+                        + "it sleeps only when you put it to sleep."
+                : "The Stick goes to sleep by itself after 15 minutes without a button press. "
+                        + "Off, it sleeps only when the TV does (the switches above) or when "
+                        + "you put it to sleep.");
         row.cell.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 if (!AdbBridge.canRun(c)) { row.setValue("needs Setup"); return; }
