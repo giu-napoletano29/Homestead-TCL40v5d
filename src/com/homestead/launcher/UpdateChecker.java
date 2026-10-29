@@ -33,7 +33,8 @@ import java.util.Locale;
  * Asks GitHub whether there is a newer Homestead release than the one installed.
  *
  * One unauthenticated GET to the Releases API (no token is shipped in the app), so the
- * releases repo must be public; a 404 is reported as "no public release channel".
+ * releases repo must be public. A repository with no published release (drafts and
+ * pre-releases do not count) answers 404, which is reported as NO_RELEASE.
  * The release tag ("v1.2" or "1.2") is compared with the installed versionName as dotted
  * numbers ("1.10" > "1.9"). Installing is UpdateInstaller's job.
  */
@@ -43,6 +44,9 @@ public final class UpdateChecker {
 
     /** owner/repo. One line to change if distribution moves to a dedicated releases repo. */
     static final String REPO = "giu-napoletano29/Homestead-TCL40v5d";
+
+    /** The error for a repository with no published release (GitHub answers 404). */
+    static final String NO_RELEASE = "No release is available yet.";
 
     private static final String API =
             "https://api.github.com/repos/" + REPO + "/releases/latest";
@@ -108,7 +112,7 @@ public final class UpdateChecker {
                     int code = conn.getResponseCode();
                     Prefs.setLastUpdateCheck(app, System.currentTimeMillis());
                     if (code == 404 || code == 401) {
-                        err = "No release is available yet.";
+                        err = NO_RELEASE;
                     } else if (code == 403) {
                         err = "GitHub rate limit reached. Try again later.";
                     } else if (code != 200) {

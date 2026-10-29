@@ -48,6 +48,20 @@ on a Fire TV Stick (`AFTSS`, Fire OS 7.7) and a TCL 40V5D (Fire OS 14).
 - **App info** in a tile's Menu: Amazon's page for the app (cache, data, force stop).
 - Quick settings now feed the rail; Settings and TV Health can be hidden like any tile.
 - Italian translation of the home screen and the main Settings and System settings rows.
+- **Inputs** entry in the rail on a TV with inputs: on the TCL it presses the TV's own INPUT
+  key through the debugging link (brought up while the item has focus), with Homestead's list
+  as the fallback.
+- **Simple mode is gone** (setting, setup step, Menu x5). Menu and holding Select always hide
+  a tile; the update pop-up follows the "check for updates" choice only.
+- **Check for updates** reads this fork's releases, says "no release published yet" instead
+  of "unavailable" when there is none, and is translated.
+- Live TV (the tuner) always comes first, and on a TV with a tuner Canali TV has no tile
+  (a remote button bound to it still opens the page).
+- **Home screen settings in three pages**: Appearance (background, columns, dock, tile style,
+  clock, date, greeting), Content & order (sort, hidden tiles, sections, Live TV first) and
+  Behaviour (idle clock).
+- **Releases are automatic**: a push to `main` with a new `versionName` builds, signs and
+  publishes it (`.github/workflows/release.yml`, `docs/RELEASING.md`).
 
 ### Fixes
 

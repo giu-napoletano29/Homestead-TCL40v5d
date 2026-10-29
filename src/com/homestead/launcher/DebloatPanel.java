@@ -201,7 +201,7 @@ public final class DebloatPanel {
             else if (e.caution) row.setBadge("Caution");
             String why = e.group == Debloat.GROUP_VOICE ? ALEXA
                     : e.risky ? "Marked risky: it is never switched off by the one-press buttons "
-                            + "or by Simple mode, and it is offered only on a TV that would then "
+                            + "and it is offered only on a TV that would then "
                             + "send Home straight to Homestead (not Fire OS 7, where Amazon's Home "
                             + "Starter takes Home). Switching it off takes two presses. To switch "
                             + "it back on, use this row, \"Undo everything this app switched "
@@ -320,7 +320,7 @@ public final class DebloatPanel {
     /**
      * Disable every catalogue entry in one group (caution or not) that is present, enabled
      * and not Fire-OS-protected, in a single ADB batch. Refused packages are recorded as
-     * protected and do not stop the rest. Also used by Simple mode's setup step.
+     * protected and do not stop the rest.
      *
      * @param skip packages to leave alone, or null
      * @return how many packages the batch covers; 0 means nothing to do and no callback.

@@ -16,6 +16,7 @@ import android.content.Context;
 import android.view.View;
 import android.view.ViewTreeObserver;
 import android.widget.TextView;
+import android.widget.Toast;
 
 /**
  * The "an update is available" panel. Shows the new version and its notes, and offers to
@@ -147,19 +148,22 @@ public final class UpdatePanel {
      * opens the update panel or updates the row's value in place.
      */
     static void checkNow(final Context c, final SettingsPanel.Host host, final Panel.Row row) {
-        row.setValue("checking…");
+        row.setValue(c.getString(R.string.update_checking));
         row.setValueColor(AMBER);
         UpdateChecker.check(c, true, new UpdateChecker.Callback() {
             public void onResult(UpdateChecker.Update u, String error) {
                 if (u != null) {
-                    row.setValue("v" + u.versionName + " available");
+                    row.setValue(c.getString(R.string.update_available, u.versionName));
                     row.setValueColor(AMBER);
                     host.showPanel(build(c, host, u));
                 } else if (error != null) {
-                    row.setValue("unavailable");
+                    boolean none = UpdateChecker.NO_RELEASE.equals(error);
+                    row.setValue(c.getString(none ? R.string.update_none_yet
+                            : R.string.update_unavailable));
                     row.setValueColor(MUTE);
+                    if (!none) Toast.makeText(c, error, Toast.LENGTH_LONG).show();
                 } else {
-                    row.setValue("up to date");
+                    row.setValue(c.getString(R.string.update_up_to_date));
                     row.setValueColor(OK);
                 }
             }

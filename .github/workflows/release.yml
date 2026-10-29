@@ -1,0 +1,96 @@
+name: Release
+
+# Publishes a release when main carries a version that has no release yet: builds and signs
+# homestead.apk, tags the commit v<versionName> and attaches the APK, with the CHANGELOG
+# section of that version as the notes. Raise versionName/versionCode in AndroidManifest.xml
+# and add the CHANGELOG section, then push to main; nothing else to do (docs/RELEASING.md).
+#
+# Needs two repository secrets (Settings -> Secrets and variables -> Actions):
+#   HOMESTEAD_KEYSTORE_B64   the release keystore, base64 on one line
+#   HOMESTEAD_KEYPASS        its password (also the key's)
+# and optionally HOMESTEAD_KEYALIAS (default "homestead").
+
+on:
+  push:
+    branches: [main]
+    paths: [AndroidManifest.xml]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Version and whether it is already released
+        id: ver
+        run: |
+          VN=$(grep -o 'versionName="[^"]*"' AndroidManifest.xml | cut -d'"' -f2)
+          VC=$(grep -o 'versionCode="[0-9]*"' AndroidManifest.xml | grep -o '[0-9]*')
+          [ -n "$VN" ] && [ -n "$VC" ] || { echo "::error::no versionName/versionCode in AndroidManifest.xml"; exit 1; }
+          echo "name=$VN" >> "$GITHUB_OUTPUT"
+          echo "code=$VC" >> "$GITHUB_OUTPUT"
+          if gh release view "v$VN" > /dev/null 2>&1; then
+            echo "v$VN already has a release; nothing to do."
+            echo "new=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "new=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Release notes from CHANGELOG.md
+        if: steps.ver.outputs.new == 'true'
+        run: |
+          awk -v v="${{ steps.ver.outputs.name }}" \
+            '$0 == "## " v { f = 1; next } /^## / { f = 0 } f' CHANGELOG.md > notes.md
+          if [ ! -s notes.md ]; then
+            echo "::error::CHANGELOG.md has no '## ${{ steps.ver.outputs.name }}' section"
+            exit 1
+          fi
+
+      - uses: actions/setup-java@v4
+        if: steps.ver.outputs.new == 'true'
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Android SDK pieces
+        if: steps.ver.outputs.new == 'true'
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-34" "build-tools;34.0.0"
+
+      - name: Build and sign
+        if: steps.ver.outputs.new == 'true'
+        env:
+          KEYSTORE_B64: ${{ secrets.HOMESTEAD_KEYSTORE_B64 }}
+          HOMESTEAD_KEYPASS: ${{ secrets.HOMESTEAD_KEYPASS }}
+          HOMESTEAD_KEYALIAS: ${{ secrets.HOMESTEAD_KEYALIAS || 'homestead' }}
+        run: |
+          if [ -z "$KEYSTORE_B64" ] || [ -z "$HOMESTEAD_KEYPASS" ]; then
+            echo "::error::set the HOMESTEAD_KEYSTORE_B64 and HOMESTEAD_KEYPASS secrets (docs/RELEASING.md)"
+            exit 1
+          fi
+          echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.keystore"
+          export HOMESTEAD_KEYSTORE="$RUNNER_TEMP/release.keystore"
+          export ANDROID_BUILD_TOOLS="$ANDROID_HOME/build-tools/34.0.0"
+          export ANDROID_JAR="$ANDROID_HOME/platforms/android-34/android.jar"
+          bash build.sh
+          rm -f "$RUNNER_TEMP/release.keystore"
+          "$ANDROID_BUILD_TOOLS/apksigner" verify --print-certs homestead.apk | grep -i "SHA-256"
+
+      - name: Publish
+        if: steps.ver.outputs.new == 'true'
+        run: |
+          gh release create "v${{ steps.ver.outputs.name }}" homestead.apk \
+            --target "$GITHUB_SHA" \
+            --title "Homestead ${{ steps.ver.outputs.name }}" \
+            --notes-file notes.md

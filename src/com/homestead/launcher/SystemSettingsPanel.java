@@ -181,8 +181,7 @@ public final class SystemSettingsPanel {
             }
         });
         place.setHelp("The screens you choose become the first entries of the side bar, above "
-                + "the Appstore, System settings and Settings, which are always there. Not in "
-                + "Simple mode.");
+                + "the Appstore, System settings and Settings, which are always there.");
         p.addRow(c.getString(R.string.sys_choose_quick), "", new Runnable() {
             public void run() { host.showPanel(buildChoose(c, host)); }
         }).opens().setHelp("Which screens get an entry. The side bar shows the first four.");

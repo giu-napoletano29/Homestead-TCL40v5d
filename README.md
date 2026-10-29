@@ -46,13 +46,13 @@ Homestead cannot run on them. The Plus and Max run Fire OS.
   Amazon's home screen.
 - **HDMI and Composite inputs as tiles**, so switching source is one press from home.
 - **A Live TV tile** on TVs with a built-in tuner, while Amazon's Live TV app is switched
-  on. It opens Live TV on the last channel you watched. **Live TV first** (Settings → Home
-  screen) makes it a large tile at the top, and the Home button always lands on it.
+  on. It opens Live TV on the last channel you watched. **Live TV first** (Settings → Content
+  & order) makes it a large tile at the top, and the Home button always lands on it.
 - **Apps in the order you use them**, counted on the TV itself.
 - **Hide anything** you do not want to see: press MENU on a tile, or hold Select.
 - **Pick a background** in Settings: the blue gradient, a few darker ones, plain black for
   OLED screens and night viewing, or [your own photo](#your-own-background-photo).
-- **Optional extras** on the Settings → Home screen page, all off until you switch them on: a
+- **Optional extras** under Settings → Appearance, all off until you switch them on: a
   greeting and the date at the top, non-TV apps as wide tiles, and Fire TV's own icons for
   Amazon Home, Settings and TV Health.
 - **Settings opens over the home screen**, so changes to the background, columns, clock and
@@ -73,9 +73,6 @@ Homestead cannot run on them. The Plus and Max run Fire OS.
   computer do the same job if you would rather not use it.
 - **Updates itself.** It checks this repository's releases once a day and installs a new
   version only when you press Install, and only if it is signed with the same key.
-- **[Simple mode](#setting-it-up-for-someone-else)** for a TV you set up for someone else:
-  Settings is out of sight, nothing can be hidden by accident, and there are no update
-  pop-ups.
 
 ## Verified on
 
@@ -107,8 +104,8 @@ installed).
 
 Download `homestead.apk` from the [latest release](https://github.com/giu-napoletano29/Homestead-TCL40v5d/releases/latest)
 and sideload it: `adb install homestead.apk` from a computer, or the Downloader app on the
-TV. When its home screen comes up, the app checks that release page (at most once a day,
-and never in [Simple mode](#setting-it-up-for-someone-else)) and shows a new version once,
+TV. When its home screen comes up, the app checks that release page (at most once a day)
+and shows a new version once,
 with **Install now**, **Later** and **Skip this version**.
 Settings → **Check for updates** checks straight away. It never installs one until you press
 **Install now**.
@@ -217,26 +214,9 @@ Light is the default.
 
 The picture is removed when Homestead is uninstalled.
 
-## Setting it up for someone else
+## Leaving the TV with someone else
 
-Choose **Simple mode** on the first setup screen (or switch it on later in Settings) when
-the TV is for someone who just wants to watch it, such as a parent or grandparent.
-
-- **The Settings and TV Health tiles are hidden.** To open Settings, press **Menu (☰)
-  five times in a row** on the home screen. Setup has you try it before you finish. Every
-  Amazon Fire TV remote has a Menu button; a TV's own remote may not send it.
-- **Menu and holding Select no longer hide tiles,** so nothing disappears by accident.
-  Hide what you want before you switch it on, or open Settings to change it later.
-- **No update pop-ups.** Homestead does not check for updates by itself; use *Check for
-  updates* in Settings when you visit.
-- **When chosen during setup, it switches off Debloat's safe list** (what the *Switch off
-  everything marked safe* button does: ads, telemetry, tutorials and demo content), except
-  Amazon Photos, which stays on for family pictures. Alexa is left on too, since asking
-  for a show by voice is often easier than finding it with the remote. This needs the
-  on-device tunnel; without it, use the button in Debloat later (which does include Amazon
-  Photos). Turning Simple mode on or off in Settings does not change Debloat.
-
-Things to know before you leave the TV:
+Things to know before you hand the TV over:
 
 - If Fire OS ever switches Homestead's Home button off (it can after a Fire OS update),
   the *Finish setup* page appears on its own. That page is the sign the TV needs you.

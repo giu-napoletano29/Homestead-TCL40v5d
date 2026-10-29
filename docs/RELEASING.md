@@ -26,18 +26,48 @@ Two builds from the same key print the same certificate digest.
 
 ## Steps
 
+A push to `main` that changes `AndroidManifest.xml` runs `.github/workflows/release.yml`.
+If that `versionName` has no release yet it builds and signs `homestead.apk`, tags the commit
+`v<versionName>` and publishes the release with the `CHANGELOG.md` section of that version as
+its notes. A version that already has a release is left alone, so an ordinary push does
+nothing.
+
 1. **Version.** In `AndroidManifest.xml` raise `versionName` (the release tag compares against
    it as dotted numbers: `1.7.0` is newer than `1.6.14.1`) and `versionCode` (this fork counts
    from 7810 for 1.7.0, so it stays above the original's own codes).
-2. **Changelog.** Add the section to `CHANGELOG.md`; the release notes are the same text.
-3. **Build and sign**: `./build.sh` (or `build.ps1`). Install it on the reference devices
-   (the Stick and the TCL) and go through the list below.
-4. **Commit and tag**: `git tag v1.7.0` on the commit you built, then push the branch and the
-   tag.
-5. **Publish** on GitHub: a release for that tag, with `homestead.apk` attached and the
-   changelog section as its notes. Attach **exactly one** `.apk`, called `homestead.apk`: the
-   updater takes the first asset whose name ends in `.apk`.
-6. Within a day the devices offer it; **Settings → Check for updates** asks straight away.
+2. **Changelog.** Add a `## <versionName>` section to `CHANGELOG.md`, exactly that heading;
+   the release fails without it.
+3. **Try it.** `./build.sh` (or `build.ps1`) builds a signed APK on this computer; install it
+   on the reference devices (the Stick and the TCL) and go through the list below.
+4. **Merge to `main` and push.** The workflow does the rest; watch it under the Actions tab.
+5. Within a day the devices offer it; **Settings → Check for updates** asks straight away.
+
+`gh workflow run release.yml` (or the Run workflow button) retries a failed run; it still
+publishes nothing for a version that has a release.
+
+### The two secrets the workflow signs with
+
+Repository **Settings → Secrets and variables → Actions → New repository secret**:
+
+| Secret | Value |
+| --- | --- |
+| `HOMESTEAD_KEYSTORE_B64` | the keystore file, base64 on one line |
+| `HOMESTEAD_KEYPASS` | its password (the key's is the same) |
+| `HOMESTEAD_KEYALIAS` | only if the alias is not `homestead` |
+
+Make the first one on this computer without printing it:
+
+```sh
+base64 -w0 ~/.homestead-keys/homestead-release.keystore | gh secret set HOMESTEAD_KEYSTORE_B64
+gh secret set HOMESTEAD_KEYPASS
+```
+
+GitHub keeps secrets encrypted and hides them from logs, but a workflow in this repository can
+read them: only merge workflow changes you have read. That copy also does not replace the two
+backups above; it is a third one, held by GitHub.
+
+Attach **exactly one** `.apk`, called `homestead.apk`: the updater takes the first asset whose
+name ends in `.apk`. The workflow does.
 
 ## Before publishing: what to try
 

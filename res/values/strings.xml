@@ -69,13 +69,21 @@
 
   <!-- SettingsPanel's own rows and headers. -->
   <string name="settings_title">Settings</string>
-  <string name="settings_home_screen">Home screen</string>
+  <string name="settings_appearance">Appearance</string>
+  <string name="settings_content">Content &amp; order</string>
+  <string name="settings_behaviour">Behaviour</string>
   <string name="settings_background">Background</string>
-  <string name="settings_simple_mode">Simple mode</string>
   <string name="settings_header_system">System</string>
   <string name="settings_setup">Setup</string>
   <string name="settings_header_device">Device</string>
   <string name="settings_warn_debloat">Warn if the system undoes Debloat</string>
   <string name="settings_check_updates">Check for updates</string>
   <string name="settings_close">Close</string>
+
+  <!-- The "Check for updates" row's value. -->
+  <string name="update_checking">checking…</string>
+  <string name="update_available">v%1$s available</string>
+  <string name="update_up_to_date">up to date</string>
+  <string name="update_none_yet">no release published yet</string>
+  <string name="update_unavailable">unavailable</string>
 </resources>

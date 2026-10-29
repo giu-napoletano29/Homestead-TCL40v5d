@@ -55,7 +55,6 @@ public final class Prefs {
     private static final String K_UPD_SKIP = "update_skipped_version";
     private static final String K_UPD_NOTIFIED = "update_notified_version";
     private static final String K_UPD_AUTO = "update_auto_check";
-    private static final String K_SIMPLE = "simple_mode";
     private static final String K_TV_FIRST = "livetv_first";
     private static final String K_GREETING = "greeting";
     private static final String K_DATE = "date_format";
@@ -200,15 +199,6 @@ public final class Prefs {
     public static boolean onboarded(Context c) { return sp(c).getBoolean(K_ONBOARDED, false); }
     public static void setOnboarded(Context c, boolean v) {
         sp(c).edit().putBoolean(K_ONBOARDED, v).apply();
-    }
-
-    /**
-     * Simple mode, for a TV set up for someone else: Settings and TV Health tiles hidden
-     * (Menu five times opens Settings), Menu and long-press hide nothing, no update pop-up.
-     */
-    public static boolean simpleMode(Context c) { return sp(c).getBoolean(K_SIMPLE, false); }
-    public static void setSimpleMode(Context c, boolean v) {
-        sp(c).edit().putBoolean(K_SIMPLE, v).apply();
     }
 
     /**

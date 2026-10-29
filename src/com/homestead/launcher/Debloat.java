@@ -52,7 +52,7 @@ final class Debloat {
     static final int GROUP_EXTRAS = 3;
     static final int GROUP_HOME = 4;
 
-    /** Marked safe, but Simple mode leaves it on: family photos are a common use of the TV. */
+    /** Marked safe, but the one-press cleanups leave it on: family photos are a common use of the TV. */
     static final String AMAZON_PHOTOS = "com.amazon.bueller.photos";
 
     /** Works, but has a consequence worth stating before the user presses the button. */

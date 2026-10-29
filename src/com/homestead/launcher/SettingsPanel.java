@@ -36,49 +36,42 @@ public final class SettingsPanel {
     private SettingsPanel() { }
 
     /**
-     * The hub: a sheet over the home screen with the two pages of home-screen options, then
-     * Simple mode and the system pages. Changes show on the grid behind it straight away.
+     * The hub: a sheet over the home screen with the three pages of home-screen options, then
+     * the system pages. Changes show on the grid behind it straight away.
      */
     public static View build(final Context c, final Host host) {
         final Panel p = new Panel(c, c.getString(R.string.settings_title),
                 "Homestead " + UpdateChecker.installedVersionName(c), Panel.SHEET);
 
-        final Panel.Row home = p.addRow(c.getString(R.string.settings_home_screen),
-                homeSummary(c), null).opens();
-        home.setValueColor(0xFF8FA3B8);
-        home.setHelp("Hidden tiles, sorting, grid columns, dock size, the clock and the sections.");
-        final Panel.Row look = p.addRow(c.getString(R.string.settings_background),
-                Backgrounds.label(c), null).opens();
+        final Panel.Row look = p.addRow(c.getString(R.string.settings_appearance),
+                appearanceSummary(c), null).opens();
         look.setValueColor(0xFF8FA3B8);
-        look.setHelp("The colour or photo behind the home screen.");
+        look.setHelp("Background, grid columns, dock size, tile style, the clock, date and greeting.");
+        final Panel.Row content = p.addRow(c.getString(R.string.settings_content),
+                contentSummary(c), null).opens();
+        content.setValueColor(0xFF8FA3B8);
+        content.setHelp("Sort order, hidden tiles, which sections show, Live TV first.");
+        final Panel.Row behaviour = p.addRow(c.getString(R.string.settings_behaviour),
+                behaviourSummary(c), null).opens();
+        behaviour.setValueColor(0xFF8FA3B8);
+        behaviour.setHelp("What the home screen does by itself: the idle clock.");
         // Summaries catch up when a sub-page changes something.
         final Runnable summaries = new Runnable() {
             public void run() {
-                home.setValue(homeSummary(c));
-                look.setValue(Backgrounds.label(c));
+                look.setValue(appearanceSummary(c));
+                content.setValue(contentSummary(c));
+                behaviour.setValue(behaviourSummary(c));
             }
         };
-        home.cell.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) { host.showPanel(buildHome(c, host, summaries)); }
-        });
         look.cell.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) { host.showPanel(buildLook(c, host, summaries)); }
+            public void onClick(View v) { host.showPanel(buildAppearance(c, host, summaries)); }
         });
-
-        final Panel.Row simple = p.addRow(c.getString(R.string.settings_simple_mode),
-                onOff(Prefs.simpleMode(c)), null).asSwitch();
-        simple.cell.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                boolean n = !Prefs.simpleMode(c);
-                Prefs.setSimpleMode(c, n);
-                simple.setValue(onOff(n));
-                host.rebuildGrid();
-            }
+        content.cell.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) { host.showPanel(buildContent(c, host, summaries)); }
         });
-        p.addNote("For a TV set up for someone else: the Settings and TV Health tiles are "
-                + "hidden (press MENU five times on the home screen to open Settings), MENU and "
-                + "long-press no longer hide tiles, and there are no update pop-ups; check for "
-                + "updates below. It does not change Debloat.");
+        behaviour.cell.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) { host.showPanel(buildBehaviour(c, host, summaries)); }
+        });
 
         p.addHeader(c.getString(R.string.settings_header_system));
 
@@ -144,36 +137,27 @@ public final class SettingsPanel {
     }
 
     // ---------------------------------------------------------------- home screen
+    // Three pages under the hub: how it looks, what it shows and in which order, and what
+    // it does by itself.
 
-    private static View buildHome(final Context c, final Host host, final Runnable changed) {
-        final Panel p = new Panel(c, "Home screen", null, Panel.SHEET);
+    /** Layout, clock and greeting, and the background. */
+    private static View buildAppearance(final Context c, final Host host, final Runnable changed) {
+        final Panel p = new Panel(c, c.getString(R.string.settings_appearance), null, Panel.SHEET);
 
-        final Panel.Row hidden = p.addRow("Hidden tiles",
-                String.valueOf(Prefs.hiddenCount(c)), null).opens();
-        hidden.cell.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) { host.showPanel(buildHiddenList(c, host)); }
+        final Panel.Row look = p.addRow(c.getString(R.string.settings_background),
+                Backgrounds.label(c), null).opens();
+        look.setValueColor(0xFF8FA3B8);
+        look.setHelp("The colour or photo behind the home screen.");
+        look.cell.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) { host.showPanel(buildLook(c, host, changed)); }
         });
-        // The count changes on the page this row opens; repaint it on the way back.
-        hidden.cell.setOnFocusChangeListener(chain(hidden.cell.getOnFocusChangeListener(),
+        // The choice is made on the page this row opens; repaint it on the way back.
+        look.cell.setOnFocusChangeListener(chain(look.cell.getOnFocusChangeListener(),
                 new Runnable() {
-                    public void run() { hidden.setValue(String.valueOf(Prefs.hiddenCount(c))); }
+                    public void run() { look.setValue(Backgrounds.label(c)); }
                 }));
 
-        p.addNote("Press the MENU button on any tile to hide it (long-press works too; not "
-                + "in Simple mode). Hiding only changes what this launcher draws - nothing is "
-                + "disabled or uninstalled, and the app still works everywhere else.");
-
-        final Panel.Row sort = p.addRow("Sort apps by", sortLabel(c), null);
-        sort.cell.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                Prefs.setSort(c, Prefs.sort(c) == Prefs.SORT_LAST_USED
-                        ? Prefs.SORT_ALPHA : Prefs.SORT_LAST_USED);
-                sort.setValue(sortLabel(c));
-                AppModel.resort(c);
-                host.rebuildGrid();
-            }
-        });
-
+        p.addHeader("Tiles");
         final Panel.Row cols = p.addRow("Grid columns", String.valueOf(Prefs.columns(c)), null);
         cols.cell.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
@@ -200,59 +184,6 @@ public final class SettingsPanel {
         dock.setHelp("How big the app tiles in the dock along the bottom are. Larger sizes "
                 + "scroll sideways when they don't all fit.");
 
-        final Panel.Row clock = p.addRow("Clock", clockLabel(c), null);
-        clock.cell.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                int n = Prefs.clockMode(c) + 1;
-                if (n > Prefs.CLOCK_OFF) n = Prefs.CLOCK_24H;
-                Prefs.setClockMode(c, n);
-                clock.setValue(clockLabel(c));
-                host.rebuildGrid();
-            }
-        });
-
-        final Panel.Row idle = p.addRow("Idle clock", idleLabel(Prefs.idleMinutes(c)), null);
-        idle.cell.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                int cur = Prefs.idleMinutes(c);
-                int next = Prefs.IDLE_CHOICES[0];
-                for (int i = 0; i < Prefs.IDLE_CHOICES.length; i++) {
-                    if (Prefs.IDLE_CHOICES[i] == cur) {
-                        next = Prefs.IDLE_CHOICES[(i + 1) % Prefs.IDLE_CHOICES.length];
-                        break;
-                    }
-                }
-                Prefs.setIdleMinutes(c, next);
-                idle.setValue(idleLabel(next));
-            }
-        });
-        idle.setHelp("After this long with no button pressed, the home screen is covered by a "
-                + "large clock that drifts slowly across the screen, so nothing stays lit in one "
-                + "place. Any button brings the home screen back; that press does nothing else.");
-
-        final Panel.Row greet = p.addRow("Greeting", onOff(Prefs.greeting(c)), null).asSwitch();
-        greet.cell.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                boolean n = !Prefs.greeting(c);
-                Prefs.setGreeting(c, n);
-                greet.setValue(onOff(n));
-                host.rebuildGrid();
-            }
-        });
-        greet.setHelp("\"Good morning\", \"Good afternoon\" or \"Good evening\" at the top left.");
-
-        final Panel.Row date = p.addRow("Date", dateLabel(c), null);
-        date.cell.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                int n = Prefs.dateFormat(c) + 1;
-                if (n > Prefs.DATE_SHORT) n = Prefs.DATE_OFF;
-                Prefs.setDateFormat(c, n);
-                date.setValue(dateLabel(c));
-                host.rebuildGrid();
-            }
-        });
-        date.setHelp("Under the greeting. Both formats follow the TV's language.");
-
         final Panel.Row wide = p.addRow("Non-TV apps as wide tiles", onOff(Prefs.nonTvWide(c)), null).asSwitch();
         wide.cell.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
@@ -278,6 +209,83 @@ public final class SettingsPanel {
         });
         fire.setHelp("Amazon Home, Settings and TV Health use the icons of Fire OS's own home and "
                 + "Settings, read from this TV. Where one is missing, the usual icon stays.");
+
+
+        p.addHeader("Clock and greeting");
+        final Panel.Row clock = p.addRow("Clock", clockLabel(c), null);
+        clock.cell.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                int n = Prefs.clockMode(c) + 1;
+                if (n > Prefs.CLOCK_OFF) n = Prefs.CLOCK_24H;
+                Prefs.setClockMode(c, n);
+                clock.setValue(clockLabel(c));
+                host.rebuildGrid();
+            }
+        });
+
+        final Panel.Row greet = p.addRow("Greeting", onOff(Prefs.greeting(c)), null).asSwitch();
+        greet.cell.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                boolean n = !Prefs.greeting(c);
+                Prefs.setGreeting(c, n);
+                greet.setValue(onOff(n));
+                host.rebuildGrid();
+            }
+        });
+        greet.setHelp("\"Good morning\", \"Good afternoon\" or \"Good evening\" at the top left.");
+
+        final Panel.Row date = p.addRow("Date", dateLabel(c), null);
+        date.cell.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                int n = Prefs.dateFormat(c) + 1;
+                if (n > Prefs.DATE_SHORT) n = Prefs.DATE_OFF;
+                Prefs.setDateFormat(c, n);
+                date.setValue(dateLabel(c));
+                host.rebuildGrid();
+            }
+        });
+        date.setHelp("Under the greeting. Both formats follow the TV's language.");
+
+        p.addRow("Back", "", new Runnable() {
+            public void run() { host.closePanel(); }
+        });
+        return p.root;
+    }
+
+    /** What is shown, in which order, and what is hidden. */
+    private static View buildContent(final Context c, final Host host, final Runnable changed) {
+        final Panel p = new Panel(c, c.getString(R.string.settings_content), null, Panel.SHEET);
+
+        final Panel.Row sort = p.addRow("Sort apps by", sortLabel(c), null);
+        sort.cell.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                Prefs.setSort(c, Prefs.sort(c) == Prefs.SORT_LAST_USED
+                        ? Prefs.SORT_ALPHA : Prefs.SORT_LAST_USED);
+                sort.setValue(sortLabel(c));
+                AppModel.resort(c);
+                host.rebuildGrid();
+            }
+        });
+
+        p.addHeader("Hidden");
+
+        final Panel.Row hidden = p.addRow("Hidden tiles",
+                String.valueOf(Prefs.hiddenCount(c)), null).opens();
+        hidden.cell.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) { host.showPanel(buildHiddenList(c, host)); }
+        });
+        // The count changes on the page this row opens; repaint it on the way back.
+        hidden.cell.setOnFocusChangeListener(chain(hidden.cell.getOnFocusChangeListener(),
+                new Runnable() {
+                    public void run() {
+                        hidden.setValue(String.valueOf(Prefs.hiddenCount(c)));
+                        changed.run();
+                    }
+                }));
+
+        p.addNote("Press the MENU button on any tile to hide it (long-press works too). "
+                + "Hiding only changes what this launcher draws - nothing is "
+                + "disabled or uninstalled, and the app still works everywhere else.");
 
         p.addHeader("Sections");
 
@@ -317,8 +325,7 @@ public final class SettingsPanel {
         });
 
         p.addSectionHelp("Settings and TV Health always stay reachable, even with "
-                + "\"Inputs & System\" switched off. Simple mode hides them; press MENU five "
-                + "times on the home screen to come back here.");
+                + "\"Inputs & System\" switched off.");
 
         p.addHeader("Apps");
         p.addRow("Reload apps now", "", new Runnable() {
@@ -334,8 +341,47 @@ public final class SettingsPanel {
         return p.root;
     }
 
-    private static String homeSummary(Context c) {
-        return Prefs.columns(c) + " columns";
+    /** What the home screen does by itself. */
+    private static View buildBehaviour(final Context c, final Host host, final Runnable changed) {
+        final Panel p = new Panel(c, c.getString(R.string.settings_behaviour), null, Panel.SHEET);
+
+        final Panel.Row idle = p.addRow("Idle clock", idleLabel(Prefs.idleMinutes(c)), null);
+        idle.cell.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                int cur = Prefs.idleMinutes(c);
+                int next = Prefs.IDLE_CHOICES[0];
+                for (int i = 0; i < Prefs.IDLE_CHOICES.length; i++) {
+                    if (Prefs.IDLE_CHOICES[i] == cur) {
+                        next = Prefs.IDLE_CHOICES[(i + 1) % Prefs.IDLE_CHOICES.length];
+                        break;
+                    }
+                }
+                Prefs.setIdleMinutes(c, next);
+                idle.setValue(idleLabel(next));
+                changed.run();
+            }
+        });
+        idle.setHelp("After this long with no button pressed, the home screen is covered by a "
+                + "large clock that drifts slowly across the screen, so nothing stays lit in one "
+                + "place. Any button brings the home screen back; that press does nothing else.");
+
+        p.addRow("Back", "", new Runnable() {
+            public void run() { host.closePanel(); }
+        });
+        return p.root;
+    }
+
+    private static String appearanceSummary(Context c) {
+        return Prefs.columns(c) + " columns, " + Backgrounds.label(c);
+    }
+
+    private static String contentSummary(Context c) {
+        int n = Prefs.hiddenCount(c);
+        return n == 0 ? "nothing hidden" : n + " hidden";
+    }
+
+    private static String behaviourSummary(Context c) {
+        return "idle clock " + idleLabel(Prefs.idleMinutes(c));
     }
 
     /** Runs extra work after a row's own focus handling, when it gains focus. */

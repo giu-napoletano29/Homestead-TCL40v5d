@@ -525,14 +525,17 @@ public final class AppModel {
     }
 
     private static void loadInputs(Context c) {
-        if (liveTvAvailable(c)) {
+        // The tuner comes first, and then Canali TV has no tile of its own: a remote button
+        // bound to it still opens the page.
+        boolean tuner = liveTvAvailable(c);
+        if (tuner) {
             Item tv = new Item();
             tv.type = TYPE_LIVETV;
             tv.label = c.getString(R.string.home_livetv);
             tv.glyph = R.drawable.ic_in_antenna;
             ITEMS.add(tv);
         }
-        if (ChannelsPanel.any(c)) {
+        if (!tuner && ChannelsPanel.any(c)) {
             Item ch = new Item();
             ch.type = TYPE_CHANNELS;
             ch.label = c.getString(R.string.home_channels);
@@ -803,10 +806,11 @@ public final class AppModel {
             }
             private int rank(int t) {
                 if (t == TYPE_RESTORE) return -1;
-                if (isLive(t)) return 0;
-                if (t == TYPE_INPUT) return 1;
-                if (t == TYPE_AMAZON_HOME || t == TYPE_SETTINGS || t == TYPE_HEALTH) return 2;
-                return 3;
+                if (t == TYPE_LIVETV) return 0;      // the tuner always ahead of Canali TV
+                if (t == TYPE_CHANNELS) return 1;
+                if (t == TYPE_INPUT) return 2;
+                if (t == TYPE_AMAZON_HOME || t == TYPE_SETTINGS || t == TYPE_HEALTH) return 3;
+                return 4;
             }
         });
         return !before.equals(order());

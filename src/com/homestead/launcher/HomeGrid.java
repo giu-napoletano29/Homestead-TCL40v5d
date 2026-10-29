@@ -219,26 +219,6 @@ public class HomeGrid implements SettingsPanel.Host {
     private int lastKeyDevice;
     private int lastKeySource;
     private long lastKeyAt;
-    /** Shared by the overlay and activity grids, so presses across the handoff still count. */
-    private static final MenuTaps menuTaps = new MenuTaps();
-
-    /** Simple mode's way into Settings: Menu pressed five times, each within 2 s of the last. */
-    static final class MenuTaps {
-        static final int COUNT = 5;
-        private int n;
-        private long last;
-
-        /** @return true on the press that completes the sequence. */
-        boolean tap() {
-            long now = android.os.SystemClock.uptimeMillis();
-            n = (now - last <= 2000L) ? n + 1 : 1;
-            last = now;
-            if (n < COUNT) return false;
-            n = 0;
-            return true;
-        }
-    }
-
     public HomeGrid(Context c, Listener l) {
         this.ctx = c;
         this.listener = l;
@@ -300,16 +280,9 @@ public class HomeGrid implements SettingsPanel.Host {
                     return true;
                 }
                 // Menu hides the focused tile, matching the stock Fire TV launcher's
-                // convention (long-press also works). In Simple mode it hides nothing, and
-                // five presses in a row open Settings instead.
+                // convention (long-press also works).
                 if (e.getKeyCode() == android.view.KeyEvent.KEYCODE_MENU && panels.isEmpty()) {
-                    if (e.getAction() == android.view.KeyEvent.ACTION_UP) {
-                        if (!Prefs.simpleMode(ctx)) showItemMenu();
-                        else if (menuTaps.tap()) {
-                            logOpen("Settings (Menu x" + MenuTaps.COUNT + ")");
-                            showPanel(SettingsPanel.build(ctx, panelHost));
-                        }
-                    }
+                    if (e.getAction() == android.view.KeyEvent.ACTION_UP) showItemMenu();
                     return true;
                 }
                 return super.dispatchKeyEvent(e);
@@ -542,7 +515,7 @@ public class HomeGrid implements SettingsPanel.Host {
         }
         inputsPill.setVisibility(inputs ? View.VISIBLE : View.GONE);
 
-        boolean on = Prefs.shortcutsPlace(ctx) != Prefs.SHORTCUTS_OFF && !Prefs.simpleMode(ctx);
+        boolean on = Prefs.shortcutsPlace(ctx) != Prefs.SHORTCUTS_OFF;
         java.util.Set<String> want = Prefs.shortcuts(ctx);
         List<String[]> screens = SystemSettingsPanel.available(ctx, null);
         StringBuilder key = new StringBuilder(on ? "on" : "off");
@@ -711,7 +684,7 @@ public class HomeGrid implements SettingsPanel.Host {
 
     /**
      * The rail's entries: the quick settings the user chose (up to RAIL_SHORTCUTS, none when
-     * they are off or in Simple mode), then the Appstore, System settings and Settings, which
+     * they are off), then the Appstore, System settings and Settings, which
      * are always there. Rebuilt when the choice changes.
      */
     private void rebuildRail(List<String[]> quick) {
@@ -733,9 +706,19 @@ public class HomeGrid implements SettingsPanel.Host {
         // On a TV with inputs (HDMI, composite): the way to switch source, after the quick
         // settings and before the Appstore.
         if (hasInputs()) {
+            // The TV's own menu is opened through the debugging link, which drops after a
+            // short idle: bring it up while the item has focus, so OK finds it ready.
             addRailItem(inputsIcon(dp(RAIL_ICON_DP)), ctx.getString(R.string.rail_inputs),
                     new Runnable() {
                         public void run() { openInputs(); }
+                    },
+                    new Runnable() {
+                        public void run() {
+                            if (tvHasInputMenu() && AdbBridge.canRun(ctx)) {
+                                AdbBridge.init(ctx);
+                                AdbBridge.connect();
+                            }
+                        }
                     });
         }
         addRailItem(ShortcutIcons.render("applications", dp(RAIL_ICON_DP)),
@@ -777,6 +760,12 @@ public class HomeGrid implements SettingsPanel.Host {
     }
 
     private void addRailItem(Bitmap icon, String text, final Runnable action) {
+        addRailItem(icon, text, action, null);
+    }
+
+    /** onFocus, if given, runs each time the item gains focus. */
+    private void addRailItem(Bitmap icon, String text, final Runnable action,
+                             final Runnable onFocus) {
         final FrameLayout cell = new FrameLayout(ctx);
         cell.setId(View.generateViewId());
         cell.setFocusable(true);
@@ -816,6 +805,7 @@ public class HomeGrid implements SettingsPanel.Host {
                 if (has) {
                     railLast = index;
                     setRailOpen(true);
+                    if (onFocus != null) onFocus.run();
                 } else {
                     // Moving between two rail items passes through "no focus" for a moment.
                     root.post(new Runnable() {
@@ -1862,19 +1852,6 @@ public class HomeGrid implements SettingsPanel.Host {
         }
         if (!Prefs.showNonTv(ctx)) nonTv.clear();
 
-        // Simple mode drops them too, unless nothing else is left: an empty grid has
-        // nothing to focus, so the Menu presses that open Settings may not reach us.
-        if (Prefs.simpleMode(ctx)) {
-            List<AppModel.Item> rest = new ArrayList<AppModel.Item>();
-            for (int i = 0; i < inputs.size(); i++) {
-                int t = inputs.get(i).type;
-                if (t != AppModel.TYPE_SETTINGS && t != AppModel.TYPE_HEALTH) rest.add(inputs.get(i));
-            }
-            if (!rest.isEmpty() || !nonTv.isEmpty() || !tv.isEmpty() || liveTv != null) {
-                inputs = rest;
-            }
-        }
-
         // Dock: Live TV first (if on), then the top few most-used TV apps. AppModel.resort()
         // already put the most relevant ones first, so the dock is just "take the front".
         int dockSlots = Math.max(0, DOCK_COUNT - (liveTv != null ? 1 : 0));
@@ -2376,9 +2353,8 @@ public class HomeGrid implements SettingsPanel.Host {
             }
         });
         cell.setOnLongClickListener(new View.OnLongClickListener() {
-            // In Simple mode a held Select falls through to a normal click.
             public boolean onLongClick(View v) {
-                return !Prefs.simpleMode(ctx) && showItemMenu();
+                return showItemMenu();
             }
         });
         cellsByKey.put(it.key(), cell);

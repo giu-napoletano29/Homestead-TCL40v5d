@@ -69,13 +69,21 @@
 
   <!-- SettingsPanel -->
   <string name="settings_title">Impostazioni</string>
-  <string name="settings_home_screen">Schermata home</string>
+  <string name="settings_appearance">Aspetto</string>
+  <string name="settings_content">Contenuto e ordine</string>
+  <string name="settings_behaviour">Comportamento</string>
   <string name="settings_background">Sfondo</string>
-  <string name="settings_simple_mode">Modalità semplice</string>
   <string name="settings_header_system">Sistema</string>
   <string name="settings_setup">Configurazione</string>
   <string name="settings_header_device">Dispositivo</string>
   <string name="settings_warn_debloat">Avvisa se il sistema annulla il Debloat</string>
   <string name="settings_check_updates">Controlla aggiornamenti</string>
   <string name="settings_close">Chiudi</string>
+
+  <!-- Valore della riga "Controlla aggiornamenti". -->
+  <string name="update_checking">controllo in corso…</string>
+  <string name="update_available">v%1$s disponibile</string>
+  <string name="update_up_to_date">aggiornato</string>
+  <string name="update_none_yet">nessuna versione pubblicata</string>
+  <string name="update_unavailable">non disponibile</string>
 </resources>
