@@ -10,6 +10,33 @@ launcher as the system home activity and will not let anything else take it.
 
 Both pictures are from the same TV, a few minutes apart.
 
+## About this fork
+
+This is a maintained fork of [Sarg338/Homestead](https://github.com/Sarg338/Homestead), which
+is no longer being developed. It keeps everything above and the original's GPL licence, and
+goes its own way on two things: how it looks and what it does for Italian live TV. Its
+reference devices are a **Fire TV Stick (`AFTSS`, Fire OS 7.7)** and a **TCL 40V5D (Fire OS
+14)**.
+
+What is different, in short (the full list is in the [changelog](CHANGELOG.md)):
+
+- a side rail, Manrope, a dock with no band over a grid of square icons, and wallpapers with
+  a fade that leaves the top half clear - including four bundled public-domain paintings;
+- a **Canali TV** page with tabs for Rai and Mediaset: Rai in its own colours, and every
+  Mediaset channel and radio opening Mediaset Infinity on that channel;
+- Settings split in two (Homestead's own, and the TV's), a **Screen & sound** page with the
+  HDMI-CEC, overscan and sleep controls that need no root, and **App info** on a tile;
+- an Italian translation of the main screens.
+
+Updates come from this repository's [releases](https://github.com/giu-napoletano29/Homestead-TCL40v5d/releases/latest),
+not the original's, and the app and the original are signed with different keys: install this
+one over a stock Homestead only after uninstalling it. How a release is made, and how to keep
+the signing key safe, is in [docs/RELEASING.md](docs/RELEASING.md).
+
+**Not for Vega OS.** Amazon's newest sticks (the Fire TV Stick 4K Select and the 2026 Fire TV
+Stick 4K, with no "Plus" or "Max") run Vega OS, which is not Android and installs no APK.
+Homestead cannot run on them. The Plus and Max run Fire OS.
+
 ## What it does
 
 - **A home screen without the ads.** Your inputs, your TV apps and everything else, in
@@ -56,6 +83,7 @@ Real hardware, not emulators:
 | Device | Model | Fire OS | Verified |
 |---|---|---|---|
 | Insignia F30-Series Fire TV Edition | `AFTDCT31` | 7.7.1.5 | **Everything**: launcher, Home button, HDMI/Composite tiles, Settings, TV Health, Debloat, and setup without a computer |
+| Amazon Fire TV Stick (this fork's reference) | `AFTSS` | 7.7.1.7 (`PS7717.5741N`) | **Everything in this fork's 1.7.0**: the launcher and side rail, the Home button, setup, Screen & sound (HDMI-CEC, overscan, sleep), the Canali TV page and its Mediaset links (Canale 5, Italia 1, Rete 4), the wallpapers and the idle clock; measured about 70-75 MB and no janky frames. Behind a Samsung TV over HDMI-CEC. |
 | Amazon Fire TV Stick | `AFTSSS` | 7.7.1.6 | **Setup without a computer**: key approval, permissions, automatic shutdown of the tunnel |
 | Amazon Fire TV Stick 4K (2nd gen) | `AFTKM` | 8.1.8.5 | **Reported by a user, not tested here**: Home button, Debloat (28 packages switched off; Fire OS 8 protects a few more than Fire OS 7), several reboots, and a background photo sent from a computer (1.2.9). Set up from a computer. |
 | Hisense 65U65SFC Pro (Fire TV Edition) | `AFTCIBFBD1` | 8.1.8.0 | **Reported by a user, not tested here**: Home button, Debloat, a full reboot, and the fix for repeated package events (1.2.3 and later). Set up from a computer. |
@@ -76,7 +104,7 @@ installed).
 
 ## Install
 
-Download `homestead.apk` from the [latest release](https://github.com/Sarg338/Homestead/releases/latest)
+Download `homestead.apk` from the [latest release](https://github.com/giu-napoletano29/Homestead-TCL40v5d/releases/latest)
 and sideload it: `adb install homestead.apk` from a computer, or the Downloader app on the
 TV. When its home screen comes up, the app checks that release page (at most once a day,
 and never in [Simple mode](#setting-it-up-for-someone-else)) and shows a new version once,
@@ -269,6 +297,10 @@ says exactly what is read.
 - **The Amazon Home tile pauses Homestead for 30 seconds.** After that, Homestead may take
   over again while you are still browsing Amazon's home screen. Pressing Home brings
   Homestead back at any time.
+- **The Fire TV Sticks that run Vega OS are not supported** (see [About this fork](#about-this-fork)).
+- **A Mediaset channel opens on its own link only on the apps and links tested.** Canale 5,
+  Italia 1 and Rete 4 are checked; the other Mediaset channels use the same pattern but were
+  not tried one by one, and Mediaset can change the app's links at any time.
 - **On Fire OS 7, Back from a Settings page can land on Homestead.** Amazon's main Settings
   screen there is a tab of its home screen, so going back to it from a page such as Network
   looks the same as going home. Open Settings again to carry on.
@@ -276,7 +308,7 @@ says exactly what is read.
 ## Building
 
 Only needed if you want to build the app from source; to use Homestead, install the signed
-`homestead.apk` from the [releases](https://github.com/Sarg338/Homestead/releases/latest).
+`homestead.apk` from the [releases](https://github.com/giu-napoletano29/Homestead-TCL40v5d/releases/latest).
 No Gradle, no dependencies, under ten seconds:
 
 ```sh

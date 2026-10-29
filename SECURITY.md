@@ -23,7 +23,7 @@ The app has exactly two network behaviours, and no others:
 
 - **Update check.** At most once a day, when the home screen opens or comes back, and
   whenever you press *Check for updates* in Settings, one unauthenticated HTTPS GET to
-  `https://api.github.com/repos/Sarg338/Homestead/releases/latest`. It carries no token, no
+  `https://api.github.com/repos/giu-napoletano29/Homestead-TCL40v5d/releases/latest`. It carries no token, no
   device identifier and nothing about your TV beyond what any HTTPS request carries. The
   APK itself is downloaded only when you choose *Install now*, and it is refused unless it is
   signed by the same certificate as the installed app.

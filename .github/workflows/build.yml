@@ -1,0 +1,42 @@
+name: Build check
+
+# Compiles the app as build.sh does, up to the dex, and stops there: the signing key is not
+# in this repository, so a signed APK is built on the maintainer's computer (see
+# docs/RELEASING.md). This only tells you a change still compiles.
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Android SDK pieces
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-34" "build-tools;34.0.0"
+
+      - name: Compile (no signing)
+        run: |
+          BT="$ANDROID_HOME/build-tools/34.0.0"
+          JAR="$ANDROID_HOME/platforms/android-34/android.jar"
+          mkdir -p classes dex res/drawable-nodpi
+          java tools/MakeArt.java res/drawable-nodpi > /dev/null
+          "$BT/aapt2" compile --dir res -o compiled.flata
+          "$BT/aapt2" link -o app-unsigned.apk -I "$JAR" \
+            --manifest AndroidManifest.xml -R compiled.flata \
+            --min-sdk-version 22 --target-sdk-version 28 \
+            --java gen --auto-add-overlay
+          find src gen -name '*.java' > sources.txt
+          javac --release 11 -nowarn -encoding UTF-8 -classpath "$JAR" -d classes @sources.txt
+          find classes -name '*.class' > classes.txt
+          "$BT/d8" --lib "$JAR" --min-api 22 --release --output dex @classes.txt
+          test -f dex/classes.dex
