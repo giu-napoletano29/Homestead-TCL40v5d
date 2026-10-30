@@ -37,6 +37,37 @@
   <string name="home_back">Back</string>
   <string name="rail_apps">Apps</string>
   <string name="rail_inputs">Inputs</string>
+  <string name="rail_search">Search</string>
+  <string name="search_title">Search</string>
+  <string name="search_prompt">Type to search</string>
+  <string name="search_recent">Used recently</string>
+  <string name="search_results">Matches</string>
+  <string name="search_none">Nothing found</string>
+  <string name="search_space">Space</string>
+  <string name="search_clear">Clear</string>
+  <string name="search_phone_on">Type faster from your phone: open %1$s in its browser.</string>
+  <string name="search_phone_off">Type faster from your phone: turn on Phone remote in Settings, Behaviour.</string>
+  <string name="remote_title">Phone remote</string>
+  <string name="remote_address">Address</string>
+  <string name="remote_sign_out">Sign out all phones</string>
+  <string name="remote_signed_out">Phones signed out</string>
+  <string name="remote_no_network">no network</string>
+  <string name="remote_pair">Pair a phone</string>
+  <string name="remote_session">Session length</string>
+  <string name="remote_session_never">until signed out</string>
+  <string name="remote_phones">Phones signed in</string>
+  <string name="pair_title">Pair a phone</string>
+  <string name="pair_scan">Scan the code with the phone\'s camera.</string>
+  <string name="pair_or">Or open %1$s on the phone and type the digits:</string>
+  <string name="pair_no_network">No network: connect the TV to Wi-Fi first.</string>
+  <string name="pair_changes">The code changes in %1$d s</string>
+  <string name="pair_note">The phone must be on the same Wi-Fi. Each code works once, and only while this screen is open.</string>
+  <string name="pair_done">Phone paired</string>
+  <string name="pair_close">Close</string>
+  <plurals name="remote_days">
+    <item quantity="one">%d day</item>
+    <item quantity="other">%d days</item>
+  </plurals>
   <string name="inputs_native_failed">The TV\'s own input menu could not be opened - showing Salotto\'s list</string>
 
   <!-- The ten screens Amazon answers directly (SystemSettingsPanel.SCREENS), and their

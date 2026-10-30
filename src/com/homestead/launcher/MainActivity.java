@@ -58,6 +58,8 @@ public class MainActivity extends Activity implements HomeGrid.Listener {
         setContentView(home.root);
         home.takeStartFocus();
         AdbBridge.init(this);
+        // Listens again if the phone remote is on (the process may have been restarted).
+        RemoteServer.ensure(this);
         openRequested(getIntent());
 
         // First run shows the wizard; later, if the accessibility service is off (e.g.
@@ -107,6 +109,11 @@ public class MainActivity extends Activity implements HomeGrid.Listener {
     /** Called by the service after it reloads the shared model. */
     void rebuildGrid() {
         if (home != null) home.rebuild();
+    }
+
+    /** After a setting changed from outside the grid's own pages (the phone remote). */
+    void refreshAll() {
+        if (home != null) home.rebuildGrid();
     }
 
     /** Called by the service just before the overlay lifts, so late D-pad moves survive. */

@@ -208,6 +208,32 @@ final class ChannelsPanel {
         return !available(c).isEmpty();
     }
 
+    /**
+     * For the search: {id, name, group} of every channel and app the page lists. Apps whose
+     * channels are chosen inside them (RaiPlay, Infinity) are in it too, and open the app.
+     */
+    static List<String[]> searchable(Context c) {
+        List<String[]> out = new ArrayList<String[]>();
+        List<Entry> list = available(c);
+        for (int i = 0; i < list.size(); i++) {
+            Entry e = list.get(i);
+            out.add(new String[]{ e.id, e.name, tabName(e.group) });
+        }
+        return out;
+    }
+
+    /** Opens one of the entries searchable() lists. Main thread. */
+    static boolean openById(Context c, String id) {
+        List<Entry> list = available(c);
+        for (int i = 0; i < list.size(); i++) {
+            if (list.get(i).id.equals(id)) {
+                open(c, list.get(i));
+                return true;
+            }
+        }
+        return false;
+    }
+
     /** Names of what is listed, for the model's change detection. */
     static String signature(Context c) {
         StringBuilder sb = new StringBuilder();
@@ -429,7 +455,7 @@ final class ChannelsPanel {
     }
 
     /** The look the home screen has now: its preset, or the photo when it is chosen and loaded. */
-    private static Drawable pageBackground(Context c) {
+    static Drawable pageBackground(Context c) {
         try {
             if (Backgrounds.photoChosen(c)) {
                 Bitmap photo = Backgrounds.photoFor(Backgrounds.keyOf(Backgrounds.photoFile(c)));

@@ -218,6 +218,49 @@ final class DisplaySoundPanel {
         });
     }
 
+    // ---------------------------------------------------------------- for the phone remote
+
+    /** The same values the rows above change, for RemoteSettings. Main thread. */
+    static String screensaverNow(Context c) { return screensaverState(c); }
+
+    /** {@code which} is "Colours", "Off" or "Amazon's"; {@code after} runs once it has been written. */
+    static void screensaverSet(Context c, String which, Runnable after) {
+        String amazon = get(c, Setting.SECURE, "screensaver_default_component");
+        String[] keys, vals;
+        if ("Off".equals(which)) {
+            keys = new String[]{ "screensaver_enabled" };
+            vals = new String[]{ "0" };
+        } else if ("Amazon's".equals(which) && amazon != null && amazon.length() > 0) {
+            keys = new String[]{ "screensaver_enabled", "screensaver_components" };
+            vals = new String[]{ "1", amazon };
+        } else {
+            keys = new String[]{ "screensaver_enabled", "screensaver_components" };
+            vals = new String[]{ "1", DREAM_COLORS };
+        }
+        write(c, Setting.SECURE, keys, vals, after);
+    }
+
+    private static final Setting SOUNDS = new Setting(Setting.SYSTEM, "sound_effects_enabled", false);
+    private static final Setting LED = new Setting(Setting.SECURE, "power_led_enabled", false);
+
+    static boolean soundsOn(Context c) { return SOUNDS.read(c); }
+
+    /** Written over the ADB link; false when there is none. */
+    static boolean soundsSet(Context c, boolean on, final Runnable after) {
+        if (!AdbBridge.canRun(c)) return false;
+        AdbBridge.run(new String[]{ SOUNDS.command(on) }, new AdbBridge.Callback() {
+            public void onDone(boolean ok, String out) { after.run(); }
+        });
+        return true;
+    }
+
+    /** Only a TV has a light to switch off. */
+    static boolean ledAvailable(Context c) {
+        return builtInTv(c) && get(c, Setting.SECURE, "power_led_enabled") != null;
+    }
+    static boolean ledOn(Context c) { return LED.read(c); }
+    static void ledSet(Context c, boolean on) { LED.writeDirect(c, on); }
+
     // ---------------------------------------------------------------- screensaver
 
     private static final String DREAM_COLORS = "com.android.dreams.basic/.Colors";

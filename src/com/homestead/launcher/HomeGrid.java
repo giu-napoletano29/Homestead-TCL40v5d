@@ -721,6 +721,13 @@ public class HomeGrid implements SettingsPanel.Host {
                         }
                     });
         }
+        addRailItem(ShortcutIcons.render("search", dp(RAIL_ICON_DP)),
+                ctx.getString(R.string.rail_search), new Runnable() {
+                    public void run() {
+                        logOpen("Search (rail)");
+                        showPanel(SearchPanel.build(ctx, panelHost));
+                    }
+                });
         addRailItem(ShortcutIcons.render("applications", dp(RAIL_ICON_DP)),
                 ctx.getString(R.string.rail_apps), new Runnable() {
                     public void run() {

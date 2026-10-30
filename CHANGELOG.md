@@ -3,6 +3,28 @@
 This fork keeps the original's version numbers and adds a fourth digit or a new minor. The
 original's history (up to 1.6.14) is in the git log below the fork's first commit.
 
+## 1.8.0
+
+Search, and a phone that controls the TV.
+
+- **Search** in the side rail: apps and Canali TV channels by name (accents and case do not
+  matter), with a keyboard of letters that the arrows walk over. Before anything is typed it
+  lists the apps used most recently. It runs only while the page is open.
+- **Phone remote** (Settings, Behaviour; off by default). While on, a phone on the same Wi-Fi
+  can press the remote's buttons, search and open apps and channels, and change the main
+  settings from forms: background, columns, dock, clock, date, greeting, sort, hidden apps,
+  idle clock, screensaver, interface sounds and the power LED. The port is closed as soon as
+  the switch is turned off.
+- **Pairing by QR code.** *Pair a phone* shows a QR code and six digits that change every
+  minute and work once, and only while that screen is open. A paired phone is signed in for
+  1 day, 1 week, 1 month or until it signs out (a setting); *Sign out all phones* ends every
+  session. It is plain HTTP: see SECURITY.md for what protects it and what does not.
+- **Quick remote buttons.** A press now takes a few milliseconds instead of about a second:
+  while the phone's remote page is open, a small helper process (see SECURITY.md) presses the
+  keys; it exits after 75 seconds without one.
+- In Italian the Settings page and its tile are now called **Personalizzazione** and
+  **Personalizza**, to tell them apart from the TV's own *Impostazioni*.
+
 ## 1.7.2
 
 The app is now called **Salotto**, "a Homestead fork".

@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>Salotto</title>
+<style>
+  :root { color-scheme: dark; --bg:#0e1116; --card:#171c23; --card2:#232b36; --line:#2a313b;
+          --mute:#9aa3ae; --accent:#3d7be0; --ok:#a7d28f; --err:#ff8a80; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { margin: 0; background: var(--bg); color: #f0f1f3; font: 17px/1.4 system-ui, sans-serif; }
+  main { max-width: 560px; margin: 0 auto; padding: 20px 16px 120px; }
+  h1 { font-size: 22px; font-weight: 600; margin: 0 0 4px; }
+  h2 { font-size: 13px; letter-spacing: .1em; text-transform: uppercase; color: var(--mute);
+       margin: 26px 0 8px; font-weight: 600; }
+  .sub { color: var(--mute); margin: 0 0 18px; font-size: 15px; }
+  input[type=text], input[type=search], select { width: 100%; padding: 14px 16px; border-radius: 12px;
+         border: 1px solid var(--line); background: var(--card); color: inherit; font: inherit; }
+  input:focus, select:focus { outline: 2px solid var(--accent); border-color: transparent; }
+  button { font: inherit; color: inherit; cursor: pointer; touch-action: manipulation; }
+  .go { width: 100%; margin-top: 12px; padding: 14px; border: 0; border-radius: 12px;
+        background: var(--accent); font-weight: 600; }
+  .err { color: var(--err); min-height: 1.4em; margin: 10px 2px 0; }
+  .hint { color: var(--mute); font-size: 14px; }
+  [hidden] { display: none !important; }
+
+  /* remote */
+  .pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 8px 0 14px;
+         user-select: none; -webkit-user-select: none; }
+  .pad button { padding: 18px 0; border: 0; border-radius: 14px; background: var(--card); font-size: 20px; }
+  .pad button:active { background: var(--card2); }
+  .pad .ok { background: var(--accent); font-weight: 600; }
+  .pad .gap { visibility: hidden; }
+  .pad .small { font-size: 15px; padding: 14px 0; }
+
+  /* search */
+  ul { list-style: none; margin: 14px 0 0; padding: 0; }
+  li.res button { width: 100%; display: flex; justify-content: space-between; gap: 12px; text-align: left;
+              padding: 14px 16px; margin-bottom: 8px; border: 0; border-radius: 12px; background: var(--card); }
+  li.res button:active { background: var(--card2); }
+
+  /* settings */
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 12px;
+         padding: 12px 16px; margin-bottom: 8px; border-radius: 12px; background: var(--card); }
+  .row select { width: auto; max-width: 55%; padding: 8px 10px; }
+  .row input[type=checkbox] { width: 24px; height: 24px; accent-color: var(--accent); flex: none; }
+  details { background: var(--card); border-radius: 12px; margin-bottom: 8px; }
+  summary { padding: 14px 16px; cursor: pointer; }
+  details .body { padding: 0 8px 8px; }
+  details .row { background: var(--card2); }
+  .link { background: none; border: 0; color: var(--mute); padding: 8px 0; margin-top: 18px; font-size: 14px; }
+
+  nav { position: fixed; left: 0; right: 0; bottom: 0; display: flex; background: #12161c;
+        border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom); }
+  nav button { flex: 1; padding: 14px 0; border: 0; background: none; color: var(--mute); font-size: 15px; }
+  nav button.on { color: #fff; box-shadow: inset 0 2px 0 var(--accent); }
+  #toast { position: fixed; left: 50%; bottom: 76px; transform: translateX(-50%); background: #2b3340;
+           padding: 10px 16px; border-radius: 20px; font-size: 14px; opacity: 0; transition: opacity .2s;
+           pointer-events: none; max-width: 90%; text-align: center; }
+  #toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Salotto</h1>
+  <p class="sub" id="sub"></p>
+
+  <section id="pairing" hidden>
+    <p id="pairText"></p>
+    <input id="code" type="text" inputmode="numeric" maxlength="6" autocomplete="off">
+    <button class="go" id="pairGo"></button>
+    <p class="err" id="pairErr"></p>
+  </section>
+
+  <section id="app" hidden>
+    <div id="tab-remote">
+      <div class="pad" id="pad"></div>
+      <p class="hint" id="remoteHint"></p>
+    </div>
+    <div id="tab-search" hidden>
+      <input id="q" type="search" autocomplete="off" autocapitalize="none" spellcheck="false">
+      <ul id="list"></ul>
+    </div>
+    <div id="tab-settings" hidden>
+      <div id="settings"></div>
+      <p class="hint" id="session"></p>
+      <button class="link" id="out"></button>
+    </div>
+  </section>
+</main>
+<nav id="nav" hidden>
+  <button data-tab="remote" class="on" id="nRemote"></button>
+  <button data-tab="search" id="nSearch"></button>
+  <button data-tab="settings" id="nSettings"></button>
+</nav>
+<div id="toast"></div>
+<script>
+(function () {
+  var it = /^it/i.test(navigator.language || '');
+  var TXT = it ? {
+    sub: 'Controlla la TV da qui.',
+    pairText: 'Per collegare questo telefono inquadra il codice QR che compare sulla TV, oppure scrivi qui le cifre.',
+    pairGo: 'Collega', pairBad: 'Codice sbagliato o scaduto.', pairWait: 'Troppi tentativi. Riprova tra un minuto.',
+    expired: 'La sessione è finita. Inquadra di nuovo il codice QR sulla TV.', net: 'La TV non risponde.',
+    nRemote: 'Telecomando', nSearch: 'Cerca', nSettings: 'Personalizza',
+    q: 'Cerca app e canali', none: 'Nessun risultato', opened: 'Aperto sulla TV', fail: 'Non si apre',
+    needLink: 'Per i tasti serve il collegamento di debug (Personalizzazione, Configurazione).',
+    out: 'Esci da questo telefono', until: 'Sessione fino al ', never: 'La sessione dura finché non esci.',
+    saved: 'Fatto', notSaved: 'Non riuscito', hiddenApps: 'App nascoste', filter: 'Filtra', pending: 'In corso...'
+  } : {
+    sub: 'Control the TV from here.',
+    pairText: 'To pair this phone, scan the QR code on the TV, or type the digits here.',
+    pairGo: 'Pair', pairBad: 'Wrong or expired code.', pairWait: 'Too many tries. Try again in a minute.',
+    expired: 'The session has ended. Scan the QR code on the TV again.', net: 'The TV does not answer.',
+    nRemote: 'Remote', nSearch: 'Search', nSettings: 'Settings',
+    q: 'Search apps and channels', none: 'Nothing found', opened: 'Opened on the TV', fail: 'Could not open',
+    needLink: 'The buttons need the debugging link (Salotto Settings, Setup).',
+    out: 'Sign out of this phone', until: 'Session until ', never: 'The session lasts until you sign out.',
+    saved: 'Done', notSaved: 'Did not work', hiddenApps: 'Hidden apps', filter: 'Filter', pending: 'Working...'
+  };
+  var IT = {
+    'Look': 'Aspetto', 'Content': 'Contenuti', 'Behaviour': 'Comportamento', 'TV': 'TV',
+    'Background': 'Sfondo', 'Grid columns': 'Colonne della griglia', 'Dock size': 'Dimensione del dock',
+    'Clock': 'Orologio', 'Date': 'Data', 'Greeting': 'Saluto',
+    'Non-TV apps as wide tiles': 'App non TV come tessere larghe', 'Fire TV system icons': 'Icone di sistema Fire TV',
+    'Sort apps by': 'Ordina le app per', 'Live TV first': 'Live TV per prima',
+    'Show "Inputs & System"': 'Mostra «Ingressi e Sistema»', 'Show "Non-TV Applications"': 'Mostra «App non TV»',
+    'Hidden apps': 'App nascoste', 'Idle clock': 'Orologio a riposo', 'Screensaver': 'Salvaschermo',
+    'Interface sounds': "Suoni dell'interfaccia", 'Power LED': 'LED di alimentazione',
+    'Off': 'Disattivato', 'Last used': 'Ultime usate', '24-hour': '24 ore', '12-hour': '12 ore',
+    'Small': 'Piccolo', 'Medium': 'Medio', 'Large': 'Grande', 'Extra large': 'Molto grande',
+    'Weekday and month': 'Giorno e mese', 'Numbers': 'Numeri', 'Colours': 'Colori',
+    "Amazon's (with ads)": 'Amazon (con pubblicità)', 'Photo': 'Foto'
+  };
+  function tr(s) { return (it && IT[s]) || s; }
+  function $(id) { return document.getElementById(id); }
+  function el(tag, text, cls) {
+    var e = document.createElement(tag);
+    if (text != null) e.textContent = text;
+    if (cls) e.className = cls;
+    return e;
+  }
+
+  var KEY = 'salotto_token', token = null, expires = 0, tab = 'remote', timer = null, warm = null, toastT = null;
+  try { token = localStorage.getItem(KEY); } catch (e) {}
+
+  $('sub').textContent = TXT.sub;
+  $('pairText').textContent = TXT.pairText;
+  $('pairGo').textContent = TXT.pairGo;
+  $('q').placeholder = TXT.q;
+  $('out').textContent = TXT.out;
+  $('remoteHint').textContent = '';
+  $('nRemote').textContent = TXT.nRemote;
+  $('nSearch').textContent = TXT.nSearch;
+  $('nSettings').textContent = TXT.nSettings;
+
+  function toast(s) {
+    var t = $('toast');
+    t.textContent = s;
+    t.className = 'show';
+    clearTimeout(toastT);
+    toastT = setTimeout(function () { t.className = ''; }, 2200);
+  }
+
+  // ---- talking to the TV
+  function call(path, body) {
+    var opt = { headers: {} };
+    if (body !== undefined) { opt.method = 'POST'; opt.body = JSON.stringify(body); }
+    if (token) opt.headers['Authorization'] = 'Bearer ' + token;
+    return fetch(path, opt).then(function (r) {
+      if (r.status === 401) { signedOut(true); throw { status: 401 }; }
+      return r.json().then(function (j) {
+        if (!r.ok) throw { status: r.status, body: j };
+        return j;
+      });
+    });
+  }
+
+  function showApp(on) {
+    $('app').hidden = !on;
+    $('nav').hidden = !on;
+    $('pairing').hidden = on;
+    if (on) openTab(tab); else { stopWarm(); $('code').focus(); }
+  }
+
+  function signedOut(expired) {
+    token = null;
+    try { localStorage.removeItem(KEY); } catch (e) {}
+    $('pairErr').textContent = expired ? TXT.expired : '';
+    showApp(false);
+  }
+
+  // ---- pairing
+  function pair(code) {
+    $('pairErr').textContent = '';
+    return fetch('/api/pair', { method: 'POST', body: JSON.stringify({ code: code }) })
+      .then(function (r) {
+        if (r.status === 429) throw 'wait';
+        if (!r.ok) throw 'bad';
+        return r.json();
+      })
+      .then(function (j) {
+        token = j.token;
+        expires = j.expires || 0;
+        try { localStorage.setItem(KEY, token); } catch (e) {}
+        $('code').value = '';
+        showApp(true);
+      })
+      .catch(function (e) {
+        $('pairErr').textContent = e === 'wait' ? TXT.pairWait : e === 'bad' ? TXT.pairBad : TXT.net;
+        showApp(false);
+      });
+  }
+  $('pairGo').onclick = function () { pair($('code').value.trim()); };
+  $('code').onkeydown = function (e) { if (e.key === 'Enter') pair($('code').value.trim()); };
+
+  // ---- tabs
+  var nav = $('nav').getElementsByTagName('button');
+  for (var n = 0; n < nav.length; n++) {
+    nav[n].onclick = (function (b) { return function () { openTab(b.getAttribute('data-tab')); }; })(nav[n]);
+  }
+  function openTab(name) {
+    tab = name;
+    ['remote', 'search', 'settings'].forEach(function (t) {
+      $('tab-' + t).hidden = t !== name;
+    });
+    for (var i = 0; i < nav.length; i++) {
+      nav[i].className = nav[i].getAttribute('data-tab') === name ? 'on' : '';
+    }
+    stopWarm();
+    if (name === 'remote') startWarm();
+    if (name === 'search') { search(); $('q').focus(); }
+    if (name === 'settings') loadSettings();
+  }
+
+  // ---- remote
+  var KEYS = [
+    ['back', '↩', 'small'], ['home', '⌂', 'small'], ['menu', '☰', 'small'],
+    [null], ['up', '▲'], [null],
+    ['left', '◀'], ['ok', 'OK', 'ok'], ['right', '▶'],
+    [null], ['down', '▼'], [null],
+    ['rewind', '⏪', 'small'], ['playpause', '⏯', 'small'], ['ffwd', '⏩', 'small'],
+    ['voldown', '−', 'small'], ['mute', '🔇', 'small'], ['volup', '+', 'small']
+  ];
+  var REPEAT = { up: 1, down: 1, left: 1, right: 1, volup: 1, voldown: 1 };
+  var inflight = false, hold = null;
+  KEYS.forEach(function (k) {
+    var b = el('button', k[1] || '', (k[2] || '') + (k[0] ? '' : ' gap'));
+    if (k[0]) {
+      b.setAttribute('data-key', k[0]);
+      b.onpointerdown = function (e) {
+        e.preventDefault();
+        press(k[0], true);
+        if (REPEAT[k[0]]) {
+          clearTimeout(hold);
+          hold = setTimeout(function again() {
+            press(k[0], false);
+            hold = setTimeout(again, 180);
+          }, 420);
+        }
+      };
+      var stop = function () { clearTimeout(hold); };
+      b.onpointerup = stop; b.onpointerleave = stop; b.onpointercancel = stop;
+      b.oncontextmenu = function (e) { e.preventDefault(); };
+    }
+    $('pad').appendChild(b);
+  });
+  function press(key, first) {
+    if (!first && inflight) return;
+    if (first && navigator.vibrate) navigator.vibrate(8);
+    inflight = true;
+    call('/api/key', { key: key }).then(function (j) {
+      inflight = false;
+      if (!j.ok && j.result === 'needs_link') toast(TXT.needLink);
+    }).catch(function (e) {
+      inflight = false;
+      if (e.status !== 401) toast(TXT.net);
+    });
+  }
+  function startWarm() {
+    var ping = function () {
+      call('/api/ping?warm=1').then(function (j) { expires = j.expires || 0; }).catch(function () {});
+    };
+    ping();
+    warm = setInterval(ping, 20000);
+  }
+  function stopWarm() { clearInterval(warm); warm = null; clearTimeout(hold); }
+
+  // ---- search
+  var ctl = null;
+  function search() {
+    if (ctl) ctl.abort();
+    ctl = window.AbortController ? new AbortController() : null;
+    var opt = { headers: { 'Authorization': 'Bearer ' + token } };
+    if (ctl) opt.signal = ctl.signal;
+    fetch('/api/search?q=' + encodeURIComponent($('q').value), opt).then(function (r) {
+      if (r.status === 401) { signedOut(true); return null; }
+      return r.json();
+    }).then(function (j) { if (j) renderHits(j.hits || []); })
+      .catch(function (e) { if (e && e.name !== 'AbortError') toast(TXT.net); });
+  }
+  $('q').oninput = function () { clearTimeout(timer); timer = setTimeout(search, 250); };
+  function renderHits(hits) {
+    var ul = $('list');
+    ul.textContent = '';
+    if (!hits.length) { ul.appendChild(el('li', TXT.none, 'hint')); return; }
+    hits.forEach(function (h) {
+      var li = el('li', null, 'res'), b = el('button');
+      b.appendChild(el('span', h.title));
+      b.appendChild(el('span', h.hint, 'hint'));
+      b.onclick = function () {
+        call('/api/open', { id: h.id }).then(function (j) { toast(j.ok ? TXT.opened : TXT.fail); })
+          .catch(function (e) { if (e.status !== 401) toast(TXT.net); });
+      };
+      li.appendChild(b);
+      ul.appendChild(li);
+    });
+  }
+
+  // ---- settings
+  function loadSettings() {
+    call('/api/settings').then(renderSettings).catch(function (e) { if (e.status !== 401) toast(TXT.net); });
+    $('session').textContent = expires ? TXT.until + new Date(expires).toLocaleDateString() : TXT.never;
+  }
+  function save(id, value, after) {
+    call('/api/setting', { id: id, value: value }).then(function (j) {
+      toast(j.result === 'pending' ? TXT.pending : TXT.saved);
+      if (j.result === 'pending' || after) setTimeout(loadSettings, 1500);
+    }).catch(function (e) {
+      if (e.status === 401) return;
+      toast(e.body && e.body.error === 'setting' ? TXT.notSaved : TXT.net);
+      loadSettings();
+    });
+  }
+  function renderSettings(j) {
+    var box = $('settings');
+    box.textContent = '';
+    j.groups.forEach(function (g) {
+      box.appendChild(el('h2', tr(g.title)));
+      g.items.forEach(function (item) {
+        if (item.type === 'switch') {
+          var row = el('label', null, 'row'), cb = el('input');
+          cb.type = 'checkbox';
+          cb.checked = item.value === '1';
+          cb.onchange = function () { save(item.id, cb.checked ? '1' : '0'); };
+          row.appendChild(el('span', tr(item.label)));
+          row.appendChild(cb);
+          box.appendChild(row);
+        } else if (item.type === 'choice') {
+          var r2 = el('label', null, 'row'), sel = el('select');
+          item.options.forEach(function (o) {
+            var op = el('option', tr(o.l));
+            op.value = o.v;
+            if (o.v === item.value) op.selected = true;
+            sel.appendChild(op);
+          });
+          sel.onchange = function () { save(item.id, sel.value); };
+          r2.appendChild(el('span', tr(item.label)));
+          r2.appendChild(sel);
+          box.appendChild(r2);
+        } else if (item.type === 'multi') {
+          box.appendChild(multi(item));
+        }
+      });
+    });
+  }
+  function multi(item) {
+    var d = el('details'), s = el('summary', tr(item.label)), body = el('div', null, 'body');
+    var f = el('input');
+    f.type = 'search';
+    f.placeholder = TXT.filter;
+    f.style.margin = '0 0 8px';
+    body.appendChild(f);
+    var rows = [];
+    item.options.forEach(function (o) {
+      var row = el('label', null, 'row'), cb = el('input');
+      cb.type = 'checkbox';
+      cb.checked = !!o.on;
+      cb.onchange = function () { save(item.id, o.v + '=' + (cb.checked ? '1' : '0')); };
+      row.appendChild(el('span', o.l));
+      row.appendChild(cb);
+      row._t = o.l.toLowerCase();
+      body.appendChild(row);
+      rows.push(row);
+    });
+    f.oninput = function () {
+      var q = f.value.toLowerCase();
+      rows.forEach(function (r) { r.hidden = q && r._t.indexOf(q) < 0; });
+    };
+    d.appendChild(s);
+    d.appendChild(body);
+    return d;
+  }
+
+  $('out').onclick = function () {
+    call('/api/logout', {}).then(function () { signedOut(false); }, function () { signedOut(false); });
+  };
+
+  // ---- start: a code in the link (the QR code), a saved session, or the pairing screen
+  var m = /[?&]c=(\d{6})(?:&|$)/.exec(location.search);
+  if (m) {
+    try { history.replaceState(null, '', location.pathname); } catch (e) {}
+    pair(m[1]);
+  } else if (token) {
+    call('/api/ping').then(function (j) { expires = j.expires || 0; showApp(true); })
+      .catch(function (e) { if (e.status !== 401) { $('pairErr').textContent = TXT.net; showApp(false); } });
+  } else {
+    showApp(false);
+  }
+})();
+</script>
+</body>
+</html>

@@ -55,7 +55,7 @@ public final class SettingsPanel {
         final Panel.Row behaviour = p.addRow(c.getString(R.string.settings_behaviour),
                 behaviourSummary(c), null).opens();
         behaviour.setValueColor(0xFF8FA3B8);
-        behaviour.setHelp("What the home screen does by itself: the idle clock.");
+        behaviour.setHelp("What the home screen does by itself, and the phone remote.");
         // Summaries catch up when a sub-page changes something.
         final Runnable summaries = new Runnable() {
             public void run() {
@@ -366,6 +366,21 @@ public final class SettingsPanel {
                 + "large clock that drifts slowly across the screen, so nothing stays lit in one "
                 + "place. Any button brings the home screen back; that press does nothing else.");
 
+        final Panel.Row remote = p.addRow(c.getString(R.string.remote_title),
+                onOff(Prefs.remoteOn(c)), null).opens();
+        remote.cell.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                host.showPanel(RemotePanel.build(c, host, new Runnable() {
+                    public void run() {
+                        remote.setValue(onOff(Prefs.remoteOn(c)));
+                        changed.run();
+                    }
+                }));
+            }
+        });
+        remote.setHelp("Search the apps and channels from a phone on the same Wi-Fi. Off until "
+                + "you turn it on.");
+
         p.addRow("Back", "", new Runnable() {
             public void run() { host.closePanel(); }
         });
@@ -382,7 +397,8 @@ public final class SettingsPanel {
     }
 
     private static String behaviourSummary(Context c) {
-        return "idle clock " + idleLabel(Prefs.idleMinutes(c));
+        return "idle clock " + idleLabel(Prefs.idleMinutes(c))
+                + (Prefs.remoteOn(c) ? ", phone remote" : "");
     }
 
     /** Runs extra work after a row's own focus handling, when it gains focus. */
@@ -575,11 +591,11 @@ public final class SettingsPanel {
 
     private static String onOff(boolean b) { return b ? "On" : "Off"; }
 
-    private static String sortLabel(Context c) {
+    static String sortLabel(Context c) {
         return Prefs.sort(c) == Prefs.SORT_ALPHA ? "A – Z" : "Last used";
     }
 
-    private static String clockLabel(Context c) {
+    static String clockLabel(Context c) {
         switch (Prefs.clockMode(c)) {
             case Prefs.CLOCK_12H: return "12-hour";
             case Prefs.CLOCK_OFF: return "Off";
@@ -587,11 +603,11 @@ public final class SettingsPanel {
         }
     }
 
-    private static String idleLabel(int minutes) {
+    static String idleLabel(int minutes) {
         return minutes <= 0 ? "Off" : minutes + " min";
     }
 
-    private static String dateLabel(Context c) {
+    static String dateLabel(Context c) {
         switch (Prefs.dateFormat(c)) {
             case Prefs.DATE_LONG: return "Weekday and month";
             case Prefs.DATE_SHORT: return "Numbers";

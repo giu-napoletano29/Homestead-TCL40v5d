@@ -105,6 +105,9 @@ final class ShortcutIcons {
                         cx + dx * s * 0.40f, cy + dy * s * 0.40f, line);
             }
             c.drawCircle(cx, cy, s * 0.28f, line);
+        } else if ("search".equals(id)) {
+            c.drawCircle(s * 0.44f, s * 0.44f, s * 0.26f, line);
+            c.drawLine(s * 0.63f, s * 0.63f, s * 0.86f, s * 0.86f, line);
         } else if ("account".equals(id)) {
             c.drawCircle(s * 0.5f, s * 0.34f, s * 0.14f, line);
             c.drawArc(new RectF(s * 0.2f, s * 0.58f, s * 0.8f, s * 1.1f), 200f, 140f, false, line);

@@ -31,13 +31,44 @@
   <string name="home_wsiw_hint">Chiedi ad Alexa: “cosa guardo?”</string>
   <string name="home_amazon_home">Home di Amazon</string>
   <string name="home_amazon_settings">Impostazioni Amazon</string>
-  <string name="home_my_settings">Le mie impostazioni</string>
+  <string name="home_my_settings">Personalizza</string>
   <string name="home_tv_health">Diagnostica TV</string>
   <string name="home_back">Indietro</string>
   <string name="rail_apps">App</string>
   <string name="rail_inputs">Ingressi</string>
+  <string name="rail_search">Cerca</string>
+  <string name="search_title">Cerca</string>
+  <string name="search_prompt">Scrivi per cercare</string>
+  <string name="search_recent">Usate di recente</string>
+  <string name="search_results">Risultati</string>
+  <string name="search_none">Nessun risultato</string>
+  <string name="search_space">Spazio</string>
+  <string name="search_clear">Svuota</string>
+  <string name="search_phone_on">Scrivi più in fretta dal telefono: apri %1$s nel suo browser.</string>
+  <string name="search_phone_off">Scrivi più in fretta dal telefono: attiva Controllo da telefono in Personalizzazione, Comportamento.</string>
+  <string name="remote_title">Controllo da telefono</string>
+  <string name="remote_address">Indirizzo</string>
+  <string name="remote_sign_out">Disconnetti tutti i telefoni</string>
+  <string name="remote_signed_out">Telefoni disconnessi</string>
+  <string name="remote_no_network">nessuna rete</string>
+  <string name="remote_pair">Collega un telefono</string>
+  <string name="remote_session">Durata della sessione</string>
+  <string name="remote_session_never">finché non esci</string>
+  <string name="remote_phones">Telefoni collegati</string>
+  <string name="pair_title">Collega un telefono</string>
+  <string name="pair_scan">Inquadra il codice con la fotocamera del telefono.</string>
+  <string name="pair_or">Oppure apri %1$s sul telefono e scrivi le cifre:</string>
+  <string name="pair_no_network">Nessuna rete: collega prima la TV alla Wi-Fi.</string>
+  <string name="pair_changes">Il codice cambia tra %1$d s</string>
+  <string name="pair_note">Il telefono deve essere sulla stessa Wi-Fi. Ogni codice vale una volta sola, e solo mentre questa schermata è aperta.</string>
+  <string name="pair_done">Telefono collegato</string>
+  <string name="pair_close">Chiudi</string>
+  <plurals name="remote_days">
+    <item quantity="one">%d giorno</item>
+    <item quantity="other">%d giorni</item>
+  </plurals>
   <string name="inputs_native_failed">Impossibile aprire il menu ingressi del TV: apro l\'elenco di Salotto</string>
-  <string name="home_settings_pill">Impostazioni</string>
+  <string name="home_settings_pill">Personalizzazione</string>
   <string name="home_inputs_pill">Ingressi</string>
 
   <!-- The ten screens Amazon answers directly, and their short form for a top-bar pill. -->
@@ -68,7 +99,7 @@
   <string name="sys_header_launcher">Launcher di Amazon</string>
 
   <!-- SettingsPanel -->
-  <string name="settings_title">Impostazioni</string>
+  <string name="settings_title">Personalizzazione</string>
   <string name="settings_appearance">Aspetto</string>
   <string name="settings_content">Contenuto e ordine</string>
   <string name="settings_behaviour">Comportamento</string>

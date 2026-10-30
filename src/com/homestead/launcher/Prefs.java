@@ -279,6 +279,105 @@ public final class Prefs {
         sp(c).edit().putBoolean(K_RESTORE_WATCH, v).apply();
     }
 
+    // ---------------------------------------------------------------- phone remote
+
+    private static final String K_REMOTE = "remote_on";
+    private static final String K_REMOTE_TOKENS = "remote_sessions";
+    private static final String K_REMOTE_DAYS = "remote_session_days";
+    /** Phones kept signed in; the oldest is dropped when one more signs in. */
+    private static final int REMOTE_TOKENS_MAX = 8;
+    private static final long DAY_MS = 24L * 60L * 60L * 1000L;
+
+    /** How long a phone stays signed in after pairing, in days; 0 is until it is signed out. */
+    public static final int[] REMOTE_SESSION_CHOICES = { 1, 7, 30, 0 };
+
+    /** The phone remote (RemoteServer) listens only while this is on; off until chosen. */
+    public static boolean remoteOn(Context c) { return sp(c).getBoolean(K_REMOTE, false); }
+    public static void setRemoteOn(Context c, boolean v) {
+        sp(c).edit().putBoolean(K_REMOTE, v).apply();
+    }
+
+    public static int remoteSessionDays(Context c) { return sp(c).getInt(K_REMOTE_DAYS, 7); }
+    public static void setRemoteSessionDays(Context c, int days) {
+        sp(c).edit().putInt(K_REMOTE_DAYS, days).apply();
+    }
+
+    /**
+     * When the session of this token ends, in epoch millis: 0 if it never does, -1 if the token
+     * is not a session (unknown, or ended). Every stored token is compared, so the time does not
+     * tell where a guess went wrong.
+     */
+    public static synchronized long remoteTokenExpiry(Context c, String token) {
+        if (token == null || token.length() < 32) return -1L;
+        long now = System.currentTimeMillis();
+        long found = -1L;
+        for (String[] e : remoteSessionList(c)) {
+            long until = parseLong(e[1]);
+            boolean same = e[0].length() == token.length()
+                    && java.security.MessageDigest.isEqual(e[0].getBytes(), token.getBytes());
+            if (same && (until == 0L || until > now)) found = until;
+        }
+        return found;
+    }
+
+    /** Phones signed in now. */
+    public static synchronized int remoteSessions(Context c) {
+        long now = System.currentTimeMillis();
+        int n = 0;
+        for (String[] e : remoteSessionList(c)) {
+            long until = parseLong(e[1]);
+            if (until == 0L || until > now) n++;
+        }
+        return n;
+    }
+
+    /** Starts a session that lasts as long as the setting says. */
+    public static synchronized void addRemoteToken(Context c, String token) {
+        int days = remoteSessionDays(c);
+        long until = days <= 0 ? 0L : System.currentTimeMillis() + days * DAY_MS;
+        java.util.List<String[]> list = remoteSessionList(c);
+        list.add(new String[]{ token, String.valueOf(until) });
+        while (list.size() > REMOTE_TOKENS_MAX) list.remove(0);
+        saveSessions(c, list);
+    }
+
+    public static synchronized void removeRemoteToken(Context c, String token) {
+        java.util.List<String[]> list = remoteSessionList(c);
+        for (int i = list.size() - 1; i >= 0; i--) {
+            if (list.get(i)[0].equals(token)) list.remove(i);
+        }
+        saveSessions(c, list);
+    }
+
+    public static synchronized void clearRemoteTokens(Context c) {
+        sp(c).edit().remove(K_REMOTE_TOKENS).apply();
+    }
+
+    /** The stored sessions without the ended ones, as {token, expiry}. */
+    private static java.util.List<String[]> remoteSessionList(Context c) {
+        long now = System.currentTimeMillis();
+        java.util.List<String[]> out = new java.util.ArrayList<String[]>();
+        for (String part : sp(c).getString(K_REMOTE_TOKENS, "").split(",")) {
+            String[] e = part.split(":");
+            if (e.length != 2 || e[0].length() < 32) continue;
+            long until = parseLong(e[1]);
+            if (until == 0L || until > now) out.add(e);
+        }
+        return out;
+    }
+
+    private static void saveSessions(Context c, java.util.List<String[]> list) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < list.size(); i++) {
+            sb.append(i > 0 ? "," : "").append(list.get(i)[0]).append(':').append(list.get(i)[1]);
+        }
+        sp(c).edit().putString(K_REMOTE_TOKENS, sb.toString()).apply();
+    }
+
+    private static long parseLong(String s) {
+        try { return Long.parseLong(s); } catch (NumberFormatException e) { return -1L; }
+    }
+
     // ---------------------------------------------------------------- updates
 
     public static boolean autoUpdateCheck(Context c) { return sp(c).getBoolean(K_UPD_AUTO, true); }

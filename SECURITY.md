@@ -19,7 +19,7 @@ are.
 
 ## What goes over the network
 
-The app has exactly two network behaviours, and no others:
+The app has exactly three network behaviours, and no others:
 
 - **Update check.** At most once a day, when the home screen opens or comes back, and
   whenever you press *Check for updates* in Settings, one unauthenticated HTTPS GET to
@@ -31,6 +31,29 @@ The app has exactly two network behaviours, and no others:
   a local tunnel on the TV. It never leaves the device. The tunnel is a VPN that routes only
   its own private subnet. Updates and re-apply after reboot do not start it while another
   VPN is running, so they never interrupt one you use.
+- **The phone remote.** Off until you turn it on in Settings, Behaviour. While it is on, the
+  app listens on a port of the TV (8765, or the next free one up to 8770) so a phone on the
+  same Wi-Fi can search the apps and channels, press the remote's buttons and change the main
+  settings. It answers only addresses of a private network, so a router that forwards the
+  port from the internet does not expose it. The page it serves holds no data. Everything
+  else needs a token that the TV hands out in one way only: pairing. *Pair a phone* (in the
+  same Settings page) shows a QR code and six digits; the code changes every minute, works once,
+  and exists only while that screen is open, so nobody can pair without being at the TV. A
+  token is a session that ends after the length chosen in Settings (1 day, 1 week, 1 month, or
+  until signed out) and is sent in a header, so another site open on the phone cannot use
+  it. Wrong codes are counted per address (five a minute) and overall. A request whose Host or
+  Origin is not the TV's own address is refused. What a signed-in phone can do is a fixed
+  list: press the keys in `RemoteKeys` (arrows, OK, Back, Home, Menu, play, rewind, forward,
+  volume), change what `RemoteSettings` lists and search and open apps and channels. It
+  cannot run commands. The keys go through the on-device ADB link, as a real remote's press
+  would: the link starts a small helper (`KeyDaemon`, run from this APK with the shell's
+  privileges, as `input` is) that listens on 127.0.0.1 only, accepts only lines that begin
+  with a secret made fresh each time it starts, presses only the fourteen codes of
+  `RemoteKeys`, and exits after 75 seconds without a line or when the switch is turned off.
+  Without it each press is an `input keyevent` run over the link, about 0.7 s slower. It is plain HTTP, so someone who can read the traffic on your Wi-Fi can read a code
+  while it is valid, and a token, and then act as that phone until the session ends. Turning
+  the switch off closes the port at once; *Sign out all phones* ends every session. It sends
+  nothing out: it only answers.
 
 There is no telemetry, no crash reporting and no analytics of any kind.
 

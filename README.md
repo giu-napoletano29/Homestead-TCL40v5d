@@ -24,6 +24,15 @@ Salotto can't run on them. The Plus and Max run Fire OS.
   on it.
 - Has a **Canali TV** page with tabs for Rai and Mediaset. Every Mediaset channel and radio
   opens Mediaset Infinity on that channel.
+- Has a **Search** entry in the side rail. It finds your apps and the Canali TV channels by
+  name; you type with the arrows and OK on a keyboard of letters.
+- Can be controlled from a phone. Turn on **Phone remote** (Settings, Behaviour; off by
+  default), press *Pair a phone* and scan the QR code. The phone gets a page with the remote's
+  buttons, the search (typing is quicker there) and forms for the main settings: background,
+  columns, clock, which apps are hidden, the screensaver and a few more. The code changes every
+  minute and works once; how long a phone stays signed in is a setting. It answers only
+  inside your home network and is plain HTTP (see [SECURITY.md](SECURITY.md)). The buttons
+  need the debugging link of [Setup](#setup).
 - Sorts apps by how often you use them, counted on the TV. Press MENU on a tile, or hold
   Select, to hide it.
 - Offers a few backgrounds: gradients, plain black for OLED screens and night, four
@@ -31,7 +40,7 @@ Salotto can't run on them. The Plus and Max run Fire OS.
   [your own photo](#your-own-background-photo).
 - Keeps its settings in three pages: **Appearance** (background, columns, dock, clock, date,
   greeting), **Content & order** (sort, hidden tiles, sections) and **Behaviour** (idle
-  clock). Settings opens over the home screen, so you see changes as you make them.
+  clock, phone remote). Settings opens over the home screen, so you see changes as you make them.
 - Has a **Screen & sound** page for what Amazon locks behind a permission: HDMI-CEC, overscan,
   sleep, screen mirroring, the screensaver, interface sounds. On a TV with its own panel it
   shows only what makes sense there. None of it needs root.

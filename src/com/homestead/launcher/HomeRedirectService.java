@@ -188,6 +188,26 @@ public class HomeRedirectService extends AccessibilityService {
         hideOverlay(0L);
     }
 
+    /** A system action (Home, Back) through this service; false when it is not running. */
+    static boolean globalAction(int action) {
+        HomeRedirectService s = instance;
+        return s != null && s.performGlobalAction(action);
+    }
+
+    /**
+     * Draws the home screen again, in the overlay and in the activity, after something that
+     * shows on it was changed from outside its own pages (the phone remote). Main thread.
+     */
+    static void refreshHome() {
+        HomeRedirectService s = instance;
+        if (s == null) return;
+        // rebuildGrid(), not rebuild(): it also redraws the background and drops the cached
+        // metrics, which is what the TV's own pages do after a change.
+        if (s.home != null) s.home.rebuildGrid();
+        MainActivity a = (liveActivity == null) ? null : liveActivity.get();
+        if (a != null) a.refreshAll();
+    }
+
     /**
      * Called from MainActivity.onPause: something else is coming to the front, so a hide
      * scheduled for the activity must not fire (it would expose Amazon's launcher).
@@ -422,6 +442,9 @@ public class HomeRedirectService extends AccessibilityService {
     @Override
     protected void onServiceConnected() {
         super.onServiceConnected();
+        // The system keeps this service alive, so it is the steadiest place for the phone
+        // remote to listen from; a no-op while the switch is off.
+        RemoteServer.ensure(this);
         if (home != null) return;               // guard against a second connect
         instance = this;
         Prefs.setHomeOffByUser(this, false);

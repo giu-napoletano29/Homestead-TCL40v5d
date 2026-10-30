@@ -160,6 +160,16 @@ public final class AdbBridge {
         });
     }
 
+    /** Postpones the idle teardown of a live link, without queueing any work ahead of a command. */
+    public static void keepAlive() {
+        if (worker == null || state != CONNECTED) return;
+        worker.post(new Runnable() {
+            public void run() {
+                if (conn != null && conn.isAlive()) armIdleDisconnect();
+            }
+        });
+    }
+
     public static void disconnect() {
         if (worker == null) return;
         worker.post(new Runnable() {
@@ -411,9 +421,13 @@ public final class AdbBridge {
         }
     }
 
+    /** The one pending idle teardown, so that re-arming replaces it instead of adding another. */
+    private static Runnable idleTask;
+
     private static void armIdleDisconnect() {
         if (worker == null) return;
-        worker.postDelayed(new Runnable() {
+        if (idleTask != null) worker.removeCallbacks(idleTask);
+        idleTask = new Runnable() {
             public void run() {
                 if (conn == null) return;
                 Log.i(TAG, "adb idle, closing");
@@ -421,7 +435,8 @@ public final class AdbBridge {
                 stopTunnelIfActive();
                 if (state == CONNECTED) publish(IDLE, "idle");
             }
-        }, IDLE_DISCONNECT_MS);
+        };
+        worker.postDelayed(idleTask, IDLE_DISCONNECT_MS);
     }
 
     /**

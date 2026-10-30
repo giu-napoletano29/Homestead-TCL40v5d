@@ -37,6 +37,8 @@ public class BootReceiver extends BroadcastReceiver {
         boolean boot = Intent.ACTION_BOOT_COMPLETED.equals(action);
         boolean updated = Intent.ACTION_MY_PACKAGE_REPLACED.equals(action);
         if (!boot && !updated) return;
+        // The phone remote listens again after a restart or an update, whatever else follows.
+        RemoteServer.ensure(context);
         if (updated) {
             // Only an update this app started recently; not an adb install from a computer.
             long started = Prefs.updateStarted(context);
