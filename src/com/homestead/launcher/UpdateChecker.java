@@ -43,7 +43,7 @@ public final class UpdateChecker {
     private static final String TAG = "Homestead";
 
     /** owner/repo. One line to change if distribution moves to a dedicated releases repo. */
-    static final String REPO = "giu-napoletano29/Homestead-TCL40v5d";
+    static final String REPO = "giu-napoletano29/Salotto-FireTv";
 
     /** The error for a repository with no published release (GitHub answers 404). */
     static final String NO_RELEASE = "No release is available yet.";

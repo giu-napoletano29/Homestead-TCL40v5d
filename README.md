@@ -83,7 +83,7 @@ safe to switch off.
 ## Install
 
 Download `homestead.apk` from the
-[latest release](https://github.com/giu-napoletano29/Homestead-TCL40v5d/releases/latest) and
+[latest release](https://github.com/giu-napoletano29/Salotto-FireTv/releases/latest) and
 sideload it: `adb install homestead.apk` from a computer, or the Downloader app on the TV.
 (The file keeps the old name.)
 
@@ -260,7 +260,7 @@ read.
 ## Building
 
 You only need this to build from source. To use Salotto, install the signed `homestead.apk`
-from the [releases](https://github.com/giu-napoletano29/Homestead-TCL40v5d/releases/latest).
+from the [releases](https://github.com/giu-napoletano29/Salotto-FireTv/releases/latest).
 There's no Gradle and no dependencies, and a build takes under ten seconds:
 
 ```sh
