@@ -150,7 +150,7 @@ is up only while this runs and for the short idle period after.
 Releases are signed with a key held outside this repository. The signing certificate's
 SHA-256 fingerprint is:
 
-    624fe3f5ac83ccdef5ce518073cbe46217de6f5ab2eb7e282983e149f0a6663e
+    f3ff3df93a8f02772044af2ebc353994daee07482d5cd0b5577054826f8dc201
 
 Before the first install, check a downloaded APK with `apksigner verify --print-certs
 homestead.apk` (apksigner ships with the Android build-tools) and compare the "Signer #1
