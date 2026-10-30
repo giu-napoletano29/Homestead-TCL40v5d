@@ -18,17 +18,27 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.view.KeyEvent;
 import android.view.View;
+import android.widget.TextView;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
- * What the four coloured buttons of a TV's remote do. They reach the Fire TV through HDMI-CEC
- * (a Samsung sends them on, but keeps its Home and Guide buttons for itself), and almost no
- * Fire TV app uses them, so here each can open Home, a page of this launcher, or an app.
+ * What the buttons of a TV's remote do. They reach the Fire TV through HDMI-CEC (a Samsung
+ * sends many on, but keeps its Home and Guide buttons for itself), and almost no Fire TV app
+ * uses the coloured ones or Exit, so here each can open Home, a page of this launcher, or an
+ * app.
+ *
+ * Which buttons a TV passes on, and under which CEC code, differs from one TV and remote to
+ * the next, so any button can be added: the page waits for the next one pressed and learns its
+ * code. The four coloured buttons and Exit are always listed.
  *
  * A binding applies only to a key that came over HDMI, so the Fire TV's own remote and the
  * apps are untouched. The keys are read from the system log (HomeKeyWatcher), since Android
- * does not give HDMI-CEC keys to an accessibility service.
+ * does not give HDMI-CEC keys to an accessibility service. The log only tells us a button was
+ * pressed: it is not taken away from the system, so whatever the button already did still
+ * happens as well.
  */
 final class KeyBindings {
 
@@ -37,48 +47,113 @@ final class KeyBindings {
     static final String CHANNELS = "channels";
     static final String SETTINGS = "settings";
     static final String APP = "app:";
+    /** "channel:<id>": one of the channels of the Canali TV page (ChannelsPanel). */
+    static final String CHANNEL = "channel:";
 
-    static final int[] KEYS = {
-            KeyEvent.KEYCODE_PROG_RED, KeyEvent.KEYCODE_PROG_GREEN,
-            KeyEvent.KEYCODE_PROG_YELLOW, KeyEvent.KEYCODE_PROG_BLUE };
-    private static final String[] NAMES = { "Red", "Green", "Yellow", "Blue" };
+    /**
+     * Always listed: the four coloured buttons (CEC F2 red, F3 green, F4 yellow, F1 blue), then
+     * Exit, which a Samsung sends as the CEC code "Clear" (0x2C), five presses out of five
+     * on a Stick with a Samsung TV.
+     */
+    static final int[] DEFAULT_CODES = { 0x72, 0x73, 0x74, 0x71, 0x2C };
+    /** How many of DEFAULT_CODES are coloured buttons; the rest are listed under "Other buttons". */
+    private static final int COLOURED = 4;
 
     private KeyBindings() { }
 
-    /** The Android key of a CEC user-control code (0x71 blue, 0x72 red, 0x73 green, 0x74 yellow), or -1. */
-    static int keyForCec(int cec) {
+    /** A button that has to keep doing what it does: Select, the arrows and Exit/Back (0x0D). */
+    static boolean reserved(int cec) {
+        return cec <= 0x08 || cec == 0x0D;
+    }
+
+    static boolean isDefault(int cec) {
+        for (int i = 0; i < DEFAULT_CODES.length; i++) if (DEFAULT_CODES[i] == cec) return true;
+        return false;
+    }
+
+    /** Where a coloured button's (or Exit's) choice was kept before buttons were stored by CEC code, or -1. */
+    static int legacyKey(int cec) {
         switch (cec) {
             case 0x72: return KeyEvent.KEYCODE_PROG_RED;
             case 0x73: return KeyEvent.KEYCODE_PROG_GREEN;
             case 0x74: return KeyEvent.KEYCODE_PROG_YELLOW;
             case 0x71: return KeyEvent.KEYCODE_PROG_BLUE;
+            case 0x2C: return KeyEvent.KEYCODE_CLEAR;
             default: return -1;
         }
     }
 
-    static boolean isBindable(int keyCode) {
-        for (int i = 0; i < KEYS.length; i++) if (KEYS[i] == keyCode) return true;
-        return false;
-    }
-
-    static String nameOf(int keyCode) {
-        for (int i = 0; i < KEYS.length; i++) if (KEYS[i] == keyCode) return NAMES[i];
-        return "Key " + keyCode;
-    }
-
-    /** True when at least one coloured button has something to do. */
-    static boolean anyOn(Context c) {
-        for (int i = 0; i < KEYS.length; i++) {
-            if (!OFF.equals(Prefs.tvKey(c, KEYS[i]))) return true;
+    /** The CEC "user control" names, for the buttons a remote is likely to have. */
+    static String nameOf(Context c, int cec) {
+        if (cec >= 0x20 && cec <= 0x29) return c.getString(R.string.keys_number, cec - 0x20);
+        switch (cec) {
+            case 0x72: return c.getString(R.string.keys_red);
+            case 0x73: return c.getString(R.string.keys_green);
+            case 0x74: return c.getString(R.string.keys_yellow);
+            case 0x71: return c.getString(R.string.keys_blue);
+            case 0x75: return "F5";
+            case 0x76: return "Data";
+            case 0x2C: return "Exit";
+            case 0x09: return "Menu";
+            case 0x0A: return "Setup";
+            case 0x0B: return "Contents";
+            case 0x0C: return "Favourites";
+            case 0x10: return "Media top menu";
+            case 0x11: return "Media menu";
+            case 0x2A: return "Dot";
+            case 0x2B: return "Enter";
+            case 0x2F: return "Next favourite";
+            case 0x30: return "Channel up";
+            case 0x31: return "Channel down";
+            case 0x32: return "Previous channel";
+            case 0x33: return "Sound";
+            case 0x34: return "Source";
+            case 0x35: return "Info";
+            case 0x36: return "Help";
+            case 0x37: return "Page up";
+            case 0x38: return "Page down";
+            case 0x40: return "Power";
+            case 0x41: return "Volume up";
+            case 0x42: return "Volume down";
+            case 0x43: return "Mute";
+            case 0x44: return "Play";
+            case 0x45: return "Stop";
+            case 0x46: return "Pause";
+            case 0x47: return "Record";
+            case 0x48: return "Rewind";
+            case 0x49: return "Fast forward";
+            case 0x4A: return "Eject";
+            case 0x4B: return "Next";
+            case 0x4C: return "Previous";
+            case 0x50: return "Angle";
+            case 0x51: return "Subtitles";
+            case 0x52: return "Video on demand";
+            case 0x53: return "Guide";
+            case 0x54: return "Timer";
+            case 0x55: return "Initial configuration";
+            case 0x56: return "Broadcast type";
+            case 0x57: return "Sound presentation";
+            default: return "Button 0x" + Integer.toHexString(cec).toUpperCase(java.util.Locale.US);
         }
-        return false;
+    }
+
+    /** What a button is bound to; Red is Home until changed. */
+    static String actionFor(Context c, int cec) {
+        return Prefs.tvCec(c, cec);
     }
 
     static String label(Context c, String action) {
-        if (action == null || OFF.equals(action)) return "Off";
+        if (action == null || OFF.equals(action)) return c.getString(R.string.keys_off);
         if (HOME.equals(action)) return "Home";
         if (CHANNELS.equals(action)) return "Canali TV";
-        if (SETTINGS.equals(action)) return "Salotto settings";
+        if (SETTINGS.equals(action)) return c.getString(R.string.keys_settings);
+        if (action.startsWith(CHANNEL)) {
+            String id = action.substring(CHANNEL.length());
+            List<String[]> all = ChannelsPanel.searchable(c);
+            for (int i = 0; i < all.size(); i++) if (all.get(i)[0].equals(id)) return all.get(i)[1];
+            // Its app is gone or switched off: nothing will open until it is back.
+            return c.getString(R.string.keys_channel_gone);
+        }
         if (action.startsWith(APP)) {
             String pkg = action.substring(APP.length());
             try {
@@ -88,7 +163,7 @@ final class KeyBindings {
                 return pkg;
             }
         }
-        return "Off";
+        return c.getString(R.string.keys_off);
     }
 
     /** Do what a button is bound to. {@code svc} is for the Home action; it may be null. */
@@ -106,6 +181,11 @@ final class KeyBindings {
             try { c.startActivity(i); } catch (Throwable ignored) { }
             return;
         }
+        if (action.startsWith(CHANNEL)) {
+            // Only a channel whose app is installed and on is found, so nothing else is tried.
+            ChannelsPanel.openById(c, action.substring(CHANNEL.length()));
+            return;
+        }
         if (action.startsWith(APP)) {
             try {
                 Intent f = c.getPackageManager().getLaunchIntentForPackage(action.substring(APP.length()));
@@ -117,48 +197,109 @@ final class KeyBindings {
         }
     }
 
+    // ---------------------------------------------------------------- learning a button
+
+    /** Wants the next button pressed on the TV's remote instead of the binding doing its job. */
+    interface Learner {
+        void onKey(int cec);
+    }
+
+    private static Learner learner;     // main thread
+
+    static void setLearner(Learner l) { learner = l; }
+
+    static Learner learner() { return learner; }
+
     // ---------------------------------------------------------------- the settings pages
 
     static View build(final Context c, final SettingsPanel.Host host) {
-        final Panel p = new Panel(c, "TV remote buttons", null, Panel.SHEET);
-        p.addHeader("Coloured buttons");
-        for (int i = 0; i < KEYS.length; i++) {
-            final int key = KEYS[i];
-            p.addRow(nameOf(key), label(c, Prefs.tvKey(c, key)), new Runnable() {
-                public void run() { host.showPanel(buildChoose(c, host, key)); }
-            }).opens().setHelp("What the " + nameOf(key).toLowerCase() + " button of the TV's "
-                    + "remote does when it reaches the Fire TV over HDMI-CEC.");
+        final Panel p = new Panel(c, c.getString(R.string.sys_tv_remote), null, Panel.SHEET);
+        p.addHeader(c.getString(R.string.keys_header_coloured));
+        for (int i = 0; i < DEFAULT_CODES.length; i++) {
+            if (i == COLOURED) p.addHeader(c.getString(R.string.keys_header_other));
+            addButton(c, host, p, DEFAULT_CODES[i]);
         }
-        p.addNote("The TV must pass the button on: some keep their own Home, Guide and Info "
-                + "for themselves. A Fire TV remote's coloured buttons, and apps, are not "
-                + "affected.");
-        p.addRow("Back", "", new Runnable() {
+        List<Integer> learned = new ArrayList<Integer>(Prefs.tvCecList(c));
+        Collections.sort(learned);
+        for (int i = 0; i < learned.size(); i++) addButton(c, host, p, learned.get(i));
+        p.addRow(c.getString(R.string.keys_add), "", new Runnable() {
+            public void run() { host.showPanel(buildLearn(c, host)); }
+        }).opens().setHelp(c.getString(R.string.keys_add_help));
+        p.addNote(c.getString(R.string.keys_note));
+        p.addRow(c.getString(R.string.home_back), "", new Runnable() {
             public void run() { host.closePanel(); }
         });
         return p.root;
     }
 
-    private static View buildChoose(final Context c, final SettingsPanel.Host host, final int key) {
-        final Panel p = new Panel(c, nameOf(key) + " button", null, Panel.SHEET);
-        String cur = Prefs.tvKey(c, key);
-        addChoice(c, host, p, key, cur, OFF, "Off");
-        addChoice(c, host, p, key, cur, HOME, "Home");
-        addChoice(c, host, p, key, cur, CHANNELS, "Canali TV");
-        addChoice(c, host, p, key, cur, SETTINGS, "Salotto settings");
-        p.addRow("An app...", cur.startsWith(APP) ? label(c, cur) : "", new Runnable() {
-            public void run() { host.showPanel(buildApps(c, host, key)); }
+    private static void addButton(final Context c, final SettingsPanel.Host host, Panel p,
+            final int cec) {
+        p.addRow(nameOf(c, cec), label(c, actionFor(c, cec)), new Runnable() {
+            public void run() { host.showPanel(buildChoose(c, host, cec)); }
+        }).opens().setHelp(c.getString(R.string.keys_row_help));
+    }
+
+    /**
+     * Waits for a button on the TV's remote, then offers what it should do. What it is waiting
+     * for, and what went wrong, is written in the page below the title, not in a row.
+     */
+    private static View buildLearn(final Context c, final SettingsPanel.Host host) {
+        final Panel p = new Panel(c, c.getString(R.string.keys_learn_title), null, Panel.SHEET);
+        p.addText(c.getString(R.string.keys_learn_press));
+        final TextView status = p.addText(c.getString(R.string.keys_learn_waiting));
+        p.addText(c.getString(R.string.keys_learn_note));
+        p.addRow(c.getString(R.string.home_back), "", new Runnable() {
+            public void run() { host.closePanel(); }
+        });
+        final KeyBindings.Learner learn = new KeyBindings.Learner() {
+            public void onKey(int cec) {
+                if (reserved(cec)) {
+                    status.setText(c.getString(R.string.keys_learn_reserved, nameOf(c, cec)));
+                    return;
+                }
+                if (!isDefault(cec)) Prefs.addTvCec(c, cec);
+                // The list is built again so that it shows the new button, with its choices on top.
+                host.closePanel();
+                host.closePanel();
+                host.showPanel(build(c, host));
+                host.showPanel(buildChoose(c, host, cec));
+            }
+        };
+        p.root.addOnAttachStateChangeListener(new View.OnAttachStateChangeListener() {
+            public void onViewAttachedToWindow(View v) { setLearner(learn); }
+            public void onViewDetachedFromWindow(View v) {
+                if (learner == learn) setLearner(null);
+            }
+        });
+        return p.root;
+    }
+
+    private static View buildChoose(final Context c, final SettingsPanel.Host host, final int cec) {
+        final Panel p = new Panel(c, c.getString(R.string.keys_button_title, nameOf(c, cec)), null, Panel.SHEET);
+        String cur = actionFor(c, cec);
+        addChoice(c, host, p, cec, cur, OFF, c.getString(R.string.keys_off));
+        addChoice(c, host, p, cec, cur, HOME, "Home");
+        addChoice(c, host, p, cec, cur, CHANNELS, "Canali TV");
+        addChoice(c, host, p, cec, cur, SETTINGS, c.getString(R.string.keys_settings));
+        p.addRow(c.getString(R.string.keys_channel), cur.startsWith(CHANNEL) ? label(c, cur) : "",
+                new Runnable() {
+            public void run() { host.showPanel(buildChannels(c, host, cec)); }
         }).opens();
-        p.addRow("Back", "", new Runnable() {
+        p.addRow(c.getString(R.string.keys_app), cur.startsWith(APP) ? label(c, cur) : "",
+                new Runnable() {
+            public void run() { host.showPanel(buildApps(c, host, cec)); }
+        }).opens();
+        p.addRow(c.getString(R.string.home_back), "", new Runnable() {
             public void run() { host.closePanel(); }
         });
         return p.root;
     }
 
     private static void addChoice(final Context c, final SettingsPanel.Host host, Panel p,
-            final int key, String cur, final String action, String title) {
-        p.addRow(title, action.equals(cur) ? "in use" : "", new Runnable() {
+            final int cec, String cur, final String action, String title) {
+        p.addRow(title, action.equals(cur) ? c.getString(R.string.keys_in_use) : "", new Runnable() {
             public void run() {
-                set(c, key, action);
+                set(c, cec, action);
                 host.closePanel();
                 host.closePanel();
                 host.showPanel(build(c, host));
@@ -166,17 +307,17 @@ final class KeyBindings {
         });
     }
 
-    private static View buildApps(final Context c, final SettingsPanel.Host host, final int key) {
-        final Panel p = new Panel(c, nameOf(key) + ": an app", null, Panel.SHEET);
+    private static View buildApps(final Context c, final SettingsPanel.Host host, final int cec) {
+        final Panel p = new Panel(c, c.getString(R.string.keys_app_title, nameOf(c, cec)), null, Panel.SHEET);
         List<AppModel.Item> all = AppModel.allItems();
-        String cur = Prefs.tvKey(c, key);
+        String cur = actionFor(c, cec);
         for (int i = 0; i < all.size(); i++) {
             final AppModel.Item it = all.get(i);
             if (it.type != AppModel.TYPE_APP || it.pkg == null) continue;
             final String action = APP + it.pkg;
-            p.addRow(it.label, action.equals(cur) ? "in use" : "", new Runnable() {
+            p.addRow(it.label, action.equals(cur) ? c.getString(R.string.keys_in_use) : "", new Runnable() {
                 public void run() {
-                    set(c, key, action);
+                    set(c, cec, action);
                     host.closePanel();
                     host.closePanel();
                     host.closePanel();
@@ -184,13 +325,49 @@ final class KeyBindings {
                 }
             });
         }
-        p.addRow("Back", "", new Runnable() {
+        p.addRow(c.getString(R.string.home_back), "", new Runnable() {
             public void run() { host.closePanel(); }
         });
         return p.root;
     }
 
-    private static void set(Context c, int key, String action) {
-        Prefs.setTvKey(c, key, action);
+    /**
+     * The channels of the Canali TV page, under the name of their tab. Only those whose app is
+     * installed and on are listed (ChannelsPanel.searchable), so a button is never bound to a
+     * channel that cannot open.
+     */
+    private static View buildChannels(final Context c, final SettingsPanel.Host host, final int cec) {
+        final Panel p = new Panel(c, c.getString(R.string.keys_channel_title, nameOf(c, cec)),
+                null, Panel.SHEET);
+        List<String[]> all = ChannelsPanel.searchable(c);
+        String cur = actionFor(c, cec);
+        String group = null;
+        for (int i = 0; i < all.size(); i++) {
+            String[] ch = all.get(i);
+            if (!ch[2].equals(group)) {
+                group = ch[2];
+                p.addHeader(group);
+            }
+            final String action = CHANNEL + ch[0];
+            p.addRow(ch[1], action.equals(cur) ? c.getString(R.string.keys_in_use) : "", new Runnable() {
+                public void run() {
+                    set(c, cec, action);
+                    host.closePanel();
+                    host.closePanel();
+                    host.closePanel();
+                    host.showPanel(build(c, host));
+                }
+            });
+        }
+        p.addRow(c.getString(R.string.home_back), "", new Runnable() {
+            public void run() { host.closePanel(); }
+        });
+        return p.root;
+    }
+
+    /** Off on a button that was added takes it off the list again; the always-listed stay. */
+    private static void set(Context c, int cec, String action) {
+        Prefs.setTvCec(c, cec, action);
+        if (OFF.equals(action) && !isDefault(cec)) Prefs.removeTvCec(c, cec);
     }
 }

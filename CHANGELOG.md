@@ -3,6 +3,15 @@
 This fork keeps the original's version numbers and adds a fourth digit or a new minor. The
 original's history (up to 1.6.14) is in the git log below the fork's first commit.
 
+## 1.8.1
+
+- **Any button of the TV's remote can be given a job**, not only the four coloured ones: Exit
+  is listed (a Samsung sends it as CEC "Clear"), and *Add a button* waits for the next button
+  pressed on the remote and learns it, so it works with whatever TV and remote there are.
+  Arrows, OK and Back keep their place. Which buttons reach the Fire TV is up to the TV.
+- A button can also open **a channel** of Canali TV (Rai 1, Canale 5 and the others), listed
+  only while its app is installed and on. The page is in Italian too.
+
 ## 1.8.0
 
 Search, and a phone that controls the TV.

@@ -261,16 +261,18 @@ public class HomeRedirectService extends AccessibilityService {
 
     /** A button of the TV's remote reached us over HDMI-CEC; do what it is bound to. */
     private void onTvKey(int cec) {
-        int key = KeyBindings.keyForCec(cec);
-        if (key < 0) return;
         // A held button repeats its press every half second or so: act once.
         long now = SystemClock.elapsedRealtime();
         if (cec == lastTvKey && now - lastTvKeyAt < 900L) { lastTvKeyAt = now; return; }
         lastTvKey = cec;
         lastTvKeyAt = now;
-        String action = Prefs.tvKey(this, key);
+        // The "Add a button" page is waiting for one: it gets this press, and nothing runs.
+        KeyBindings.Learner learner = KeyBindings.learner();
+        if (learner != null) { learner.onKey(cec); return; }
+        if (KeyBindings.reserved(cec)) return;
+        String action = KeyBindings.actionFor(this, cec);
         if (KeyBindings.OFF.equals(action)) return;
-        Log.i(TAG, "TV remote " + KeyBindings.nameOf(key) + " -> " + action);
+        Log.i(TAG, "TV remote " + KeyBindings.nameOf(this, cec) + " -> " + action);
         KeyBindings.run(this, this, action);
     }
 

@@ -117,4 +117,31 @@
   <string name="update_up_to_date">aggiornato</string>
   <string name="update_none_yet">nessuna versione pubblicata</string>
   <string name="update_unavailable">non disponibile</string>
+
+  <!-- KeyBindings: la pagina dei tasti del telecomando TV. -->
+  <string name="keys_header_coloured">Tasti colorati</string>
+  <string name="keys_header_other">Altri tasti</string>
+  <string name="keys_add">Aggiungi un tasto...</string>
+  <string name="keys_add_help">Premi il tasto del telecomando della TV a cui vuoi dare un compito.</string>
+  <string name="keys_note">La TV deve passare il tasto alla Fire TV: alcune tengono per sé Home, Guida e Info, e quali dipende dalla TV. L\'Exit di un Samsung arriva alla Fire TV come \"Clear\". Il tasto continua anche a fare quello che faceva. I tasti del telecomando Fire TV e le app non sono toccati.</string>
+  <string name="keys_row_help">Cosa fa questo tasto del telecomando della TV quando arriva alla Fire TV via HDMI-CEC.</string>
+  <string name="keys_learn_title">Aggiungi un tasto</string>
+  <string name="keys_learn_press">Premi ora un tasto del telecomando della TV.</string>
+  <string name="keys_learn_waiting">In attesa di un tasto...</string>
+  <string name="keys_learn_reserved">%1$s serve per muoversi e non si può usare. Premine un altro.</string>
+  <string name="keys_learn_note">Frecce, OK e Indietro restano al loro posto e non si possono assegnare. Se non succede nulla, la TV non passa quel tasto.</string>
+  <string name="keys_button_title">Tasto %1$s</string>
+  <string name="keys_off">Nessuna azione</string>
+  <string name="keys_settings">Personalizzazione</string>
+  <string name="keys_in_use">in uso</string>
+  <string name="keys_app">Un\'app...</string>
+  <string name="keys_app_title">%1$s: un\'app</string>
+  <string name="keys_channel">Un canale...</string>
+  <string name="keys_channel_title">%1$s: un canale</string>
+  <string name="keys_channel_gone">Canale non disponibile</string>
+  <string name="keys_red">Rosso</string>
+  <string name="keys_green">Verde</string>
+  <string name="keys_yellow">Giallo</string>
+  <string name="keys_blue">Blu</string>
+  <string name="keys_number">Numero %1$d</string>
 </resources>

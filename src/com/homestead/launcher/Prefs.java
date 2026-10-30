@@ -265,13 +265,41 @@ public final class Prefs {
     public static int idleMinutes(Context c) { return sp(c).getInt(K_IDLE, 5); }
     public static void setIdleMinutes(Context c, int v) { sp(c).edit().putInt(K_IDLE, v).apply(); }
 
-    /** What a coloured button of a TV remote does (KeyBindings); Red is Home until changed. */
-    public static String tvKey(Context c, int keyCode) {
-        String def = keyCode == android.view.KeyEvent.KEYCODE_PROG_RED ? "home" : "off";
-        return sp(c).getString("tvkey_" + keyCode, def);
+    /**
+     * What a button of a TV remote does (KeyBindings), by its HDMI-CEC code; Red is Home until
+     * changed. The four coloured buttons were once kept by Android key code: that is still read
+     * where the new key has no value.
+     */
+    public static String tvCec(Context c, int cec) {
+        String v = sp(c).getString("tvcec_" + cec, null);
+        if (v != null) return v;
+        int old = KeyBindings.legacyKey(cec);
+        if (old >= 0) return sp(c).getString("tvkey_" + old, cec == 0x72 ? "home" : "off");
+        return "off";
     }
-    public static void setTvKey(Context c, int keyCode, String action) {
-        sp(c).edit().putString("tvkey_" + keyCode, action).apply();
+    public static void setTvCec(Context c, int cec, String action) {
+        sp(c).edit().putString("tvcec_" + cec, action).apply();
+    }
+
+    /** The buttons added by pressing them (KeyBindings), as CEC codes. */
+    public static java.util.List<Integer> tvCecList(Context c) {
+        java.util.List<Integer> out = new java.util.ArrayList<Integer>();
+        for (String s : sp(c).getStringSet("tvcec_list", new java.util.HashSet<String>())) {
+            try { out.add(Integer.parseInt(s)); } catch (NumberFormatException ignored) { }
+        }
+        return out;
+    }
+    public static void addTvCec(Context c, int cec) {
+        Set<String> s = new java.util.HashSet<String>(
+                sp(c).getStringSet("tvcec_list", new java.util.HashSet<String>()));
+        s.add(String.valueOf(cec));
+        sp(c).edit().putStringSet("tvcec_list", s).apply();
+    }
+    public static void removeTvCec(Context c, int cec) {
+        Set<String> s = new java.util.HashSet<String>(
+                sp(c).getStringSet("tvcec_list", new java.util.HashSet<String>()));
+        s.remove(String.valueOf(cec));
+        sp(c).edit().putStringSet("tvcec_list", s).apply();
     }
 
     public static boolean restoreWatch(Context c) { return sp(c).getBoolean(K_RESTORE_WATCH, false); }

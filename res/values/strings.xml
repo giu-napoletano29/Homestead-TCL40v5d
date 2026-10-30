@@ -117,4 +117,31 @@
   <string name="update_up_to_date">up to date</string>
   <string name="update_none_yet">no release published yet</string>
   <string name="update_unavailable">unavailable</string>
+
+  <!-- KeyBindings: the TV remote buttons page. -->
+  <string name="keys_header_coloured">Coloured buttons</string>
+  <string name="keys_header_other">Other buttons</string>
+  <string name="keys_add">Add a button...</string>
+  <string name="keys_add_help">Press the button on the TV\'s remote that you want to give a job.</string>
+  <string name="keys_note">The TV must pass the button on: some keep their own Home, Guide and Info for themselves, and which ones differs from one TV to the next. A Samsung\'s Exit reaches the Fire TV as \"Clear\". The button also keeps doing what it did. A Fire TV remote\'s buttons, and apps, are not affected.</string>
+  <string name="keys_row_help">What this button of the TV\'s remote does when it reaches the Fire TV over HDMI-CEC.</string>
+  <string name="keys_learn_title">Add a button</string>
+  <string name="keys_learn_press">Press a button on the TV\'s remote now.</string>
+  <string name="keys_learn_waiting">Waiting for a button...</string>
+  <string name="keys_learn_reserved">%1$s is for moving around and cannot be used. Press another one.</string>
+  <string name="keys_learn_note">Arrows, OK and Back keep their place and cannot be given a job. If nothing happens, the TV does not pass that button on.</string>
+  <string name="keys_button_title">%1$s button</string>
+  <string name="keys_off">Off</string>
+  <string name="keys_settings">Salotto settings</string>
+  <string name="keys_in_use">in use</string>
+  <string name="keys_app">An app...</string>
+  <string name="keys_app_title">%1$s: an app</string>
+  <string name="keys_channel">A channel...</string>
+  <string name="keys_channel_title">%1$s: a channel</string>
+  <string name="keys_channel_gone">Channel not available</string>
+  <string name="keys_red">Red</string>
+  <string name="keys_green">Green</string>
+  <string name="keys_yellow">Yellow</string>
+  <string name="keys_blue">Blue</string>
+  <string name="keys_number">Number %1$d</string>
 </resources>
