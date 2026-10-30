@@ -97,7 +97,7 @@ final class RemoteSettings {
         JSONArray behaviour = new JSONArray();
         JSONArray idle = new JSONArray();
         for (int i = 0; i < Prefs.IDLE_CHOICES.length; i++) {
-            idle.put(opt(String.valueOf(Prefs.IDLE_CHOICES[i]), SettingsPanel.idleLabel(Prefs.IDLE_CHOICES[i])));
+            idle.put(opt(String.valueOf(Prefs.IDLE_CHOICES[i]), SettingsPanel.idleLabel(c, Prefs.IDLE_CHOICES[i])));
         }
         behaviour.put(choice("idle", "Idle clock", String.valueOf(Prefs.idleMinutes(c)), idle, null));
         groups.put(group("Behaviour", behaviour));

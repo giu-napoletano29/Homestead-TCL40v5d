@@ -132,7 +132,7 @@ public class HdmiActivity extends Activity {
                     settled = true;
                     handler.removeCallbacks(timeout);
                     status.setVisibility(View.VISIBLE);
-                    status.setText("No signal on this input");
+                    status.setText(HdmiActivity.this.getString(R.string.hd_no_signal));
                 }
             }
         });
@@ -155,7 +155,7 @@ public class HdmiActivity extends Activity {
 
         settled = false;
         status.setVisibility(View.VISIBLE);
-        status.setText((label == null ? "Input" : label) + " — connecting…");
+        status.setText((label == null ? HdmiActivity.this.getString(R.string.hd_input) : label) + " — connecting…");
 
         // Without a volume the TV's input service (MediaTek's, on Fire OS 7) plays the input at
         // volume 0: TvView only sends one once it has been set.
@@ -181,7 +181,7 @@ public class HdmiActivity extends Activity {
             Log.w(TAG, "fallback: Amazon's launcher is off, no Inputs screen");
             if (status != null) {
                 status.setVisibility(View.VISIBLE);
-                status.setText("This input could not be opened");
+                status.setText(HdmiActivity.this.getString(R.string.hd_failed));
             }
             handler.postDelayed(new Runnable() {
                 public void run() { finish(); }

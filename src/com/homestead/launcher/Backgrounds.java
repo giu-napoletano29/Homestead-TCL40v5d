@@ -58,6 +58,12 @@ final class Backgrounds {
         final float[][] glows;
         /** Two soft diagonal light bands across the screen, on top of the glows. */
         final boolean bands;
+        /** The name in the TV's language; {@code name} is the English default. */
+        String name(Context c) {
+            int res = c.getResources().getIdentifier("bg_" + id, "string", c.getPackageName());
+            return res != 0 ? c.getString(res) : name;
+        }
+
         Preset(String id, String name, int from, int to, int text, int ring, int outline) {
             this(id, name, from, to, text, ring, outline, false);
         }
@@ -282,8 +288,9 @@ final class Backgrounds {
     static String label(Context c) {
         Art art = artFor(currentId(c));
         if (art != null) return art.name;
-        if (!photoChosen(c)) return current(c).name;
-        return photoFile(c) != null ? "Photo" : "Photo (no file yet)";
+        if (!photoChosen(c)) return current(c).name(c);
+        return photoFile(c) != null ? c.getString(R.string.bg_photo)
+                : c.getString(R.string.bg_photo_nofile);
     }
 
     static int dimAlpha(Context c) {
@@ -293,7 +300,11 @@ final class Backgrounds {
 
     static String dimLabel(Context c) {
         int d = Prefs.photoDim(c);
-        return DIM_NAMES[(d < 0 || d >= DIM.length) ? 1 : d];
+        switch ((d < 0 || d >= DIM.length) ? 1 : d) {
+            case 0: return c.getString(R.string.bg_dim_off);
+            case 2: return c.getString(R.string.bg_dim_dark);
+            default: return c.getString(R.string.bg_dim_light);
+        }
     }
 
     /**

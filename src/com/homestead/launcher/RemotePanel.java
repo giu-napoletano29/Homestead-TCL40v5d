@@ -27,24 +27,19 @@ final class RemotePanel {
     static View build(final Context c, final SettingsPanel.Host host, final Runnable changed) {
         final Panel p = new Panel(c, c.getString(R.string.remote_title), null, Panel.SHEET);
 
-        final Panel.Row on = p.addRow(c.getString(R.string.remote_title), label(Prefs.remoteOn(c)), null)
+        final Panel.Row on = p.addRow(c.getString(R.string.remote_title), label(c, Prefs.remoteOn(c)), null)
                 .asSwitch();
-        on.setHelp("A phone on the same Wi-Fi can search the apps and channels, press the remote's "
-                + "buttons and change the main settings. While this is on, Salotto listens on a "
-                + "port of this TV for the phone; turn it off and it stops listening.");
+        on.setHelp(c.getString(R.string.rp_help_switch));
         final Panel.Row address = p.addRow(c.getString(R.string.remote_address), "", null);
-        address.setHelp("The page the phone opens. Pairing puts it in the QR code, so there is "
-                + "nothing to type.");
+        address.setHelp(c.getString(R.string.rp_help_address));
         final Panel.Row pair = p.addRow(c.getString(R.string.remote_pair), "", null).opens();
-        pair.setHelp("Shows a QR code to scan with the phone's camera. The code changes every "
-                + "minute and works once, and pairing is open only while that screen is.");
+        pair.setHelp(c.getString(R.string.rp_help_pair));
         final Panel.Row session = p.addRow(c.getString(R.string.remote_session), "", null);
-        session.setHelp("How long a phone stays signed in after pairing. When it ends, the phone "
-                + "pairs again. It applies to phones that pair from now on.");
+        session.setHelp(c.getString(R.string.rp_help_session));
         final Panel.Row phones = p.addRow(c.getString(R.string.remote_phones), "", null);
-        phones.setHelp("How many phones are signed in now.");
+        phones.setHelp(c.getString(R.string.rp_help_phones));
         final Panel.Row out = p.addRow(c.getString(R.string.remote_sign_out), "", null);
-        out.setHelp("Signs every phone out. They need to pair again.");
+        out.setHelp(c.getString(R.string.rp_help_signout));
 
         final Runnable refresh = new Runnable() {
             public void run() {
@@ -54,7 +49,7 @@ final class RemotePanel {
                 pair.cell.setEnabled(enabled);
                 phones.cell.setEnabled(enabled);
                 out.cell.setEnabled(enabled);
-                on.setValue(label(enabled));
+                on.setValue(label(c, enabled));
                 String a = enabled ? RemoteServer.address() : null;
                 address.setValue(!enabled ? "" : a != null ? a : c.getString(R.string.remote_no_network));
                 pair.setValue("");
@@ -106,7 +101,7 @@ final class RemotePanel {
         return p.root;
     }
 
-    private static String label(boolean on) { return on ? "On" : "Off"; }
+    private static String label(Context c, boolean on) { return SettingsPanel.onOff(c, on); }
 
     static String sessionLabel(Context c, int days) {
         return days <= 0 ? c.getString(R.string.remote_session_never)

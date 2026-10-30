@@ -1468,37 +1468,35 @@ public class HomeGrid implements SettingsPanel.Host {
         final AppModel.Item target = focusedItem();
         if (target == null || fixedTile(target) || !panels.isEmpty()) return false;
         final Panel p = new Panel(ctx, target.label, null, Panel.SHEET);
-        p.addRow("Hide from the home screen", "", new Runnable() {
+        p.addRow(ctx.getString(R.string.hg_hide), "", new Runnable() {
             public void run() {
                 closePanel();
                 hideItem(target);
             }
-        }).setHelp("The tile goes away; bring it back in Settings > Home screen > Hidden tiles.");
+        }).setHelp(ctx.getString(R.string.hg_hide_help));
         if (target.type == AppModel.TYPE_APP && target.pkg != null) {
-            p.addRow("App info", "", new Runnable() {
+            p.addRow(ctx.getString(R.string.hg_app_info), "", new Runnable() {
                 public void run() {
                     closePanel();
                     logOpen("App info " + target.label);
                     Intent i = new Intent("android.settings.APPLICATION_DETAILS_SETTINGS",
                             Uri.parse("package:" + target.pkg));
                     if (!SetupPanel.start(ctx, i)) {
-                        Toast.makeText(ctx, "No info page for " + target.label,
+                        Toast.makeText(ctx, ctx.getString(R.string.hg_no_info, target.label),
                                 Toast.LENGTH_SHORT).show();
                     }
                 }
-            }).setHelp("Opens the system page for " + target.label + ": clear its cache or "
-                    + "data, force it to stop, check its permissions.");
+            }).setHelp(ctx.getString(R.string.hg_info_help, target.label));
         }
         if (removable(target)) {
-            p.addRow("Uninstall", "", new Runnable() {
+            p.addRow(ctx.getString(R.string.hg_uninstall), "", new Runnable() {
                 public void run() {
                     closePanel();
                     uninstall(target);
                 }
-            }).setHelp("Asks the system to remove " + target.label + " from this TV. The system "
-                    + "asks you to confirm first.");
+            }).setHelp(ctx.getString(R.string.hg_uninstall_help, target.label));
         }
-        p.addRow("Cancel", "", new Runnable() {
+        p.addRow(ctx.getString(R.string.ui_cancel), "", new Runnable() {
             public void run() { closePanel(); }
         });
         showPanel(p.root);
@@ -1509,7 +1507,7 @@ public class HomeGrid implements SettingsPanel.Host {
         logOpen("Uninstall " + t.label);
         Intent i = new Intent(Intent.ACTION_DELETE, Uri.parse("package:" + t.pkg));
         if (!SetupPanel.start(ctx, i)) {
-            Toast.makeText(ctx, t.label + " cannot be uninstalled from here", Toast.LENGTH_SHORT).show();
+            Toast.makeText(ctx, ctx.getString(R.string.hg_no_uninstall, t.label), Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -1527,7 +1525,7 @@ public class HomeGrid implements SettingsPanel.Host {
     private void hideItem(AppModel.Item target) {
         Prefs.setHidden(ctx, target.key(), true);
         try {
-            Toast.makeText(ctx, target.label + " hidden - restore it in Settings",
+            Toast.makeText(ctx, ctx.getString(R.string.hg_hidden_toast, target.label),
                     Toast.LENGTH_SHORT).show();
         } catch (Throwable t) { }
         layoutGen++;
@@ -1906,7 +1904,7 @@ public class HomeGrid implements SettingsPanel.Host {
         List<String> pkgs = AppModel.reverted(ctx);
         TextView hint = new TextView(ctx);
         hint.setText(ctx.getString(pkgs.size() == 1 ? R.string.home_restore_hint_one
-                : R.string.home_restore_hint_many, revertedNames(pkgs)));
+                : R.string.home_restore_hint_many, revertedNames(ctx, pkgs)));
         hint.setTextColor(0xE6FFFFFF);
         hint.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
         hint.setMaxLines(2);
@@ -2042,15 +2040,15 @@ public class HomeGrid implements SettingsPanel.Host {
 
     /** The reverted packages by name, short enough for the tile: "A", "A and B",
      *  "A, B and C", or "A, B and 4 more". */
-    private static String revertedNames(List<String> pkgs) {
+    private static String revertedNames(Context c, List<String> pkgs) {
         int n = pkgs.size();
         if (n == 0) return "";
-        String a = Debloat.titleOf(pkgs.get(0));
+        String a = Debloat.titleOf(c, pkgs.get(0));
         if (n == 1) return a;
-        String b = Debloat.titleOf(pkgs.get(1));
-        if (n == 2) return a + " and " + b;
-        if (n == 3) return a + ", " + b + " and " + Debloat.titleOf(pkgs.get(2));
-        return a + ", " + b + " and " + (n - 2) + " more";
+        String b = Debloat.titleOf(c, pkgs.get(1));
+        if (n == 2) return c.getString(R.string.hg_and2, a, b);
+        if (n == 3) return c.getString(R.string.hg_and3, a, b, Debloat.titleOf(c, pkgs.get(2)));
+        return c.getString(R.string.hg_and_more, a, b, n - 2);
     }
 
     /** Switch off again whatever the system switched back on; open Setup if there is no link. */
@@ -2080,7 +2078,7 @@ public class HomeGrid implements SettingsPanel.Host {
                     Prefs.noteDisabled(ctx, list[i], off);
                     if (!off) {
                         if (kept.length() > 0) kept.append(", ");
-                        kept.append(Debloat.titleOf(list[i]));
+                        kept.append(Debloat.titleOf(ctx, list[i]));
                     }
                 }
                 // Fire OS refuses some packages; the record is dropped so the tile does not

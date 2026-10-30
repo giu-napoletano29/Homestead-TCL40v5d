@@ -35,17 +35,17 @@ public final class UpdatePanel {
     public static View build(final Context c, final SettingsPanel.Host host,
                              final UpdateChecker.Update u) {
         String installed = UpdateChecker.installedVersionName(c);
-        final Panel p = new Panel(c, "Update available",
+        final Panel p = new Panel(c, c.getString(R.string.up_title),
                 "Salotto " + installed + "  →  " + u.versionName);
 
         String notes = u.notes != null ? u.notes.trim() : "";
-        if (notes.length() == 0) notes = "See the release page for details.";
+        if (notes.length() == 0) notes = c.getString(R.string.up_see_page);
         if (notes.length() > 1200) notes = notes.substring(0, 1200) + "…";
 
         // Install first so it is in view with focus; the release notes follow it.
-        p.addHeader("Install");
-        final Panel.Row status = p.addStatus("Status");
-        status.setValue("ready");
+        p.addHeader(c.getString(R.string.up_install_header));
+        final Panel.Row status = p.addStatus(c.getString(R.string.ui_status));
+        status.setValue(c.getString(R.string.up_ready));
         status.cell.setFocusable(false);
         status.setValueColor(MUTE);
         final TextView message = p.addNote("");
@@ -64,23 +64,22 @@ public final class UpdatePanel {
                 if (!leftWindow[0]) return;
                 inInstaller[0] = false;
                 running[0] = false;
-                status.setValue("not installed");
+                status.setValue(c.getString(R.string.up_not_installed));
                 status.setValueColor(AMBER);
-                show(message, "The installer closed without installing the update. Select "
-                        + "Install now to try again.");
+                show(message, c.getString(R.string.up_closed));
             }
         });
 
-        final Panel.Row install = p.addRow("Install now", "", new Runnable() {
+        final Panel.Row install = p.addRow(c.getString(R.string.up_install_now), "", new Runnable() {
             public void run() {
                 if (running[0]) return;
                 running[0] = true;
                 message.setVisibility(View.GONE);
-                status.setValue("starting…");
+                status.setValue(c.getString(R.string.up_starting));
                 status.setValueColor(AMBER);
                 UpdateInstaller.downloadAndInstall(c, u, new UpdateInstaller.Progress() {
                     public void onProgress(int pct) {
-                        status.setValue(pct < 0 ? "downloading…" : "downloading " + pct + "%");
+                        status.setValue(pct < 0 ? c.getString(R.string.up_downloading) : c.getString(R.string.up_downloading_pct, pct));
                         status.setValueColor(AMBER);
                     }
                     public void onStatus(String s) {
@@ -90,24 +89,19 @@ public final class UpdatePanel {
                     public void onInstallerOpened() {
                         inInstaller[0] = true;
                         leftWindow[0] = false;
-                        status.setValue("in the installer");
+                        status.setValue(c.getString(R.string.up_in_installer));
                         status.setValueColor(AMBER);
                     }
                     public void onNotAllowed() {
                         running[0] = false;
-                        status.setValue("needs permission");
+                        status.setValue(c.getString(R.string.up_needs_permission));
                         status.setValueColor(AMBER);
-                        show(message, "Fire OS has to allow Salotto to install apps first. "
-                                + "In the TV's own Settings, open Device & Software (My Fire TV "
-                                + "on some models), then Developer options, then Install "
-                                + "unknown apps, and switch Salotto on. Come back here and "
-                                + "select Install now again. With the on-device tunnel set up, "
-                                + "updates install without this.");
+                        show(message, c.getString(R.string.up_permission_help));
                     }
                     public void onDone(boolean ok, String text) {
                         running[0] = false;
                         inInstaller[0] = false;
-                        status.setValue(ok ? "done" : "failed");
+                        status.setValue(ok ? c.getString(R.string.st_done) : c.getString(R.string.up_failed));
                         status.setValueColor(ok ? OK : BAD);
                         show(message, text);
                     }
@@ -115,22 +109,20 @@ public final class UpdatePanel {
             }
         });
 
-        p.addRow("Later", "", new Runnable() {
+        p.addRow(c.getString(R.string.ui_later), "", new Runnable() {
             public void run() { host.closePanel(); }
         });
 
-        p.addRow("Skip this version", "", new Runnable() {
+        p.addRow(c.getString(R.string.up_skip), "", new Runnable() {
             public void run() {
                 Prefs.setSkippedVersion(c, u.versionName);
                 host.closePanel();
             }
         });
 
-        p.addSectionHelp("Updates install through the on-device tunnel with no prompts when "
-                + "it is set up. Without it, the system installer opens to confirm. Salotto "
-                + "only installs an update signed with the same key as the copy you have now.");
+        p.addSectionHelp(c.getString(R.string.up_help));
 
-        p.addHeader("What's new");
+        p.addHeader(c.getString(R.string.up_whats_new));
         p.addText(notes);
 
         final View first = install.cell;

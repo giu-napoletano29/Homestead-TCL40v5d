@@ -3,6 +3,17 @@
 This fork keeps the original's version numbers and adds a fourth digit or a new minor. The
 original's history (up to 1.6.14) is in the git log below the fork's first commit.
 
+## 1.8.2
+
+Everything in Italian.
+
+- Every page of the app is now translated into Italian: the settings, System settings, Screen
+  and sound, TV Health, Debloat (with the description of each package), Setup, the first-run
+  steps, the update pages and the Canali TV page.
+- English stays the default: a TV set to any language other than Italian shows English
+  throughout.
+- The phone's remote page still follows the phone's language, not the TV's.
+
 ## 1.8.1
 
 - **Any button of the TV's remote can be given a job**, not only the four coloured ones: Exit

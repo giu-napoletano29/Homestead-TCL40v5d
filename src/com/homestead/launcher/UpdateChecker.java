@@ -114,15 +114,15 @@ public final class UpdateChecker {
                     if (code == 404 || code == 401) {
                         err = NO_RELEASE;
                     } else if (code == 403) {
-                        err = "GitHub rate limit reached. Try again later.";
+                        err = c.getString(R.string.uc_rate_limit);
                     } else if (code != 200) {
-                        err = "GitHub returned HTTP " + code + ".";
+                        err = app.getString(R.string.uc_http, code);
                     } else {
                         u = parse(app, read(conn.getInputStream()));
                     }
                 } catch (Throwable t) {
                     Log.w(TAG, "update check failed: " + t);
-                    err = friendly(t);
+                    err = friendly(app, t);
                 } finally {
                     if (conn != null) try { conn.disconnect(); } catch (Throwable ignored) { }
                 }
@@ -220,11 +220,11 @@ public final class UpdateChecker {
         return sb.toString();
     }
 
-    private static String friendly(Throwable t) {
+    private static String friendly(Context c, Throwable t) {
         String m = String.valueOf(t.getMessage());
         if (t instanceof java.net.UnknownHostException) return "No internet connection.";
-        if (t instanceof java.net.SocketTimeoutException) return "The update check timed out.";
-        return "Update check failed: " + m;
+        if (t instanceof java.net.SocketTimeoutException) return c.getString(R.string.uc_timeout);
+        return c.getString(R.string.uc_failed, m);
     }
 
     private static void post(final Callback cb, final Update u, final String err) {

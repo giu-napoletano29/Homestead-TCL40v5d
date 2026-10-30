@@ -217,7 +217,7 @@ final class ChannelsPanel {
         List<Entry> list = available(c);
         for (int i = 0; i < list.size(); i++) {
             Entry e = list.get(i);
-            out.add(new String[]{ e.id, e.name, tabName(e.group) });
+            out.add(new String[]{ e.id, e.name, tabName(c, e.group) });
         }
         return out;
     }
@@ -275,7 +275,7 @@ final class ChannelsPanel {
         title.setTypeface(Fonts.get(c, Fonts.MEDIUM));
         page.addView(title);
         TextView sub = new TextView(c);
-        sub.setText("Le dirette delle app installate. Premi OK su un canale per guardarlo.");
+        sub.setText(c.getString(R.string.ch_sub));
         sub.setTextColor(0xFF9BB0C6);
         sub.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
         LinearLayout.LayoutParams slp = new LinearLayout.LayoutParams(
@@ -334,8 +334,8 @@ final class ChannelsPanel {
     }
 
     /** What a tab strip entry says for a group. */
-    private static String tabName(String group) {
-        return G_OTHER.equals(group) ? "Altre app" : group;
+    private static String tabName(Context c, String group) {
+        return G_OTHER.equals(group) ? c.getString(R.string.ch_other_tab) : group;
     }
 
     /** The tab strip and the cards of the tab showing; switching rebuilds only the cards. */
@@ -363,7 +363,7 @@ final class ChannelsPanel {
             chip.setFocusable(true);
             chip.setFocusableInTouchMode(true);
             TextView t = new TextView(c);
-            t.setText(tabName(groups.get(idx)));
+            t.setText(tabName(c, groups.get(idx)));
             t.setTextSize(TypedValue.COMPLEX_UNIT_SP, 17);
             t.setTypeface(Fonts.get(c, Fonts.MEDIUM));
             t.setPadding(AppModel.dp(c, 18), AppModel.dp(c, 8), AppModel.dp(c, 18), AppModel.dp(c, 8));
@@ -441,9 +441,7 @@ final class ChannelsPanel {
             }
 
             TextView note = new TextView(c);
-            note.setText("Logo ufficiali: copia i PNG (rai1.png, raimovie.png...) in "
-                    + "Android/data/com.homestead.launcher/files/logos/. I canali Mediaset si "
-                    + "aprono direttamente in Mediaset Infinity.");
+            note.setText(c.getString(R.string.ch_logos_note));
             note.setTextColor(0xFF74889C);
             note.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
             LinearLayout.LayoutParams nlp = new LinearLayout.LayoutParams(
@@ -675,6 +673,6 @@ final class ChannelsPanel {
                 return;
             }
         } catch (Throwable ignored) { }
-        Toast.makeText(c, e.name + " non si apre", Toast.LENGTH_SHORT).show();
+        Toast.makeText(c, c.getString(R.string.ch_no_open, e.name), Toast.LENGTH_SHORT).show();
     }
 }

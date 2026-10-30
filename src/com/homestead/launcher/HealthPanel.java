@@ -57,66 +57,65 @@ public final class HealthPanel {
     public static View build(final Context c, final SettingsPanel.Host host) {
         AdbBridge.init(c);
         final boolean writable = canApply(c);
-        final Panel p = new Panel(c, "TV Health",
-                writable ? "Detected state - fixes can be applied here"
-                         : "Detected state - read-only until Setup is finished");
+        final Panel p = new Panel(c, c.getString(R.string.home_tv_health),
+                writable ? c.getString(R.string.hp_sub_rw)
+                         : c.getString(R.string.hp_sub_ro));
 
         // ---------------------------------------------------------- launcher itself
         p.addHeader("Salotto");
 
         boolean svc = SetupPanel.serviceEnabled(c);
-        Panel.Row r1 = p.addRow("Home-button redirect", svc ? "active" : "NOT ACTIVE", null);
+        Panel.Row r1 = p.addRow(c.getString(R.string.cmd_home_redirect), svc ? c.getString(R.string.hp_active) : c.getString(R.string.hp_not_active), null);
         r1.setValueColor(svc ? OK : BAD);
 
         String ovlType = HomeRedirectService.overlayTypeLabel();
-        Panel.Row r2 = p.addRow("Instant home screen",
-                ovlType == null ? (svc ? "ready" : "waiting") : ovlType, null);
+        Panel.Row r2 = p.addRow(c.getString(R.string.hp_instant),
+                ovlType == null ? (svc ? c.getString(R.string.up_ready) : c.getString(R.string.hp_waiting)) : ovlType, null);
         r2.setValueColor(ovlType == null ? (svc ? OK : WARN)
                 : (HomeRedirectService.overlayIsFree() ? OK : WARN));
 
-        Panel.Row r3 = p.addRow("App ordering",
-                UsageTracker.size(c) + " apps tracked", null);
+        Panel.Row r3 = p.addRow(c.getString(R.string.hp_ordering),
+                c.getString(R.string.hp_tracked, UsageTracker.size(c)), null);
         r3.setValueColor(OK);
 
-        Panel.Row r4 = p.addRow("Configure this TV", AdbBridge.statusLabel(c), null);
+        Panel.Row r4 = p.addRow(c.getString(R.string.hp_configure), AdbBridge.statusLabel(c), null);
         r4.setValueColor(AdbBridge.isReady(c) ? OK : WARN);
 
-        p.addRow("Open Setup", "", new Runnable() {
+        p.addRow(c.getString(R.string.hp_open_setup), "", new Runnable() {
             public void run() { host.showPanel(SetupPanel.build(c, host)); }
         }).opens();
 
         if (!svc) {
-            p.addNote("Without the accessibility service the Home button goes to Amazon's "
-                    + "launcher. Setup explains how to switch it on, or can do it for you.");
+            p.addNote(c.getString(R.string.hp_no_service));
         }
 
         // ---------------------------------------------------------- settings-tier fixes
-        p.addHeader("Speed");
+        p.addHeader(c.getString(R.string.hp_speed));
 
         final List<Panel.Row> settingRows = new ArrayList<Panel.Row>();
         final List<Check> checks = new ArrayList<Check>();
 
-        checks.add(Check.global("window_animation_scale", "0", "Window animation"));
-        checks.add(Check.global("transition_animation_scale", "0", "Transition animation"));
+        checks.add(Check.global("window_animation_scale", "0", c.getString(R.string.hp_c_window)));
+        checks.add(Check.global("transition_animation_scale", "0", c.getString(R.string.hp_c_transition)));
         // Below 1, the Amazon home menu's Settings and Inputs do nothing on Fire OS 8.
-        checks.add(Check.global("animator_duration_scale", "1", "Animator duration"));
+        checks.add(Check.global("animator_duration_scale", "1", c.getString(R.string.hp_c_animator)));
         checks.add(Check.global("com.amazon.tv.settings.featured_item_video_enabled", "0",
-                "Home-screen video autoplay"));
-        checks.add(Check.secure("amz_limit_ad_tracking", "1", "Limit ad tracking"));
-        checks.add(Check.secure("USAGE_METRICS_UPLOAD_ENABLED", "0", "Usage metrics upload"));
+                c.getString(R.string.hp_c_video)));
+        checks.add(Check.secure("amz_limit_ad_tracking", "1", c.getString(R.string.hp_c_limit_ads)));
+        checks.add(Check.secure("USAGE_METRICS_UPLOAD_ENABLED", "0", c.getString(R.string.hp_c_metrics)));
         // The switches under Settings > Preferences > Privacy Settings, as Fire OS stores them.
-        checks.add(Check.secure("settingsApp:deviceUsageData:value", "0", "Device usage data"));
-        checks.add(Check.secure("settingsApp:appUsageData:value", "0", "Collect app usage data"));
-        checks.add(Check.secure("advertisingIdApp:interestBasedAds:value", "0", "Interest-based ads"));
-        checks.add(Check.secure("usage_metrics_marketing_enabled", "0", "Marketing metrics"));
-        checks.add(Check.secure("pact_usage_collection_enabled", "0", "PACT usage collection"));
-        checks.add(Check.secure("limit_ad_tracking", "1", "Limit ad tracking (platform)"));
-        checks.add(Check.secure("non_amz_limit_ad_tracking", "1", "Limit ad tracking (3rd party)"));
+        checks.add(Check.secure("settingsApp:deviceUsageData:value", "0", c.getString(R.string.hp_c_device_usage)));
+        checks.add(Check.secure("settingsApp:appUsageData:value", "0", c.getString(R.string.hp_c_app_usage)));
+        checks.add(Check.secure("advertisingIdApp:interestBasedAds:value", "0", c.getString(R.string.hp_c_interest)));
+        checks.add(Check.secure("usage_metrics_marketing_enabled", "0", c.getString(R.string.hp_c_marketing)));
+        checks.add(Check.secure("pact_usage_collection_enabled", "0", c.getString(R.string.hp_c_pact)));
+        checks.add(Check.secure("limit_ad_tracking", "1", c.getString(R.string.hp_c_limit_platform)));
+        checks.add(Check.secure("non_amz_limit_ad_tracking", "1", c.getString(R.string.hp_c_limit_3rd)));
         checks.add(Check.secure("screensaver_components", "com.android.dreams.basic/.Colors",
-                "Screensaver"));
+                c.getString(R.string.ds_saver)));
 
         for (int i = 0; i < checks.size(); i++) {
-            if (i == 3) p.addHeader("Ads & privacy");
+            if (i == 3) p.addHeader(c.getString(R.string.hp_ads_privacy));
             final Check ck = checks.get(i);
             final Panel.Row row = p.addRow(ck.label, "", null);
             settingRows.add(row);
@@ -126,7 +125,7 @@ public final class HealthPanel {
                     if (!canApply(c)) return;
                     // Before apply: with the permission held it finishes at once and paints
                     // the result, which a later "working..." would cover for good.
-                    row.setValue("working...");
+                    row.setValue(c.getString(R.string.ds_working));
                     apply(c, new Check[]{ck}, new Runnable() {
                         public void run() { paint(c, ck, row); }
                     });
@@ -134,11 +133,11 @@ public final class HealthPanel {
             });
         }
 
-        final Panel.Row applyAll = p.addRow("Apply all of the above", "", null);
+        final Panel.Row applyAll = p.addRow(c.getString(R.string.hp_apply_all), "", null);
         applyAll.cell.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 if (!canApply(c)) return;
-                applyAll.setValue("working...");
+                applyAll.setValue(c.getString(R.string.ds_working));
                 final Check[] all = checks.toArray(new Check[checks.size()]);
                 apply(c, all, new Runnable() {
                     public void run() {
@@ -147,7 +146,7 @@ public final class HealthPanel {
                             paint(c, all[i], settingRows.get(i));
                             if (all[i].isGood(all[i].read(c))) good++;
                         }
-                        applyAll.setValue(good + " of " + all.length + " set");
+                        applyAll.setValue(c.getString(R.string.hp_n_set, good, all.length));
                         applyAll.setValueColor(good == all.length ? OK : WARN);
                     }
                 });
@@ -156,18 +155,14 @@ public final class HealthPanel {
 
         if (!writable) {
             applyAll.cell.setEnabled(false);
-            applyAll.setValue("needs Setup");
-            p.addNote("These rows are read-only right now. One permission makes all of them "
-                    + "changeable from the remote, permanently - see \"Commands for a "
-                    + "computer\" below.");
+            applyAll.setValue(c.getString(R.string.ds_needs_setup));
+            p.addNote(c.getString(R.string.hp_readonly));
         } else if (!canWriteSettings(c)) {
-            p.addNote("Applied through the ADB link. Setup also grants this app "
-                    + "WRITE_SECURE_SETTINGS, after which these rows keep working with the "
-                    + "link switched off.");
+            p.addNote(c.getString(R.string.hp_via_adb));
         }
 
         // ---------------------------------------------------------- packages
-        p.addHeader("Ad & telemetry packages");
+        p.addHeader(c.getString(R.string.hp_packages));
 
         // Every package still on falls into one reason, so the user can tell "done" from
         // "not done yet". Only the last one is work left.
@@ -183,36 +178,32 @@ public final class HealthPanel {
             else if (e.caution) choice++;
             else stillOn++;
         }
-        p.addRow("Switched off", String.valueOf(off), null).setValueColor(OK);
-        Panel.Row left = p.addRow("Still to switch off", String.valueOf(stillOn), null);
+        p.addRow(c.getString(R.string.hp_switched_off), String.valueOf(off), null).setValueColor(OK);
+        Panel.Row left = p.addRow(c.getString(R.string.hp_still_on), String.valueOf(stillOn), null);
         left.setValueColor(stillOn == 0 ? OK : WARN);
-        p.addRow("Protected by Fire OS", String.valueOf(fireOs), null);
-        p.addRow("Kept on for safety", String.valueOf(locked), null);
-        p.addRow("Left on by choice (marked caution)", String.valueOf(choice), null);
+        p.addRow(c.getString(R.string.hp_protected), String.valueOf(fireOs), null);
+        p.addRow(c.getString(R.string.hp_kept_safety), String.valueOf(locked), null);
+        p.addRow(c.getString(R.string.hp_left_choice), String.valueOf(choice), null);
 
-        p.addRow("Open Debloat", "", new Runnable() {
+        p.addRow(c.getString(R.string.hp_open_debloat), "", new Runnable() {
             public void run() { host.showPanel(DebloatPanel.build(c, host)); }
         }).opens();
 
-        p.addRow("Commands for a computer", "", new Runnable() {
+        p.addRow(c.getString(R.string.cmd_title), "", new Runnable() {
             public void run() { host.showPanel(CommandsPanel.build(c, host)); }
         }).opens();
 
         p.addSectionHelp((stillOn == 0
-                ? "Everything on the list that Fire OS lets an app switch off is off."
-                : stillOn + " of the listed packages can still be switched off. Debloat can "
-                        + "switch them off one at a time or all at once, and put them back "
-                        + "the same way. Packages Fire OS refuses are counted as protected "
-                        + "once Debloat has tried them.")
-                + "\n\nA few telemetry packages are protected by Fire OS and cannot be "
-                + "switched off by any app, even with the privacy switches above off.");
+                ? c.getString(R.string.hp_all_off)
+                : c.getString(R.string.hp_some_on, stillOn))
+                + c.getString(R.string.hp_telemetry_note));
 
         // ---------------------------------------------------------- resources
-        p.addHeader("Resources");
+        p.addHeader(c.getString(R.string.hp_resources));
         long[] mem = memory(c);
-        p.addRow("Free memory", mb(mem[0]) + " of " + mb(mem[1]), null);
+        p.addRow(c.getString(R.string.hp_free_mem), c.getString(R.string.ui_x_of_y, mb(mem[0]), mb(mem[1])), null);
         long[] disk = storage();
-        p.addRow("Free storage", mb(disk[0]) + " of " + mb(disk[1]), null);
+        p.addRow(c.getString(R.string.hp_free_storage), c.getString(R.string.ui_x_of_y, mb(disk[0]), mb(disk[1])), null);
 
         int disabledTotal = -1;
         try {
@@ -222,12 +213,13 @@ public final class HealthPanel {
             disabledTotal = 0;
             for (int i = 0; i < apps.size(); i++) if (!apps.get(i).enabled) disabledTotal++;
         } catch (Throwable t) { disabledTotal = -1; }
-        p.addRow("Packages disabled on this TV",
+        p.addRow(c.getString(R.string.hp_disabled_pkgs),
                 disabledTotal >= 0 ? String.valueOf(disabledTotal) : "?", null);
-        p.addRow("Tiles shown", AppModel.visibleItems(c).size()
-                + " of " + AppModel.allItems().size(), null);
+        p.addRow(c.getString(R.string.hp_tiles_shown), c.getString(R.string.ui_x_of_y,
+                String.valueOf(AppModel.visibleItems(c).size()),
+                String.valueOf(AppModel.allItems().size())), null);
 
-        p.addRow("Back", "", new Runnable() {
+        p.addRow(c.getString(R.string.home_back), "", new Runnable() {
             public void run() { host.closePanel(); }
         });
         return p.root;
@@ -261,13 +253,13 @@ public final class HealthPanel {
 
     private static void paint(Context c, Check ck, Panel.Row row) {
         String cur = ck.read(c);
-        row.setValue(describe(ck, cur));
+        row.setValue(describe(c, ck, cur));
         row.setValueColor(ck.isGood(cur) ? OK : WARN);
     }
 
-    private static String describe(Check ck, String cur) {
+    private static String describe(Context c, Check ck, String cur) {
         cur = ck.effective(cur);
-        if (cur == null || cur.isEmpty()) return "unset";
+        if (cur == null || cur.isEmpty()) return c.getString(R.string.hp_unset);
         // What is set, not the target: a picked screensaver is fine but is not the target.
         if (ck.isGood(cur)) return ck.abbreviate(cur);
         return ck.abbreviate(cur) + " -> " + ck.shortWant();

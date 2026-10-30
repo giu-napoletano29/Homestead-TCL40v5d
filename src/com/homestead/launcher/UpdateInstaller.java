@@ -72,21 +72,21 @@ public final class UpdateInstaller {
             public void run() {
                 File apk = null;
                 try {
-                    status(p, "Downloading");
+                    status(p, c.getString(R.string.ui_downloading));
                     apk = download(app, u, p);
-                    if (apk == null || apk.length() == 0) { done(p, false, "Download failed."); return; }
+                    if (apk == null || apk.length() == 0) { done(p, false, c.getString(R.string.ui_download_failed)); return; }
 
-                    status(p, "Verifying");
+                    status(p, c.getString(R.string.ui_verifying));
                     if (!signatureMatches(app, apk)) {
                         apk.delete();
-                        done(p, false, "Update refused: its signature does not match this app.");
+                        done(p, false, c.getString(R.string.ui_refused));
                         return;
                     }
                     install(app, apk, p);
                 } catch (Throwable t) {
                     Log.w(TAG, "update install failed: " + t);
                     if (apk != null) try { apk.delete(); } catch (Throwable ignored) { }
-                    done(p, false, friendly(t));
+                    done(p, false, friendly(app, t));
                 }
             }
         }, "homestead-update-install").start();
@@ -181,13 +181,13 @@ public final class UpdateInstaller {
         // Replacing the app ends this process; BootReceiver reopens it if this was us.
         Prefs.setUpdateStarted(c, System.currentTimeMillis());
         if (AdbBridge.canRun(c)) {
-            status(p, "Installing through the tunnel");
+            status(p, c.getString(R.string.ui_installing));
             AdbBridge.installApk(apk, new AdbBridge.Callback() {
                 public void onDone(boolean ok, String output) {
                     // Reaching here means the replace has not stopped us yet, or it failed.
                     boolean success = ok && output != null && output.contains("Success");
                     if (success) {
-                        done(p, true, "Installed. Salotto will restart on the new version.");
+                        done(p, true, c.getString(R.string.ui_installed));
                     } else {
                         Log.w(TAG, "tunnel install did not report success: " + output);
                         installViaIntent(c, apk, p, output);
@@ -219,9 +219,9 @@ public final class UpdateInstaller {
             c.startActivity(i);
         } catch (Throwable t) {
             String base = prevErr != null && prevErr.trim().length() > 0
-                    ? "Install failed: " + firstLine(prevErr)
-                    : "Could not open the installer.";
-            done(p, false, base + " Set up the on-device tunnel for a one-tap install.");
+                    ? c.getString(R.string.ui_install_failed, firstLine(prevErr))
+                    : c.getString(R.string.ui_no_installer);
+            done(p, false, base + c.getString(R.string.ui_tunnel_hint));
         }
     }
 
@@ -233,10 +233,10 @@ public final class UpdateInstaller {
         return (nl > 0 ? s.substring(0, nl) : s).trim();
     }
 
-    private static String friendly(Throwable t) {
-        if (t instanceof java.net.UnknownHostException) return "No internet connection.";
-        if (t instanceof java.net.SocketTimeoutException) return "The download timed out.";
-        return "Update failed: " + t.getMessage();
+    private static String friendly(Context c, Throwable t) {
+        if (t instanceof java.net.UnknownHostException) return c.getString(R.string.ui_no_internet);
+        if (t instanceof java.net.SocketTimeoutException) return c.getString(R.string.ui_download_timeout);
+        return c.getString(R.string.ui_update_failed, t.getMessage());
     }
 
     private static void progress(final Progress p, final int pct) {

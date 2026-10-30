@@ -201,73 +201,62 @@ public final class OnboardingPanel {
         brand.addView(mark, mlp);
         content.addView(brand, wrap());
 
-        content.addView(margin(title("A home screen that stays out of your way."), dp(26), dp(10)));
-        content.addView(body("No ad banners, no auto-playing trailers, no sponsored rows - just your "
-                + "apps and inputs. And, if you want, a one-tap way to switch off Amazon's "
-                + "advertising and telemetry."));
-        content.addView(margin(note("A fork of Homestead by Sarg338, gone its own way."), dp(10), 0));
+        content.addView(margin(title(c.getString(R.string.ob_tagline)), dp(26), dp(10)));
+        content.addView(body(c.getString(R.string.ob_intro)));
+        content.addView(margin(note(c.getString(R.string.ob_fork)), dp(10), 0));
 
-        View start = button("Get started", true, new Runnable() { public void run() { next(); } });
+        View start = button(c.getString(R.string.ob_start), true, new Runnable() { public void run() { next(); } });
         actions.addView(start);
         actions.addView(gap());
-        actions.addView(button("Skip setup", false, new Runnable() { public void run() { finish(); } }));
+        actions.addView(button(c.getString(R.string.ob_skip), false, new Runnable() { public void run() { finish(); } }));
         focusTarget = start;
     }
 
     private void buildChoose() {
-        content.addView(tag("Step " + stepNo() + " of " + stepTotal()));
-        content.addView(margin(title("What should we set up?"), dp(6), dp(6)));
-        content.addView(body("Turn on what you want now - you can change any of them later from Settings."));
+        content.addView(tag(c.getString(R.string.ob_step, stepNo(), stepTotal())));
+        content.addView(margin(title(c.getString(R.string.ob_what)), dp(6), dp(6)));
+        content.addView(body(c.getString(R.string.ob_what_help)));
 
-        content.addView(featureCard("⌂", "Replace the home screen",
-                "The Home button opens this launcher instead of Amazon's.", null,
+        content.addView(featureCard("⌂", c.getString(R.string.ob_replace),
+                c.getString(R.string.ob_replace_help), null,
                 CARD_HOME));
-        content.addView(featureCard("✦", "Clean up my TV",
-                "Switch off Amazon's ads and telemetry, and turn off the animations.", "Advanced",
+        content.addView(featureCard("✦", c.getString(R.string.ob_clean),
+                c.getString(R.string.ob_clean_help), c.getString(R.string.ob_advanced),
                 CARD_CLEAN));
 
-        View cont = button("Continue", true, new Runnable() { public void run() { next(); } });
-        actions.addView(button("Back", false, new Runnable() { public void run() { back(); } }));
+        View cont = button(c.getString(R.string.ob_continue), true, new Runnable() { public void run() { next(); } });
+        actions.addView(button(c.getString(R.string.home_back), false, new Runnable() { public void run() { back(); } }));
         actions.addView(gap());
         actions.addView(cont);
         focusTarget = cont;
     }
 
     private void buildHome() {
-        content.addView(tag("Step " + stepNo() + " of " + stepTotal()));
-        content.addView(margin(title("Turn on the home screen"), dp(6), dp(6)));
-        content.addView(body("Fire OS doesn't list Salotto in its Accessibility menu, so the "
-                + "app switches it on itself, through the TV's own debugging service. No "
-                + "computer needed."));
+        content.addView(tag(c.getString(R.string.ob_step, stepNo(), stepTotal())));
+        content.addView(margin(title(c.getString(R.string.ob_home_title)), dp(6), dp(6)));
+        content.addView(body(c.getString(R.string.ob_home_help)));
 
-        content.addView(miniStep("1", "Turn on ADB debugging: Settings, My Fire TV, "
-                + "Developer options"));
-        content.addView(miniStep("2", "Press Set it up and approve two prompts: a VPN "
-                + "notice, then the TV's key prompt. Tick \"Always allow\" on the second"));
+        content.addView(miniStep("1", c.getString(R.string.ob_step1)));
+        content.addView(miniStep("2", c.getString(R.string.ob_step2)));
 
         chip = pill();
         content.addView(wrapMargin(chip, dp(14), dp(4)));
-        content.addView(note("Android's VPN notice says the app could monitor network traffic; "
-                + "Salotto's only carries the TV's own debugging connection, and nothing "
-                + "leaves the TV. In each prompt, press Down to reach OK. No Developer options? "
-                + "Open My Fire TV, then About, and press Select on the device name seven "
-                + "times. To do this later, press Continue; you can still open Salotto "
-                + "from Amazon's app row."));
+        content.addView(note(c.getString(R.string.ob_vpn_note)));
         updateChip();
 
-        View open = button("Open My Fire TV", !adbDebuggingOn(), new Runnable() {
+        View open = button(c.getString(R.string.ob_open_myfire), !adbDebuggingOn(), new Runnable() {
             public void run() { SetupPanel.openDeviceSettings(c); }
         });
-        View setup = button("Set it up", adbDebuggingOn(), new Runnable() {
+        View setup = button(c.getString(R.string.ob_set_up), adbDebuggingOn(), new Runnable() {
             public void run() { setUpHome(); }
         });
-        actions.addView(button("Back", false, new Runnable() { public void run() { back(); } }));
+        actions.addView(button(c.getString(R.string.home_back), false, new Runnable() { public void run() { back(); } }));
         actions.addView(gap());
         actions.addView(open);
         actions.addView(space(dp(10)));
         actions.addView(setup);
         actions.addView(space(dp(10)));
-        homeContinue = button("Continue", false, new Runnable() { public void run() { next(); } });
+        homeContinue = button(c.getString(R.string.ob_continue), false, new Runnable() { public void run() { next(); } });
         actions.addView(homeContinue);
         focusTarget = SetupPanel.serviceEnabled(c) ? homeContinue
                 : adbDebuggingOn() ? setup : open;
@@ -302,46 +291,40 @@ public final class OnboardingPanel {
     }
 
     private void buildAdb() {
-        content.addView(tag("Step " + stepNo() + " of " + stepTotal()));
-        content.addView(margin(title("Let the app clean up your TV"), dp(6), dp(6)));
-        content.addView(body("To switch Amazon's packages off, the app needs the access a computer "
-                + "has over ADB - so it makes a private connection to the TV's own service. No "
-                + "computer, no account, and nothing ever leaves the TV."));
-        content.addView(miniStep("!", "You approve two quick prompts: a VPN notice, then the TV's "
-                + "key prompt. Tick \"Always allow\" on the second"));
+        content.addView(tag(c.getString(R.string.ob_step, stepNo(), stepTotal())));
+        content.addView(margin(title(c.getString(R.string.ob_clean_title)), dp(6), dp(6)));
+        content.addView(body(c.getString(R.string.ob_clean_intro)));
+        content.addView(miniStep("!", c.getString(R.string.ob_clean_prompts)));
 
         chip = pill();
         content.addView(wrapMargin(chip, dp(14), dp(4)));
-        content.addView(note("Android's VPN notice says the app could monitor network traffic; "
-                + "Salotto's only carries the TV's own debugging connection. It only runs "
-                + "while cleaning up, then switches itself off."));
+        content.addView(note(c.getString(R.string.ob_clean_vpn)));
         updateChip();
 
-        View setup = button("Set it up", true, new Runnable() {
+        View setup = button(c.getString(R.string.ob_set_up), true, new Runnable() {
             public void run() { SetupPanel.startTunnel(c); }
         });
-        actions.addView(button("Back", false, new Runnable() { public void run() { back(); } }));
+        actions.addView(button(c.getString(R.string.home_back), false, new Runnable() { public void run() { back(); } }));
         actions.addView(gap());
         actions.addView(setup);
         actions.addView(space(dp(10)));
-        View cont = button("Continue", true, new Runnable() { public void run() { next(); } });
+        View cont = button(c.getString(R.string.ob_continue), true, new Runnable() { public void run() { next(); } });
         actions.addView(cont);
         // Already connected on the Home step: nothing more to do here.
         focusTarget = (Prefs.tunnelEnabled(c) && AdbCrypto.hasKey(c)) ? cont : setup;
     }
 
     private void buildDone() {
-        content.addView(tag("All set"));
-        content.addView(margin(title("You're ready."), dp(6), dp(14)));
+        content.addView(tag(c.getString(R.string.ob_all_set)));
+        content.addView(margin(title(c.getString(R.string.ob_ready)), dp(6), dp(14)));
 
         boolean svc = SetupPanel.serviceEnabled(c);
         boolean tun = Prefs.tunnelEnabled(c) || AdbBridge.isConnected();
-        if (wantHome) content.addView(checkItem(svc, svc ? "Home screen - on" : "Home screen - skipped for now"));
-        if (wantClean) content.addView(checkItem(tun, tun ? "TV cleanup - ready; choose what to switch off in Debloat" : "TV cleanup - skipped for now"));
-        content.addView(margin(body("Find all of it again from the Settings tile on your home "
-                + "screen - hidden apps, sorting, TV Health and Debloat."), dp(14), dp(4)));
+        if (wantHome) content.addView(checkItem(svc, svc ? c.getString(R.string.ob_home_on) : c.getString(R.string.ob_home_skipped)));
+        if (wantClean) content.addView(checkItem(tun, tun ? c.getString(R.string.ob_clean_ready) : c.getString(R.string.ob_clean_skipped)));
+        content.addView(margin(body(c.getString(R.string.ob_find_again)), dp(14), dp(4)));
 
-        View fin = button("Finish", true, new Runnable() { public void run() { finish(); } });
+        View fin = button(c.getString(R.string.ob_finish), true, new Runnable() { public void run() { finish(); } });
         actions.addView(fin);
         focusTarget = fin;
     }
@@ -361,23 +344,23 @@ public final class OnboardingPanel {
         if (chip == null) return;
         int id = current();
         if (id == HOME && SetupPanel.serviceEnabled(c)) {
-            setChip(OK, "On - press Home to try it");
+            setChip(OK, c.getString(R.string.ob_chip_on));
             if (!homeWasOn && homeContinue != null) homeContinue.requestFocus();
             homeWasOn = true;
         } else if (id == HOME || id == ADB) {
             int st = AdbBridge.state();
             String fp = AdbBridge.fingerprint();
             if (st == AdbBridge.CONNECTED) {
-                setChip(OK, id == HOME ? "Connected - switching it on…" : "Connected - ready to clean up");
+                setChip(OK, id == HOME ? c.getString(R.string.ob_chip_switching) : c.getString(R.string.ob_chip_connected));
             } else if (id == ADB && Prefs.tunnelEnabled(c) && AdbCrypto.hasKey(c)) {
-                setChip(OK, "Set up - ready to clean up");
+                setChip(OK, c.getString(R.string.ob_chip_setup));
             } else if (st == AdbBridge.AWAITING_APPROVAL) {
-                setChip(WARN, fp == null ? "Approve the key on screen"
-                        : "Approve the key on screen - it starts " + SetupPanel.shortFingerprint(fp));
-            } else if (st == AdbBridge.CONNECTING) setChip(WARN, "Connecting…");
-            else if (st == AdbBridge.SELF_REFUSED) setChip(BAD, "This TV blocked it - see Commands for a computer");
-            else if (st == AdbBridge.NO_DAEMON) setChip(BAD, "Turn on ADB debugging first");
-            else setChip(MUTE, "Not set up yet");
+                setChip(WARN, fp == null ? c.getString(R.string.ob_chip_approve)
+                        : c.getString(R.string.ob_chip_approve_fp, SetupPanel.shortFingerprint(fp)));
+            } else if (st == AdbBridge.CONNECTING) setChip(WARN, c.getString(R.string.ob_chip_connecting));
+            else if (st == AdbBridge.SELF_REFUSED) setChip(BAD, c.getString(R.string.ob_chip_blocked));
+            else if (st == AdbBridge.NO_DAEMON) setChip(BAD, c.getString(R.string.ob_chip_adb));
+            else setChip(MUTE, c.getString(R.string.ob_chip_not_yet));
         }
     }
 

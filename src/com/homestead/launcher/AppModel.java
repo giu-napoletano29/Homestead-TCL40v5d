@@ -555,7 +555,7 @@ public final class AppModel {
                 it.inputId = info.getId();
                 CharSequence lb = null;
                 try { lb = info.loadLabel(c); } catch (Throwable t) { }
-                it.label = (lb == null || lb.length() == 0) ? "Input" : lb.toString();
+                it.label = (lb == null || lb.length() == 0) ? c.getString(R.string.hd_input) : lb.toString();
                 it.glyph = it.label.toUpperCase(Locale.US).startsWith("HDMI")
                         ? R.drawable.ic_in_hdmi : R.drawable.ic_in_composite;
                 it.connected = inputConnected(tim, it.inputId);

@@ -34,53 +34,40 @@ public final class CommandsPanel {
     private CommandsPanel() { }
 
     public static View build(final Context c, final SettingsPanel.Host host) {
-        final Panel p = new Panel(c, "Commands for a computer",
-                "Only the steps this TV will not let the app do itself");
+        final Panel p = new Panel(c, c.getString(R.string.cmd_title),
+                c.getString(R.string.cmd_sub));
 
         String pkg = c.getPackageName();
         String ip = localAddress();
 
-        p.addHeader("Connecting");
-        p.addRow("This TV", ip == null ? "no network" : ip, null);
-        p.addNote("Switch on Settings, My Fire TV, Developer options, ADB debugging. Then "
-                + "from a computer with Android platform-tools installed:\n\n"
-                + "adb connect " + (ip == null ? "<this TV>" : ip) + "\n\n"
-                + "The TV will ask you to allow the connection.");
+        p.addHeader(c.getString(R.string.cmd_connecting));
+        p.addRow(c.getString(R.string.cmd_this_tv), ip == null ? c.getString(R.string.remote_no_network) : ip, null);
+        p.addNote(c.getString(R.string.cmd_connect_note,
+                ip == null ? c.getString(R.string.cmd_this_tv_arg) : ip));
 
         // ------------------------------------------------------------------ what is missing
         boolean svc = SetupPanel.serviceEnabled(c);
         boolean wss = HealthPanel.canWriteSettings(c);
         boolean logs = HomeKeyWatcher.permitted(c);
 
-        p.addHeader("Still missing");
+        p.addHeader(c.getString(R.string.cmd_missing));
 
-        Panel.Row a = p.addRow("Home-button redirect", svc ? "done" : "needed", null);
+        Panel.Row a = p.addRow(c.getString(R.string.cmd_home_redirect), svc ? c.getString(R.string.st_done) : c.getString(R.string.cmd_needed), null);
         a.setValueColor(svc ? OK : WARN);
         if (!svc) {
-            p.addNote("Fire OS has no menu for this, so it is switched on over ADB. "
-                    + "\"Finish setup automatically\" in Setup does it from the TV, or "
-                    + "run:\n\n"
-                    + "adb shell settings put secure enabled_accessibility_services "
-                    + pkg + "/" + pkg + ".HomeRedirectService\n"
-                    + "adb shell settings put secure accessibility_enabled 1");
+            p.addNote(c.getString(R.string.cmd_home_note, pkg));
         }
 
-        Panel.Row w = p.addRow("Settings-tier tuning", wss ? "done" : "needed", null);
+        Panel.Row w = p.addRow(c.getString(R.string.cmd_tuning), wss ? c.getString(R.string.st_done) : c.getString(R.string.cmd_needed), null);
         w.setValueColor(wss ? OK : WARN);
         if (!wss) {
-            p.addNote("One command makes every row on the TV Health page changeable from "
-                    + "the remote, permanently:\n\n"
-                    + "adb shell pm grant " + pkg
-                    + " android.permission.WRITE_SECURE_SETTINGS");
+            p.addNote(c.getString(R.string.cmd_tuning_note, pkg));
         }
 
-        Panel.Row h = p.addRow("Catch Home presses early", logs ? "done" : "needed", null);
+        Panel.Row h = p.addRow(c.getString(R.string.cmd_catch_home), logs ? c.getString(R.string.st_done) : c.getString(R.string.cmd_needed), null);
         h.setValueColor(logs ? OK : WARN);
         if (!logs) {
-            p.addNote("Without this, Amazon's home screen shows for a moment on each Home press, "
-                    + "and Home does nothing while Amazon's home screen is already showing. "
-                    + "Salotto uses it only to spot the Home press in the system log:\n\n"
-                    + "adb shell pm grant " + pkg + " android.permission.READ_LOGS");
+            p.addNote(c.getString(R.string.cmd_logs_note, pkg));
         }
 
         // ------------------------------------------------------------------ packages
@@ -95,22 +82,17 @@ public final class CommandsPanel {
             count++;
         }
 
-        p.addHeader("Advertising & telemetry");
-        Panel.Row pkgs = p.addRow("Still running", count == 0 ? "none" : String.valueOf(count), null);
+        p.addHeader(c.getString(R.string.cmd_ads));
+        Panel.Row pkgs = p.addRow(c.getString(R.string.cmd_running), count == 0 ? c.getString(R.string.cmd_none) : String.valueOf(count), null);
         pkgs.setValueColor(count == 0 ? OK : WARN);
         if (count > 0) {
             p.addText(off.toString()
-                    + "\nEvery one of these is undone with:\n"
-                    + "adb shell pm enable <package>\n\n"
-                    + "Nothing is uninstalled and no data is deleted. The Debloat page "
-                    + "lists what each package does. Alexa and everything else marked caution "
-                    + "are left out here because they change how the TV behaves - choose those "
-                    + "individually.");
+                    + c.getString(R.string.cmd_undo_note));
         } else {
-            p.addNote("None of the tracked advertising or telemetry packages are running.");
+            p.addNote(c.getString(R.string.cmd_none_note));
         }
 
-        p.addRow("Back", "", new Runnable() {
+        p.addRow(c.getString(R.string.home_back), "", new Runnable() {
             public void run() { host.closePanel(); }
         });
         return p.root;

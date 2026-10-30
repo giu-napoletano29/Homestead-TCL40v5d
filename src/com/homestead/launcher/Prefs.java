@@ -124,6 +124,15 @@ public final class Prefs {
 
     /** Index into DOCK_SIZE_NAMES (HomeGrid maps it to a tile height). Medium by default. */
     public static final String[] DOCK_SIZE_NAMES = { "Small", "Medium", "Large", "Extra large" };
+    /** The name of a dock size in the TV's language; DOCK_SIZE_NAMES stays the English key. */
+    public static String dockSizeName(Context c, int i) {
+        switch (i) {
+            case 0: return c.getString(R.string.dk_small);
+            case 2: return c.getString(R.string.dk_large);
+            case 3: return c.getString(R.string.dk_xlarge);
+            default: return c.getString(R.string.dk_medium);
+        }
+    }
     public static int dockSize(Context c) {
         int n = sp(c).getInt(K_DOCK_SIZE, 1);
         return (n < 0 || n >= DOCK_SIZE_NAMES.length) ? 1 : n;

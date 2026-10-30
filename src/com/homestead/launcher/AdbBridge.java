@@ -126,22 +126,22 @@ public final class AdbBridge {
 
     /** The link's state for a status row. */
     public static String statusLabel(Context c) {
-        if (!Prefs.adbEnabled(c)) return "off";
-        if (state == IDLE && isReady(c)) return "ready";
-        return describe(state);
+        if (!Prefs.adbEnabled(c)) return c.getString(R.string.ab_off);
+        if (state == IDLE && isReady(c)) return c.getString(R.string.up_ready);
+        return describe(c, state);
     }
 
-    public static String describe(int s) {
+    public static String describe(Context c, int s) {
         switch (s) {
-            case CONNECTING: return "connecting";
-            case AWAITING_APPROVAL: return "waiting for you";
-            case CONNECTED: return "connected";
-            case NO_DAEMON: return "ADB debugging is off";
-            case BLOCKED: return "blocked by the system";
-            case DENIED: return "not authorised";
-            case SELF_REFUSED: return "not allowed on this TV";
-            case ERROR: return "failed";
-            default: return "off";
+            case CONNECTING: return c.getString(R.string.ab_connecting);
+            case AWAITING_APPROVAL: return c.getString(R.string.ab_waiting);
+            case CONNECTED: return c.getString(R.string.ab_connected);
+            case NO_DAEMON: return c.getString(R.string.ab_no_daemon);
+            case BLOCKED: return c.getString(R.string.ab_blocked);
+            case DENIED: return c.getString(R.string.ab_denied);
+            case SELF_REFUSED: return c.getString(R.string.ab_self_refused);
+            case ERROR: return c.getString(R.string.up_failed);
+            default: return c.getString(R.string.ab_off);
         }
     }
 

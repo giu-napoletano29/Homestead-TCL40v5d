@@ -39,27 +39,20 @@ public final class SystemSettingsPanel {
     private static final String A = "com.amazon.device.settings.action.";
     private static final String PERMISSION = "com.amazon.tv.permission.LAUNCHER_SETTINGS";
 
-    static final int ID = 0, TITLE = 1, ACTION = 2, HELP = 3;
+    static final int ID = 0, TITLE = 1, ACTION = 2;
 
-    /** Id (also the icon), title, action, what it holds. Resolved on a TCL 40V5D, Fire OS 14. */
+    /** Id (also the icon), title, action. Resolved on a TCL 40V5D, Fire OS 14. */
     static final String[][] SCREENS = {
-            { "network", "Network", "android.settings.WIFI_SETTINGS",
-                    "Wi-Fi, Ethernet and adding a network." },
-            { "display", "Display & sounds", A + "DISPLAY_AND_SOUNDS",
-                    "Resolution, HDR, audio, HDMI device control, ambient mode." },
-            { "controllers", "Controllers & Bluetooth", A + "CONTROLLERS",
-                    "Pair a remote, a game controller or any Bluetooth device." },
-            { "accessibility", "Accessibility", A + "ACCESSIBILITY",
-                    "Captions, audio description, screen reader." },
-            { "applications", "Applications", A + "APPLICATIONS",
-                    "Installed apps, storage and permissions." },
-            { "language", "Language", A + "LANGUAGE", "The TV's language." },
-            { "preferences", "Preferences", A + "PREFERENCES",
-                    "Time zone, privacy, advertising, featured content." },
-            { "data", "Data monitoring", A + "DATA_MONITOR", "Data used by apps and video." },
-            { "account", "Amazon account", A + "MY_ACCOUNT", "The account this TV is signed in to." },
-            { "device", "My Fire TV", A + "DEVICE",
-                    "About this TV, software updates, Developer options and ADB debugging." },
+            { "network", "Network", "android.settings.WIFI_SETTINGS" },
+            { "display", "Display & sounds", A + "DISPLAY_AND_SOUNDS" },
+            { "controllers", "Controllers & Bluetooth", A + "CONTROLLERS" },
+            { "accessibility", "Accessibility", A + "ACCESSIBILITY" },
+            { "applications", "Applications", A + "APPLICATIONS" },
+            { "language", "Language", A + "LANGUAGE" },
+            { "preferences", "Preferences", A + "PREFERENCES" },
+            { "data", "Data monitoring", A + "DATA_MONITOR" },
+            { "account", "Amazon account", A + "MY_ACCOUNT" },
+            { "device", "My Fire TV", A + "DEVICE" },
     };
 
     private SystemSettingsPanel() { }
@@ -92,6 +85,21 @@ public final class SystemSettingsPanel {
         return title(c, id);
     }
 
+    /** What a screen holds, in the TV's language. */
+    static String help(Context c, String id) {
+        if ("network".equals(id)) return c.getString(R.string.sys_help_network);
+        if ("display".equals(id)) return c.getString(R.string.sys_help_display);
+        if ("controllers".equals(id)) return c.getString(R.string.sys_help_controllers);
+        if ("accessibility".equals(id)) return c.getString(R.string.sys_help_accessibility);
+        if ("applications".equals(id)) return c.getString(R.string.sys_help_applications);
+        if ("language".equals(id)) return c.getString(R.string.sys_help_language);
+        if ("preferences".equals(id)) return c.getString(R.string.sys_help_preferences);
+        if ("data".equals(id)) return c.getString(R.string.sys_help_data);
+        if ("account".equals(id)) return c.getString(R.string.sys_help_account);
+        if ("device".equals(id)) return c.getString(R.string.sys_help_device);
+        return "";
+    }
+
     static Intent intentFor(String action) {
         Intent i = new Intent(action);
         i.setPackage(SETTINGS_PKG);
@@ -110,7 +118,7 @@ public final class SystemSettingsPanel {
             if (ri == null || ri.activityInfo == null) continue;
             String need = ri.activityInfo.permission;
             if (need != null && c.checkSelfPermission(need) != PackageManager.PERMISSION_GRANTED) {
-                if (locked != null) locked.add(SCREENS[i][TITLE]);
+                if (locked != null) locked.add(title(c, SCREENS[i][ID]));
                 continue;
             }
             out.add(SCREENS[i]);
@@ -130,24 +138,22 @@ public final class SystemSettingsPanel {
             final Intent intent = intentFor(open.get(i)[ACTION]);
             p.addRow(title(c, open.get(i)[ID]), "", new Runnable() {
                 public void run() { SetupPanel.start(c, intent); }
-            }).opens().setHelp(open.get(i)[HELP]);
+            }).opens().setHelp(help(c, open.get(i)[ID]));
         }
 
         p.addHeader(c.getString(R.string.sys_header_own));
         List<String> checks = DisplaySoundPanel.issues(c);
         Panel.Row screenSound = p.addRow(c.getString(R.string.sys_screen_sound),
-                checks.isEmpty() ? "" : checks.size() + " to check", new Runnable() {
+                checks.isEmpty() ? "" : c.getString(R.string.sys_to_check, checks.size()), new Runnable() {
             public void run() { host.showPanel(DisplaySoundPanel.build(c, host)); }
         }).opens();
         if (!checks.isEmpty()) screenSound.setValueColor(0xFFE8C468);
         StringBuilder sb = new StringBuilder(DisplaySoundPanel.builtInTv(c)
-                ? "Sleep, power LED, screensaver, screen mirroring, interface sounds and Live TV "
-                        + "audio language"
-                : "HDMI-CEC, sleep, screensaver, screen mirroring, overscan and the rest");
-        sb.append(": things Amazon keeps behind a permission only its own apps can hold, "
-                + "read and set directly - no root, no Amazon launcher needed.");
+                ? c.getString(R.string.sys_ss_help_tv)
+                : c.getString(R.string.sys_ss_help_stick));
+        sb.append(c.getString(R.string.sys_ss_help_tail));
         if (!checks.isEmpty()) {
-            sb.append("\n\nWorth a look: ");
+            sb.append(c.getString(R.string.sys_worth));
             for (int i = 0; i < checks.size(); i++) {
                 sb.append(i == 0 ? "" : "; ").append(checks.get(i));
             }
@@ -157,48 +163,41 @@ public final class SystemSettingsPanel {
 
         p.addRow(c.getString(R.string.sys_tv_remote), "", new Runnable() {
             public void run() { host.showPanel(KeyBindings.build(c, host)); }
-        }).opens().setHelp("What the red, green, yellow and blue buttons of the TV's remote do "
-                + "when the TV passes them on over HDMI-CEC: Home, a page here, or an app.");
+        }).opens().setHelp(c.getString(R.string.sys_tv_remote_help));
 
         final Panel.Row all = p.addRow(c.getString(R.string.home_amazon_settings),
-                AppModel.amazonLauncherOn(c) ? "" : "needs the launcher", null).opens();
+                AppModel.amazonLauncherOn(c) ? "" : c.getString(R.string.sys_needs_launcher), null).opens();
         all.cell.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) { openAll(c, host); }
         });
-        all.setHelp("Amazon's full settings menu"
-                + (locked.isEmpty() ? "." : ", including " + join(locked) + ".")
-                + (AppModel.amazonLauncherOn(c) ? ""
-                        : " With Amazon's launcher off it is switched on for a moment first - "
-                        + "on a TV where that is possible."));
+        all.setHelp((locked.isEmpty() ? c.getString(R.string.sys_all_help)
+                : c.getString(R.string.sys_all_help_incl, join(locked)))
+                + (AppModel.amazonLauncherOn(c) ? "" : c.getString(R.string.sys_all_help_off)));
 
         p.addHeader(c.getString(R.string.sys_header_topbar));
         final Panel.Row place = p.addRow(c.getString(R.string.sys_quick_settings),
-                onOff(Prefs.shortcutsPlace(c) != Prefs.SHORTCUTS_OFF), null).asSwitch();
+                SettingsPanel.onOff(c, Prefs.shortcutsPlace(c) != Prefs.SHORTCUTS_OFF), null).asSwitch();
         place.cell.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 boolean n = Prefs.shortcutsPlace(c) == Prefs.SHORTCUTS_OFF;
                 Prefs.setShortcutsPlace(c, n ? Prefs.SHORTCUTS_BAR : Prefs.SHORTCUTS_OFF);
-                place.setValue(onOff(n));
+                place.setValue(SettingsPanel.onOff(c, n));
                 AppModel.reload(c);
                 host.rebuildGrid();
             }
         });
-        place.setHelp("The screens you choose become the first entries of the side bar, above "
-                + "the Appstore, System settings and Settings, which are always there.");
+        place.setHelp(c.getString(R.string.sys_quick_help));
         p.addRow(c.getString(R.string.sys_choose_quick), "", new Runnable() {
             public void run() { host.showPanel(buildChoose(c, host)); }
-        }).opens().setHelp("Which screens get an entry. The side bar shows the first four.");
+        }).opens().setHelp(c.getString(R.string.sys_choose_help));
 
         p.addHeader(c.getString(R.string.sys_header_launcher));
         if (AppModel.amazonLauncherOn(c)) {
-            p.addRow(c.getString(R.string.sys_header_launcher), "on", null)
-                    .setHelp("Switch it off in Debloat to make Home open Salotto directly, "
-                            + "and to free up the memory it uses in the background.");
+            p.addRow(c.getString(R.string.sys_header_launcher), c.getString(R.string.ui_on), null)
+                    .setHelp(c.getString(R.string.sys_launcher_on_help));
         } else {
-            p.addRow(c.getString(R.string.sys_header_launcher), "off", null)
-                    .setHelp("Home opens Salotto directly. The screens Amazon answers "
-                            + "directly still work; \"Amazon Settings\" above switches the "
-                            + "launcher back on for a moment first, where that is possible.");
+            p.addRow(c.getString(R.string.sys_header_launcher), c.getString(R.string.ui_off), null)
+                    .setHelp(c.getString(R.string.sys_launcher_off_help));
         }
         p.addRow(c.getString(R.string.home_back), "", new Runnable() {
             public void run() { host.closePanel(); }
@@ -207,26 +206,26 @@ public final class SystemSettingsPanel {
     }
 
     private static View buildChoose(final Context c, final SettingsPanel.Host host) {
-        final Panel p = new Panel(c, "Choose shortcuts", null, Panel.SHEET);
+        final Panel p = new Panel(c, c.getString(R.string.sys_choose_title), null, Panel.SHEET);
         p.addHeader(c.getString(R.string.sys_header_topbar));
         final java.util.Set<String> on = Prefs.shortcuts(c);
         List<String[]> open = available(c, null);
         for (int i = 0; i < open.size(); i++) {
             final String id = open.get(i)[ID];
-            final Panel.Row row = p.addRow(open.get(i)[TITLE], onOff(on.contains(id)), null).asSwitch();
+            final Panel.Row row = p.addRow(title(c, id), SettingsPanel.onOff(c, on.contains(id)), null).asSwitch();
             row.cell.setOnClickListener(new View.OnClickListener() {
                 public void onClick(View v) {
                     boolean n = !Prefs.shortcuts(c).contains(id);
                     Prefs.setShortcut(c, id, n);
-                    row.setValue(onOff(n));
+                    row.setValue(SettingsPanel.onOff(c, n));
                     AppModel.reload(c);
                     host.rebuildGrid();
                 }
             });
-            row.setHelp(open.get(i)[HELP]);
+            row.setHelp(help(c, open.get(i)[ID]));
         }
         if (Prefs.shortcutsPlace(c) == Prefs.SHORTCUTS_OFF) {
-            p.addNote("Quick settings are off. Turn them on on the previous page.");
+            p.addNote(c.getString(R.string.sys_quick_off));
         }
         p.addRow(c.getString(R.string.home_back), "", new Runnable() {
             public void run() { host.closePanel(); }
@@ -246,21 +245,17 @@ public final class SystemSettingsPanel {
     private static View buildOpenRest(final Context c, final SettingsPanel.Host host) {
         final Panel p = new Panel(c, c.getString(R.string.home_amazon_settings), null, Panel.SHEET);
 
-        p.addHeader("What will happen");
-        p.addNote("1. Amazon's launcher is switched back on, over the ADB link.");
-        p.addNote("2. Amazon's settings menu opens. Change what you need.");
-        p.addNote("3. Press Home when you are done. Salotto covers Amazon's home again, with "
-                + "a tile on top saying the launcher was switched back on. Press OK on it to "
-                + "switch the launcher off again.");
-        p.addHeader("What it costs if you leave it on");
-        p.addNote("With Amazon's launcher on, Home goes through Amazon's home screen again: "
-                + "its ads and a flash of it on every press. This also turns on \"Warn if the "
-                + "system undoes Debloat\", which is what shows the tile in step 3.");
+        p.addHeader(c.getString(R.string.sys_what_happens));
+        p.addNote(c.getString(R.string.sys_step1));
+        p.addNote(c.getString(R.string.sys_step2));
+        p.addNote(c.getString(R.string.sys_step3));
+        p.addHeader(c.getString(R.string.sys_cost));
+        p.addNote(c.getString(R.string.sys_cost_note));
 
-        p.addRow("Switch it on and open the settings", "", new Runnable() {
+        p.addRow(c.getString(R.string.sys_switch_on), "", new Runnable() {
             public void run() { openRest(c); }
         });
-        p.addRow("Cancel", "", new Runnable() {
+        p.addRow(c.getString(R.string.ui_cancel), "", new Runnable() {
             public void run() { host.closePanel(); }
         });
         return p.root;
@@ -306,7 +301,6 @@ public final class SystemSettingsPanel {
 
     // ---------------------------------------------------------------- small helpers
 
-    private static String onOff(boolean on) { return on ? "on" : "off"; }
 
     private static String join(List<String> items) {
         StringBuilder sb = new StringBuilder();

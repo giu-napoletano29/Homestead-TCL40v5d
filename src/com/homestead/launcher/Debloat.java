@@ -80,15 +80,29 @@ final class Debloat {
             this.caution = caution;
             this.risky = risky;
         }
+
+        /**
+         * The English text here is the default; the TV's language comes from the resources
+         * "dbt_<package>" and "dbn_<package>" (dots as underscores), where there are any.
+         */
+        String title(Context c) { return localized(c, "dbt_", title); }
+
+        String note(Context c) { return localized(c, "dbn_", note); }
+
+        private String localized(Context c, String prefix, String fallback) {
+            int id = c.getResources().getIdentifier(prefix + pkg.replace('.', '_'), "string",
+                    c.getPackageName());
+            return id != 0 ? c.getString(id) : fallback;
+        }
     }
 
-    static String groupName(int g) {
+    static String groupName(Context c, int g) {
         switch (g) {
-            case GROUP_ADS: return "Advertising & recommendations";
-            case GROUP_TELEMETRY: return "Telemetry & diagnostics";
-            case GROUP_VOICE: return "Alexa";
-            case GROUP_HOME: return "Amazon's home screen";
-            default: return "Extras";
+            case GROUP_ADS: return c.getString(R.string.db_group_ads);
+            case GROUP_TELEMETRY: return c.getString(R.string.db_group_telemetry);
+            case GROUP_VOICE: return c.getString(R.string.db_group_alexa);
+            case GROUP_HOME: return c.getString(R.string.db_group_home);
+            default: return c.getString(R.string.db_group_extras);
         }
     }
 
@@ -355,15 +369,15 @@ final class Debloat {
 
     /** Null if the package may be toggled, otherwise the reason it may not be. */
     static String protectionReason(Context c, String pkg) {
-        if (pkg == null || pkg.length() == 0) return "no package";
-        if (pkg.equals(c.getPackageName())) return "this launcher";
+        if (pkg == null || pkg.length() == 0) return c.getString(R.string.db_reason_nopkg);
+        if (pkg.equals(c.getPackageName())) return c.getString(R.string.db_reason_self);
 
         for (int i = 0; i < NEVER.length; i++) {
             if (NEVER[i].equals(pkg)) {
                 if (isRisky(pkg)) break;     // its own row, with a warning, is the way in
                 return "com.amazon.ceviche".equals(pkg)
-                        ? "disabling this crash-loops the home screen"
-                        : "core system component";
+                        ? c.getString(R.string.db_reason_crash)
+                        : c.getString(R.string.db_reason_core);
             }
         }
         // The substring rules guard "Browse every system app". Catalogue entries were
@@ -371,12 +385,12 @@ final class Debloat {
         if (!inCatalogue(pkg)) {
             String lower = pkg.toLowerCase(java.util.Locale.US);
             for (int i = 0; i < NEVER_CONTAINING.length; i++) {
-                if (lower.contains(NEVER_CONTAINING[i])) return "core system component";
+                if (lower.contains(NEVER_CONTAINING[i])) return c.getString(R.string.db_reason_core);
             }
         }
         // The launcher is the home screen right now by definition; Homestead also declares
         // Home, so the risky entry is allowed past this check and carries its own warning.
-        if (!isRisky(pkg) && liveCritical(c).contains(pkg)) return "in use by the system right now";
+        if (!isRisky(pkg) && liveCritical(c).contains(pkg)) return c.getString(R.string.db_reason_live);
         // Only ever blocks switching it off: once it is off, its row must stay the way back.
         if (AppModel.AMAZON_LAUNCHER.equals(pkg) && stateOf(c, pkg) == ENABLED) {
             return homeWithoutAmazonLauncher(c);
@@ -398,7 +412,7 @@ final class Debloat {
             ris = pm.queryIntentActivities(
                     new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME), 0);
         } catch (Throwable t) {
-            return "could not check what handles Home";
+            return c.getString(R.string.db_reason_check);
         }
         ResolveInfo ours = null, rival = null;
         for (int i = 0; ris != null && i < ris.size(); i++) {
@@ -412,21 +426,21 @@ final class Debloat {
                 rival = ri;
             }
         }
-        if (ours == null) return "could not check what handles Home";
+        if (ours == null) return c.getString(R.string.db_reason_check);
         if (rival == null || rival.priority < ours.priority) return null;
-        if (rival.priority > ours.priority) return "Fire OS would take Home";
+        if (rival.priority > ours.priority) return c.getString(R.string.db_reason_fireos);
         // Short enough for the row; a package without a label falls back to its name.
         CharSequence label = null;
         try { label = rival.loadLabel(pm); } catch (Throwable ignored) { }
         String name = label == null ? "" : label.toString();
         return name.length() == 0 || name.equals(rival.activityInfo.packageName)
-                ? "another home app is installed" : "Home shared with " + name;
+                ? c.getString(R.string.db_reason_other_home) : c.getString(R.string.db_reason_shared, name);
     }
 
     /** The catalogue's plain-English name for a package, or the package name itself. */
-    static String titleOf(String pkg) {
+    static String titleOf(Context c, String pkg) {
         for (int i = 0; i < CATALOGUE.length; i++) {
-            if (CATALOGUE[i].pkg.equals(pkg)) return CATALOGUE[i].title;
+            if (CATALOGUE[i].pkg.equals(pkg)) return CATALOGUE[i].title(c);
         }
         return pkg;
     }
