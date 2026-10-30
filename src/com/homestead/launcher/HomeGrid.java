@@ -1234,6 +1234,7 @@ public class HomeGrid implements SettingsPanel.Host {
         int tint = look == null ? 0xFF000000 : look.tint();
         int mid = Color.rgb(Color.red(tint) / 5, Color.green(tint) / 5, Color.blue(tint) / 5);
         bg.setColors(new int[]{ mid, 0xFF020304 });
+        bg.setDither(true);
         v.setBackground(bg);
         // With a photo or painting as the background, the idle clock sits on a blurred copy
         // of it, dimmed hard: still a quiet, dark screen (and no bright static picture for a

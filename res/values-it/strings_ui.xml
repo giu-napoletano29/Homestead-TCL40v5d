@@ -133,7 +133,7 @@
   <string name="ds_autosleep_help_stick">La Stick va in sospensione da sola dopo 15 minuti senza premere un tasto. Se è disattivato, va in sospensione solo quando lo fa la TV (gli interruttori sopra) o quando la metti tu.</string>
   <string name="ds_overscan_amount">Entità dell\'overscan</string>
   <string name="ds_overscan_help">Riduce l\'immagine dai bordi, per una TV che li taglia. Lascialo disattivato quando la TV mostra l\'immagine 1:1 (per esempio in modalità Film), altrimenti compaiono bordi neri.</string>
-  <string name="ds_overscan_amount_help">Di quanto verso l\'interno da ogni bordo, uguale sui quattro lati. Premi OK per il passo successivo; dopo l\'ultimo torna a 0. Ha effetto solo con l\'Overscan attivo.</string>
+  <string name="ds_overscan_amount_help">Di quanto verso l\'interno da ogni bordo, uguale sui quattro lati. Premi OK per il passo successivo; dopo l\'ultimo torna a 0. Disattivando l\'Overscan torna a 0.</string>
   <string name="ds_depth">Profondità colore</string>
   <string name="ds_depth_help">Un valore che la TV non supporta può rendere l\'immagine instabile finché non viene rimesso. Mostrato come riferimento; si cambia dalla pagina di Amazon.</string>
   <string name="ds_issue_sleep">va in sospensione da sola dopo %1$d minuti</string>

@@ -133,7 +133,7 @@
   <string name="ds_autosleep_help_stick">The Stick goes to sleep by itself after 15 minutes without a button press. Off, it sleeps only when the TV does (the switches above) or when you put it to sleep.</string>
   <string name="ds_overscan_amount">Overscan amount</string>
   <string name="ds_overscan_help">Takes the picture in from the edges, for a TV that crops them. Leave it off when the TV shows the picture 1:1 (for example in Film mode), or black borders appear.</string>
-  <string name="ds_overscan_amount_help">How far in from each edge, the same on all four sides. Press OK for the next step; it wraps round to 0. Only has an effect while Overscan is on.</string>
+  <string name="ds_overscan_amount_help">How far in from each edge, the same on all four sides. Press OK for the next step; it wraps round to 0. Turning Overscan off sets it back to 0.</string>
   <string name="ds_depth">Colour depth</string>
   <string name="ds_depth_help">A value the TV does not support can make the picture unstable until it is put back. Shown for reference; changed from Amazon\'s own page.</string>
   <string name="ds_issue_sleep">it sleeps by itself after %1$d minutes</string>

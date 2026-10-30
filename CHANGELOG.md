@@ -3,6 +3,16 @@
 This fork keeps the original's version numbers and adds a fourth digit or a new minor. The
 original's history (up to 1.6.14) is in the git log below the fork's first commit.
 
+## 1.8.3
+
+Smoother dark backgrounds, and no black borders left behind by Overscan.
+
+- Dark gradients (the backgrounds, the fade under the dock, the idle clock) are now dithered.
+  On a TV in Film mode they showed hard steps, because the picture is shown as it is.
+- Turning Overscan off in Screen and sound now also sets its amount back to 0. A leftover
+  amount could keep shrinking the picture on some TVs even with the switch off, leaving black
+  borders on the sides in Film mode.
+
 ## 1.8.2
 
 Everything in Italian.

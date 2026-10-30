@@ -512,7 +512,7 @@ final class Backgrounds {
         private static final float[] AT = { 0f, 0.48f, 0.60f, 0.78f, 1f };
         private static final int[] ALPHA = { 0x00, 0x00, 0xC8, 0xF2, 0xFC };
         private final int rgb;
-        private final Paint paint = new Paint();
+        private final Paint paint = new Paint(Paint.DITHER_FLAG);
         Scrim(int rgb) { this.rgb = rgb; }
 
         @Override protected void onBoundsChange(android.graphics.Rect r) {
@@ -644,10 +644,13 @@ final class Backgrounds {
             };
             g.setGradientType(GradientDrawable.RADIAL_GRADIENT);
             g.setGradientCenter(0.36f, 0.42f);
+            g.setDither(true);
             return g;
         }
-        return new GradientDrawable(GradientDrawable.Orientation.BL_TR,
+        GradientDrawable g = new GradientDrawable(GradientDrawable.Orientation.BL_TR,
                 new int[]{ p.from, p.to });
+        g.setDither(true);
+        return g;
     }
 
     /**
@@ -657,13 +660,14 @@ final class Backgrounds {
      */
     private static final class GlowDrawable extends GradientDrawable {
         private final Preset p;
-        private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.DITHER_FLAG);
         private android.graphics.RadialGradient[] glowShaders;
         private android.graphics.LinearGradient bandShader;
 
         GlowDrawable(Preset p) {
             super(GradientDrawable.Orientation.TL_BR, new int[]{ p.from, p.to });
             this.p = p;
+            setDither(true);
         }
 
         @Override protected void onBoundsChange(android.graphics.Rect r) {

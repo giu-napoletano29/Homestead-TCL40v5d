@@ -451,10 +451,15 @@ final class DisplaySoundPanel {
                 if (!AdbBridge.canRun(c)) { sw.setValue(c.getString(R.string.ds_needs_setup)); return; }
                 final boolean n = !"1".equals(getGlobal(c, "overscan_enabled"));
                 sw.setValue(c.getString(R.string.ds_working));
-                AdbBridge.run(new String[]{ "settings put global overscan_enabled " + (n ? 1 : 0) },
+                // A leftover amount can still shrink the picture on some TVs with the switch
+                // off (black borders in Film mode), so turning it off clears the amount too.
+                AdbBridge.run(n ? new String[]{ "settings put global overscan_enabled 1" }
+                                : new String[]{ "settings put global overscan_enabled 0",
+                                        "settings put global overscan_values \"0.000000 0.000000 0.000000 0.000000\"" },
                         new AdbBridge.Callback() {
                             public void onDone(boolean ok, String out) {
                                 sw.setValue(SettingsPanel.onOff(c, "1".equals(getGlobal(c, "overscan_enabled"))));
+                                amount.setValue(percent(overscanNow(c)));
                             }
                         });
             }
